@@ -29,5 +29,5 @@ pnpm-debug.log*
 # deployment
 .vercel/
 
-# private weekly plan (personal, not part of the app)
+# private weekly plan
 plan/
