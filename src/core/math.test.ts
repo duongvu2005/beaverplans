@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { clamp } from './math.ts';
+import { clamp } from './math';
 
 describe('clamp', () => {
-  /* 
-   * Testing strategy
-   *   partition on x vs [lo, hi]: x < lo; x = lo; lo < x < hi; x = hi; x > hi
-   *   partition on interval: lo < hi; lo = hi
-   *   x is NaN
-   */
+    /*
+     * Testing strategy
+     *     partition on x vs [lo, hi]: x < lo; x = lo; lo < x < hi; x = hi; x > hi
+     *     partition on interval: lo < hi; lo = hi
+     *     x is NaN
+     */
 
     it('covers x < lo and lo < hi', () => {
         const x = -1;
