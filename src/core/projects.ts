@@ -106,8 +106,20 @@ export function addSubtask(plan: WeekPlan, taskId: string, subtaskId: string, as
 }
 
 // Remove (producers)
-export function removeProject(_plan: WeekPlan, _projectId: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Remove a project from the plan.
+ * 
+ * @param plan the current plan
+ * @param projectId the id of the project to remove
+ * @returns a new plan with the same weekStart, and the same projects in the same
+ *          order but without the one whose id is projectId. If no project has that
+ *          id, the projects are unchanged.
+ */
+export function removeProject(plan: WeekPlan, projectId: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.filter(p => p.id !== projectId)
+    };
 }
 
 export function removeTask(_plan: WeekPlan, _taskId: string): WeekPlan {

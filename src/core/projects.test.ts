@@ -230,3 +230,92 @@ describe('addSubtask', () => {
         expect(leaf.isDone).toBe(false);
     });
 });
+
+describe('removeProject', () => {
+    /**
+     * Testing strategy:
+     *      - partition on number of projects: 1 | >1
+     *      - partition on removed project's position (when >1): first | middle | last
+     *      - partition on projectId: exists | not found (miss, incl. empty plan)
+     *
+     *      properties checked when a project is removed:
+     *      - the target is gone (length shrinks by 1, no project with that id)
+     *      - surviving projects are the same instances, in the same order
+     *      - weekStart is unchanged
+     *      - the input plan is not mutated
+     */
+
+    it('covers 1 project: removing it leaves no projects', () => {
+        const a = makeProject('a');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeProject(plan, 'a');
+
+        expect(result.projects).toEqual([]);
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers >1, remove first: others remain, same instances and order', () => {
+        const a = makeProject('a');
+        const b = makeProject('b');
+        const c = makeProject('c');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b, c] };
+        const result = removeProject(plan, 'a');
+
+        expect(result.projects).toHaveLength(2);
+        expect(result.projects[0]).toBe(b);
+        expect(result.projects[1]).toBe(c);
+    });
+
+    it('covers >1, remove middle: neighbours remain, same instances and order', () => {
+        const a = makeProject('a');
+        const b = makeProject('b');
+        const c = makeProject('c');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b, c] };
+        const result = removeProject(plan, 'b');
+
+        expect(result.projects).toHaveLength(2);
+        expect(result.projects[0]).toBe(a);
+        expect(result.projects[1]).toBe(c);
+    });
+
+    it('covers >1, remove last: others remain, same instances and order', () => {
+        const a = makeProject('a');
+        const b = makeProject('b');
+        const c = makeProject('c');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b, c] };
+        const result = removeProject(plan, 'c');
+
+        expect(result.projects).toHaveLength(2);
+        expect(result.projects[0]).toBe(a);
+        expect(result.projects[1]).toBe(b);
+    });
+
+    it('covers not found on non-empty plan: projects unchanged (same instances)', () => {
+        const a = makeProject('a');
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const result = removeProject(plan, 'nope');
+
+        expect(result.projects).toHaveLength(2);
+        expect(result.projects[0]).toBe(a);
+        expect(result.projects[1]).toBe(b);
+    });
+
+    it('covers not found on empty plan: still no projects', () => {
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const result = removeProject(plan, 'nope');
+
+        expect(result.projects).toEqual([]);
+    });
+
+    it('covers remove: does not mutate the input plan', () => {
+        const a = makeProject('a');
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        removeProject(plan, 'a');
+
+        expect(plan.projects).toHaveLength(2);
+        expect(plan.projects[0]).toBe(a);
+        expect(plan.projects[1]).toBe(b);
+    });
+});
