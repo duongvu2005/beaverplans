@@ -822,3 +822,108 @@ describe('toggleSubtask', () => {
         expect(plan.projects[0]?.tasks[0]?.subtasks[0]?.isDone).toBe(false);
     });
 });
+
+describe('toggleTask', () => {
+    /**
+     * Testing strategy:
+     *      - partition on taskId: exists | not found
+     *      - partition on whether the task has subtasks:
+     *          - no subtasks (leaf): partition on isDone: false (-> true) | true (-> false)
+     *          - has subtasks: partition on aggregate state:
+     *              all done (-> all undone) | all undone (-> all done) | mixed (-> all done)
+     *
+     *      properties checked when found:
+     *      - leaf: its isDone is flipped
+     *      - parent: every subtask's isDone is set to one target
+     *        (false if all were done, true otherwise)
+     *      - target task/project new objects; sibling tasks and other projects shared
+     *      - weekStart unchanged; input not mutated
+     */
+
+    it('covers leaf, currently undone: flips isDone to true', () => {
+        const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = toggleTask(plan, 't0');
+
+        expect(result.projects[0]?.tasks[0]?.isDone).toBe(true);
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers leaf, currently done: flips isDone to false', () => {
+        const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: true };
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = toggleTask(plan, 't0');
+
+        expect(result.projects[0]?.tasks[0]?.isDone).toBe(false);
+    });
+
+    it('covers parent, all subtasks done: sets all undone', () => {
+        const s0: Subtask = { id: 's0', isDone: true, assignedDay: 'mon', missedDays: [], weight: 1 };
+        const s1: Subtask = { id: 's1', isDone: true, assignedDay: 'tue', missedDays: [], weight: 1 };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = toggleTask(plan, 't0');
+
+        const subs = result.projects[0]?.tasks[0]?.subtasks;
+        expect(subs?.map(s => s.isDone)).toEqual([false, false]);
+    });
+
+    it('covers parent, all subtasks undone: sets all done', () => {
+        const s0 = makeSubtask('s0', 'mon'); // isDone: false
+        const s1 = makeSubtask('s1', 'tue');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = toggleTask(plan, 't0');
+
+        const subs = result.projects[0]?.tasks[0]?.subtasks;
+        expect(subs?.map(s => s.isDone)).toEqual([true, true]);
+    });
+
+    it('covers parent, mixed: sets all done (target, not per-subtask flip)', () => {
+        const s0: Subtask = { id: 's0', isDone: true, assignedDay: 'mon', missedDays: [], weight: 1 };
+        const s1 = makeSubtask('s1', 'tue'); // isDone: false
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = toggleTask(plan, 't0');
+
+        const subs = result.projects[0]?.tasks[0]?.subtasks;
+        // both true: a per-subtask flip would have given [false, true]
+        expect(subs?.map(s => s.isDone)).toEqual([true, true]);
+    });
+
+    it('covers found among >1 projects and sibling task: only the target is rebuilt', () => {
+        const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
+        const siblingTask = makeTask('t1');
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf, siblingTask] };
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a] };
+        const result = toggleTask(plan, 't0');
+
+        expect(result.projects[0]).toBe(b); // other project shared
+        expect(result.projects[1]?.tasks[1]).toBe(siblingTask); // sibling task shared
+        expect(result.projects[1]?.tasks[0]).not.toBe(leaf);
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = toggleTask(plan, 'nope');
+
+        expect(result.projects[0]).toBe(a);
+    });
+
+    it('covers leaf: does not mutate the input plan', () => {
+        const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        toggleTask(plan, 't0');
+
+        expect(plan.projects[0]?.tasks[0]?.isDone).toBe(false);
+    });
+});

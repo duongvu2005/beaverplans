@@ -312,8 +312,46 @@ export function toggleSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
     };
 }
 
-export function toggleTask(_plan: WeekPlan, _taskId: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Toggle a task's completion.
+ *
+ * A task's completion is derived from its subtasks when it has any (done iff all
+ * subtasks are done), and stored in its own isDone field when it has none. So this
+ * function acts differently on the two: a leaf task's isDone is flipped directly,
+ * while a task with subtasks has all of its subtasks set to a single target.
+ *
+ * @param plan the current plan
+ * @param taskId the id of the task to toggle
+ * @returns a new plan with the same weekStart. For the task with id taskId: if it
+ *          has no subtasks, its isDone is set to the opposite of its current value;
+ *          if it has subtasks, every subtask's isDone is set to a single target —
+ *          false if all subtasks are currently done, true otherwise (so a
+ *          partially-done task becomes fully done). Everything else in the plan is
+ *          unchanged. If no task has that id, the projects are unchanged.
+ */
+export function toggleTask(plan: WeekPlan, taskId: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                if (task.id !== taskId) {
+                    return task;
+                }
+                projectChanged = true;
+                // toggle task's completion
+                if (!task.subtasks.length) {
+                    return { ...task, isDone: !(task.isDone ?? false) }
+                }
+                const allDone = task.subtasks.every(s => s.isDone);
+                return {
+                    ...task,
+                    subtasks: task.subtasks.map(s => ({ ...s, isDone: !allDone }))
+                };
+            });
+            return projectChanged ? { ...project, tasks } : project;
+        })
+    }
 }
 
 // Validators (observers)
