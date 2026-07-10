@@ -278,11 +278,41 @@ export function setSubtaskDescription(plan: WeekPlan, subtaskId: string, subtask
     };
 }
 
-export function toggleTask(_plan: WeekPlan, _taskId: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Toggle a subtask's completion.
+ * 
+ * @param plan the current plan
+ * @param subtaskId the id of the subtask to toggle completion
+ * @returns a new plan with the same weekStart. The subtask with id subtaskId has
+ *          its isDone flipped; everything else in the plan is unchanged.
+ *          If no subtask has that id, the projects are unchanged.
+ */
+export function toggleSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                let taskChanged = false;
+                const subtasks = task.subtasks.map(s => {
+                    if (s.id !== subtaskId) {
+                        return s;
+                    }
+                    taskChanged = true;
+                    return { ...s, isDone: !s.isDone };
+                });
+                if (!taskChanged) {
+                    return task;
+                }
+                projectChanged = true;
+                return { ...task, subtasks };
+            });
+            return projectChanged ? { ...project, tasks } : project;
+        })
+    };
 }
 
-export function toggleSubtask(_plan: WeekPlan, _subtaskId: string): WeekPlan {
+export function toggleTask(_plan: WeekPlan, _taskId: string): WeekPlan {
     throw new Error('unimplemented');
 }
 
