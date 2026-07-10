@@ -10,8 +10,25 @@
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from "./types";
 
 // Create (producers)
-export function addProject(_plan: WeekPlan, _projectId: string): WeekPlan {
-    throw new Error('unimplemented');
+
+/**
+ * Add a new project to plan.
+ * 
+ * @param plan the current plan
+ * @param projectId the id of the new project, must be a new unique id
+ * @returns a new plan with the same weekStart and projects, plus an empty
+ *          project (name = '', no tasks) appended to the end
+ */
+export function addProject(plan: WeekPlan, projectId: string): WeekPlan {
+    const newProject: Project = {
+        id: projectId,
+        name: '',
+        tasks: []
+    }
+    return {
+        weekStart: plan.weekStart,
+        projects: [...plan.projects, newProject]
+    };
 }
 
 export function addTask(_plan: WeekPlan, _projectId: string, _taskId: string): WeekPlan {
