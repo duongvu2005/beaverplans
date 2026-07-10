@@ -24,15 +24,40 @@ export function addProject(plan: WeekPlan, projectId: string): WeekPlan {
         id: projectId,
         name: '',
         tasks: []
-    }
+    };
     return {
         weekStart: plan.weekStart,
         projects: [...plan.projects, newProject]
     };
 }
 
-export function addTask(_plan: WeekPlan, _projectId: string, _taskId: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Add a new task to a project.
+ * 
+ * @param plan the current plan
+ * @param projectId the id of the project to add a task to
+ * @param taskId the id of the new task, must be a new unique id
+ * @returns a new plan with the same weekStart and projects, except for the project
+ *          with id projectId, where an empty task (name = '', no subtasks, isDone = false)
+ *          is appended to its tasks. If no project has id projectId, the returned plan has
+ *          the same projects (no task is added)
+ */
+export function addTask(plan: WeekPlan, projectId: string, taskId: string): WeekPlan {
+    const newTask: Task = {
+        id: taskId,
+        name: '',
+        isDone: false,
+        subtasks: []
+    };
+    return {
+        weekStart: plan.weekStart,
+        projects: plan.projects.map(project => {
+            if (project.id === projectId) {
+                return { ...project, tasks: [...project.tasks, newTask] };
+            }
+            return project;
+        })
+    };
 }
 
 export function addSubtask(_plan: WeekPlan, _taskId: string, _subtaskId: string, _assignedDay: DayOfWeek): WeekPlan {
