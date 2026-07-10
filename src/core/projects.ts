@@ -51,12 +51,11 @@ export function addTask(plan: WeekPlan, projectId: string, taskId: string): Week
     };
     return {
         ...plan,
-        projects: plan.projects.map(project => {
-            if (project.id === projectId) {
-                return { ...project, tasks: [...project.tasks, newTask] };
-            }
-            return project;
-        })
+        projects: plan.projects.map(project => 
+            project.id === projectId
+                ? { ...project, tasks: [...project.tasks, newTask] }
+                : project
+        )
     };
 }
 
@@ -85,22 +84,16 @@ export function addSubtask(plan: WeekPlan, taskId: string, subtaskId: string, as
     return {
         ...plan,
         projects: plan.projects.map(project => {
-            if (!project.tasks.some(task => task.id === taskId)) {
-                return project;
-            }
-            return {
-                ...project,
-                tasks: project.tasks.map(task => {
-                    if (task.id === taskId) {
-                        const { isDone: _isDone, ...taskWithoutDone } = task;
-                        return {
-                            ...taskWithoutDone,
-                            subtasks: [...task.subtasks, newSubtask]
-                        };
-                    }
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                if (task.id !== taskId) {
                     return task;
-                })
-            };
+                }
+                projectChanged = true;
+                const { isDone: _isDone, ...taskWithoutDone } = task;
+                return { ...taskWithoutDone, subtasks: [...task.subtasks, newSubtask] };
+            });
+            return projectChanged ? {...project, tasks} : project;
         })
     };
 }
@@ -136,13 +129,8 @@ export function removeTask(plan: WeekPlan, taskId: string): WeekPlan {
     return {
         ...plan,
         projects: plan.projects.map(project => {
-            if (!project.tasks.some(task => task.id === taskId)) {
-                return project;
-            }
-            return {
-                ...project,
-                tasks: project.tasks.filter(task => task.id !== taskId)
-            };
+            const tasks = project.tasks.filter(task => task.id !== taskId);
+            return tasks.length === project.tasks.length ? project : { ...project, tasks};
         })
     };
 }
@@ -171,13 +159,12 @@ export function removeSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
                 projectChanged = true;
                 const subtasks = task.subtasks.filter(s => s.id !== subtaskId);
                 return subtasks.length === 0
-                    ? { ...task, subtasks: subtasks, isDone: false }
-                    : { ...task, subtasks: subtasks };
-   
+                    ? { ...task, subtasks, isDone: false }
+                    : { ...task, subtasks };
             });
-            return projectChanged ? {...project, tasks: tasks} : project;
+            return projectChanged ? { ...project, tasks } : project;
         })
-    }
+    };
 }
 
 // Modify (producers)
@@ -194,15 +181,9 @@ export function removeSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
 export function setProjectName(plan: WeekPlan, projectId: string, projectName: string): WeekPlan {
     return {
         ...plan,
-        projects: plan.projects.map(project => {
-            if (project.id === projectId) {
-                return {
-                    ...project,
-                    name: projectName
-                };
-            }
-            return project;
-        })
+        projects: plan.projects.map(project =>
+            project.id === projectId ? { ...project, name: projectName } : project
+        )
     };
 }
 
@@ -220,21 +201,15 @@ export function setTaskName(plan: WeekPlan, taskId: string, taskName: string): W
     return {
         ...plan,
         projects: plan.projects.map(project => {
-            if (!project.tasks.some(task => task.id === taskId)) {
-                return project;
-            }
-            return {
-                ...project,
-                tasks: project.tasks.map(task => {
-                    if (task.id === taskId) {
-                        return {
-                            ...task,
-                            name: taskName
-                        };
-                    }
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                if (task.id !== taskId) {
                     return task;
-                })
-            };
+                }
+                projectChanged = true;
+                return { ...task, name: taskName };
+            });
+            return projectChanged ? { ...project, tasks } : project;
         })
     };
 }
@@ -254,21 +229,15 @@ export function setTaskDescription(plan: WeekPlan, taskId: string, taskDescripti
     return {
         ...plan,
         projects: plan.projects.map(project => {
-            if (!project.tasks.some(task => task.id === taskId)) {
-                return project;
-            }
-            return {
-                ...project,
-                tasks: project.tasks.map(task => {
-                    if (task.id === taskId) {
-                        return {
-                            ...task,
-                            description: taskDescription
-                        };
-                    }
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                if (task.id !== taskId) {
                     return task;
-                })
-            };
+                }
+                projectChanged = true;
+                return { ...task, description: taskDescription };
+            })
+            return projectChanged ? { ...project, tasks } : project;
         })
     };
 }
@@ -288,31 +257,23 @@ export function setSubtaskDescription(plan: WeekPlan, subtaskId: string, subtask
     return {
         ...plan,
         projects: plan.projects.map(project => {
-            if (!project.tasks.some(
-                task => task.subtasks.some(s => s.id === subtaskId)
-            )) {
-                return project;
-            }
-            return {
-                ...project,
-                tasks: project.tasks.map(task => {
-                    if (!task.subtasks.some(s => s.id === subtaskId)) {
-                        return task;
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                let taskChanged = false;
+                const subtasks = task.subtasks.map(s => {
+                    if (s.id !== subtaskId) {
+                        return s;
                     }
-                    return {
-                        ...task,
-                        subtasks: task.subtasks.map(s => {
-                            if (s.id === subtaskId) {
-                                return {
-                                    ...s,
-                                    description: subtaskDescription
-                                };
-                            }
-                            return s;
-                        })
-                    };
-                })
-            };
+                    taskChanged = true;
+                    return { ...s, description: subtaskDescription };
+                });
+                if (!taskChanged) {
+                    return task;
+                }
+                projectChanged = true;
+                return { ...task, subtasks };
+            });
+            return projectChanged ? { ...project, tasks } : project;
         })
     };
 }
