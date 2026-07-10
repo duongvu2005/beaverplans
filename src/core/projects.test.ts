@@ -431,3 +431,132 @@ describe('removeTask', () => {
         expect(plan.projects[0]?.tasks[1]).toBe(t1);
     });
 });
+
+describe('removeSubtask', () => {
+    /**
+     * Testing strategy:
+     *      - partition on target task's subtasks: 1 (remove -> empty -> restore isDone) | >1 (no restore)
+     *      - partition on removed subtask's position (when >1): first | middle | last
+     *      - partition on structure: hits the right task among sibling tasks and other projects
+     *      - partition on subtaskId: exists | not found (miss, incl. empty plan)
+     *
+     *      properties checked when a subtask is removed:
+     *      - the subtask is gone from its task (that task's subtasks shrink by 1)
+     *      - surviving subtasks are the same instances, in the same order
+     *      - if the task is now empty, its isDone is restored to false; otherwise isDone stays absent
+     *      - the target task/project are new objects; sibling tasks and other projects are same instances
+     *      - weekStart is unchanged
+     *      - the input plan is not mutated
+     */
+
+    it('covers task with 1 subtask: removing it empties the task and restores isDone=false', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] }; // no isDone (has a subtask)
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeSubtask(plan, 's0');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks).toEqual([]);
+        expect(task?.isDone).toBe(false);
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers >1 subtasks, remove first: others remain, isDone stays absent', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const s1 = makeSubtask('s1', 'tue');
+        const s2 = makeSubtask('s2', 'wed');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1, s2] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeSubtask(plan, 's0');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks).toHaveLength(2);
+        expect(task?.subtasks[0]).toBe(s1);
+        expect(task?.subtasks[1]).toBe(s2);
+        expect(task).not.toHaveProperty('isDone');
+    });
+
+    it('covers >1 subtasks, remove middle: neighbours remain, isDone stays absent', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const s1 = makeSubtask('s1', 'tue');
+        const s2 = makeSubtask('s2', 'wed');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1, s2] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeSubtask(plan, 's1');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks).toHaveLength(2);
+        expect(task?.subtasks[0]).toBe(s0);
+        expect(task?.subtasks[1]).toBe(s2);
+        expect(task).not.toHaveProperty('isDone');
+    });
+
+    it('covers >1 subtasks, remove last: others remain, isDone stays absent', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const s1 = makeSubtask('s1', 'tue');
+        const s2 = makeSubtask('s2', 'wed');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1, s2] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeSubtask(plan, 's2');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks).toHaveLength(2);
+        expect(task?.subtasks[0]).toBe(s0);
+        expect(task?.subtasks[1]).toBe(s1);
+        expect(task).not.toHaveProperty('isDone');
+    });
+
+    it('covers >1 projects and sibling task: only the target task is rebuilt', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const target: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const siblingTask = makeTask('t1');
+        const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
+        const b = makeProject('b');
+        const c = makeProject('c');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a, c] };
+        const result = removeSubtask(plan, 's0');
+
+        // other projects shared
+        expect(result.projects[0]).toBe(b);
+        expect(result.projects[2]).toBe(c);
+        // sibling task shared, target task rebuilt
+        expect(result.projects[1]?.tasks[1]).toBe(siblingTask);
+        expect(result.projects[1]?.tasks[0]).not.toBe(target);
+        expect(result.projects[1]?.tasks[0]?.subtasks).toEqual([]);
+    });
+
+    it('covers not found on non-empty plan: everything unchanged (same instances)', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const result = removeSubtask(plan, 'nope');
+
+        expect(result.projects[0]).toBe(a);
+        expect(result.projects[1]).toBe(b);
+    });
+
+    it('covers not found on empty plan: still no projects', () => {
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const result = removeSubtask(plan, 'nope');
+
+        expect(result.projects).toEqual([]);
+    });
+
+    it('covers restore: does not mutate the input plan', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        removeSubtask(plan, 's0');
+
+        // input task still has its subtask and still no isDone (restore happened on a copy)
+        expect(plan.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
+        expect(plan.projects[0]?.tasks[0]).not.toHaveProperty('isDone');
+    });
+});

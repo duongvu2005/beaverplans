@@ -147,8 +147,37 @@ export function removeTask(plan: WeekPlan, taskId: string): WeekPlan {
     };
 }
 
-export function removeSubtask(_plan: WeekPlan, _subtaskId: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Remove a subtask from the plan.
+ *
+ * @param plan the current plan
+ * @param subtaskId the id of the subtask to remove
+ * @returns a new plan with the same weekStart. The task containing the subtask
+ *          with id subtaskId has that subtask removed, its remaining subtasks
+ *          kept in the same order; the containing project and all other projects
+ *          and tasks are unchanged. If removing the subtask leaves the task with
+ *          none, the task's isDone is restored to false (doneness is stored again
+ *          for a leaf task). If no subtask has that id, the projects are unchanged.
+ */
+export function removeSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                if (!task.subtasks.some(s => s.id === subtaskId)) {
+                    return task;
+                }
+                projectChanged = true;
+                const subtasks = task.subtasks.filter(s => s.id !== subtaskId);
+                return subtasks.length === 0
+                    ? { ...task, subtasks: subtasks, isDone: false }
+                    : { ...task, subtasks: subtasks };
+   
+            });
+            return projectChanged ? {...project, tasks: tasks} : project;
+        })
+    }
 }
 
 // Modify (producers)
