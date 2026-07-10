@@ -319,3 +319,115 @@ describe('removeProject', () => {
         expect(plan.projects[1]).toBe(b);
     });
 });
+
+describe('removeTask', () => {
+    /**
+     * Testing strategy:
+     *      - partition on target project's tasks: 1 | >1
+     *      - partition on removed task's position (when >1): first | middle | last
+     *      - partition on number of projects: 1 | >1 (finds the task's project among many)
+     *      - partition on taskId: exists | not found (miss, incl. empty plan)
+     *
+     *      properties checked when a task is removed:
+     *      - the task is gone from its project (that project's tasks shrink by 1)
+     *      - surviving tasks are the same instances, in the same order
+     *      - the parent project is a new object; all other projects are same instances
+     *      - weekStart is unchanged
+     *      - the input plan is not mutated
+     */
+
+    it('covers 1 project, 1 task: removing it leaves that project with no tasks', () => {
+        const t = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [t] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeTask(plan, 't0');
+
+        expect(result.projects[0]?.tasks).toEqual([]);
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers >1 tasks, remove first: others remain, same instances and order', () => {
+        const t0 = makeTask('t0');
+        const t1 = makeTask('t1');
+        const t2 = makeTask('t2');
+        const a: Project = { id: 'a', name: 'a', tasks: [t0, t1, t2] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeTask(plan, 't0');
+
+        expect(result.projects[0]?.tasks).toHaveLength(2);
+        expect(result.projects[0]?.tasks[0]).toBe(t1);
+        expect(result.projects[0]?.tasks[1]).toBe(t2);
+    });
+
+    it('covers >1 tasks, remove middle: neighbours remain, same instances and order', () => {
+        const t0 = makeTask('t0');
+        const t1 = makeTask('t1');
+        const t2 = makeTask('t2');
+        const a: Project = { id: 'a', name: 'a', tasks: [t0, t1, t2] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeTask(plan, 't1');
+
+        expect(result.projects[0]?.tasks).toHaveLength(2);
+        expect(result.projects[0]?.tasks[0]).toBe(t0);
+        expect(result.projects[0]?.tasks[1]).toBe(t2);
+    });
+
+    it('covers >1 tasks, remove last: others remain, same instances and order', () => {
+        const t0 = makeTask('t0');
+        const t1 = makeTask('t1');
+        const t2 = makeTask('t2');
+        const a: Project = { id: 'a', name: 'a', tasks: [t0, t1, t2] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeTask(plan, 't2');
+
+        expect(result.projects[0]?.tasks).toHaveLength(2);
+        expect(result.projects[0]?.tasks[0]).toBe(t0);
+        expect(result.projects[0]?.tasks[1]).toBe(t1);
+    });
+
+    it('covers >1 projects: finds the right project, others stay same instances', () => {
+        const t = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [t] };
+        const b = makeProject('b');
+        const c = makeProject('c');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a, c] };
+        const result = removeTask(plan, 't0');
+
+        // other projects untouched (same instances)
+        expect(result.projects[0]).toBe(b);
+        expect(result.projects[2]).toBe(c);
+        // the target's project is rebuilt with the task gone
+        expect(result.projects[1]).not.toBe(a);
+        expect(result.projects[1]?.tasks).toEqual([]);
+    });
+
+    it('covers not found on non-empty plan: projects unchanged (same instances)', () => {
+        const t = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [t] };
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const result = removeTask(plan, 'nope');
+
+        expect(result.projects[0]).toBe(a);
+        expect(result.projects[1]).toBe(b);
+    });
+
+    it('covers not found on empty plan: still no projects', () => {
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const result = removeTask(plan, 'nope');
+
+        expect(result.projects).toEqual([]);
+    });
+
+    it('covers remove: does not mutate the input plan', () => {
+        const t0 = makeTask('t0');
+        const t1 = makeTask('t1');
+        const a: Project = { id: 'a', name: 'a', tasks: [t0, t1] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        removeTask(plan, 't0');
+
+        expect(plan.projects[0]?.tasks).toHaveLength(2);
+        expect(plan.projects[0]?.tasks[0]).toBe(t0);
+        expect(plan.projects[0]?.tasks[1]).toBe(t1);
+    });
+});

@@ -122,8 +122,29 @@ export function removeProject(plan: WeekPlan, projectId: string): WeekPlan {
     };
 }
 
-export function removeTask(_plan: WeekPlan, _taskId: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Remove a task from the plan.
+ * 
+ * @param plan the current plan
+ * @param taskId the id of the task to remove
+ * @returns a new plan with the same weekStart. The project containing the task
+ *          with id taskId has that task removed, its remaining tasks kept in the
+ *          same order; all other projects are unchanged. If no task has that id,
+ *          the projects are unchanged.
+ */
+export function removeTask(plan: WeekPlan, taskId: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            if (!project.tasks.some(task => task.id === taskId)) {
+                return project;
+            }
+            return {
+                ...project,
+                tasks: project.tasks.filter(task => task.id !== taskId)
+            };
+        })
+    };
 }
 
 export function removeSubtask(_plan: WeekPlan, _subtaskId: string): WeekPlan {
