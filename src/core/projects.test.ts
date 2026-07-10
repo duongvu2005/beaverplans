@@ -560,3 +560,193 @@ describe('removeSubtask', () => {
         expect(plan.projects[0]?.tasks[0]).not.toHaveProperty('isDone');
     });
 });
+
+describe('setProjectName', () => {
+    /**
+     * Testing strategy:
+     *      - partition on projectId: exists (among other projects) | not found (miss)
+     *
+     *      properties checked when found:
+     *      - the target project's name is set to the given value
+     *      - the target project is a new object; all other projects are same instances
+     *      - weekStart is unchanged; input not mutated
+     */
+
+    it('covers found among siblings: sets name, other projects shared', () => {
+        const a = makeProject('a');
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const result = setProjectName(plan, 'a', 'Renamed');
+
+        expect(result.projects[0]?.name).toBe('Renamed');
+        expect(result.projects[0]).not.toBe(a);
+        expect(result.projects[1]).toBe(b); // sibling shared
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const a = makeProject('a');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setProjectName(plan, 'nope', 'Renamed');
+
+        expect(result.projects[0]).toBe(a);
+    });
+
+    it('covers found: does not mutate the input plan', () => {
+        const a = makeProject('a'); // makeProject sets name = id = 'a'
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        setProjectName(plan, 'a', 'Renamed');
+
+        expect(plan.projects[0]?.name).toBe('a');
+    });
+});
+
+describe('setTaskName', () => {
+    /**
+     * Testing strategy:
+     *      - partition on taskId: exists (among sibling tasks and other projects) | not found
+     *
+     *      properties checked when found:
+     *      - the target task's name is set to the given value
+     *      - the task's OTHER fields (subtasks, isDone, deadline) are preserved (spread, not rebuilt)
+     *      - target task/project are new objects; sibling tasks and other projects are same instances
+     *      - weekStart unchanged; input not mutated
+     */
+
+    it('covers found among siblings: sets name, preserves other fields, shares the rest', () => {
+        const target: Task = { id: 't0', name: 't0', subtasks: [], isDone: false, deadline: '2026-07-10' };
+        const siblingTask = makeTask('t1');
+        const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const result = setTaskName(plan, 't0', 'Renamed');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.name).toBe('Renamed');
+        // other fields preserved
+        expect(task?.isDone).toBe(false);
+        expect(task?.deadline).toBe('2026-07-10');
+        expect(task?.subtasks).toEqual([]);
+        // sharing
+        expect(result.projects[0]?.tasks[1]).toBe(siblingTask);
+        expect(result.projects[1]).toBe(b);
+        expect(result.projects[0]?.tasks[0]).not.toBe(target);
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const target = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [target] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setTaskName(plan, 'nope', 'Renamed');
+
+        expect(result.projects[0]?.tasks[0]).toBe(target);
+    });
+
+    it('covers found: does not mutate the input plan', () => {
+        const target = makeTask('t0'); // name = 't0'
+        const a: Project = { id: 'a', name: 'a', tasks: [target] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        setTaskName(plan, 't0', 'Renamed');
+
+        expect(plan.projects[0]?.tasks[0]?.name).toBe('t0');
+    });
+});
+
+describe('setTaskDescription', () => {
+    /**
+     * Testing strategy:
+     *      - partition on taskId: exists (among siblings) | not found
+     *
+     *      properties checked when found:
+     *      - the target task's description is set to the given value
+     *      - target task/project new objects; sibling tasks and other projects shared
+     *      - weekStart unchanged; input not mutated
+     */
+
+    it('covers found among siblings: sets description, shares the rest', () => {
+        const target = makeTask('t0');
+        const siblingTask = makeTask('t1');
+        const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setTaskDescription(plan, 't0', 'some notes');
+
+        expect(result.projects[0]?.tasks[0]?.description).toBe('some notes');
+        expect(result.projects[0]?.tasks[1]).toBe(siblingTask);
+        expect(result.projects[0]?.tasks[0]).not.toBe(target);
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const target = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [target] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setTaskDescription(plan, 'nope', 'some notes');
+
+        expect(result.projects[0]?.tasks[0]).toBe(target);
+    });
+
+    it('covers found: does not mutate the input plan', () => {
+        const target = makeTask('t0'); // no description
+        const a: Project = { id: 'a', name: 'a', tasks: [target] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        setTaskDescription(plan, 't0', 'some notes');
+
+        expect(plan.projects[0]?.tasks[0]?.description).toBeUndefined();
+    });
+});
+
+describe('setSubtaskDescription', () => {
+    /**
+     * Testing strategy:
+     *      - partition on subtaskId: exists (among siblings) | not found
+     *      - partition on value: non-empty | empty string (stored as given, not stripped)
+     *
+     *      properties checked when found:
+     *      - the target subtask's description is set to the given value
+     *      - target subtask/task/project new objects; sibling subtasks, tasks, projects shared
+     *      - weekStart unchanged; input not mutated
+     */
+
+    it('covers found among siblings: sets description, shares the rest', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const s1 = makeSubtask('s1', 'tue');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setSubtaskDescription(plan, 's0', 'notes');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks[0]?.description).toBe('notes');
+        expect(task?.subtasks[1]).toBe(s1); // sibling subtask shared
+        expect(task?.subtasks[0]).not.toBe(s0);
+    });
+
+    it('covers empty string: stored as given (not removed)', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setSubtaskDescription(plan, 's0', '');
+
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.description).toBe('');
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setSubtaskDescription(plan, 'nope', 'notes');
+
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
+    });
+
+    it('covers found: does not mutate the input plan', () => {
+        const s0 = makeSubtask('s0', 'mon'); // no description
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        setSubtaskDescription(plan, 's0', 'notes');
+
+        expect(plan.projects[0]?.tasks[0]?.subtasks[0]?.description).toBeUndefined();
+    });
+});

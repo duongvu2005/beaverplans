@@ -181,20 +181,140 @@ export function removeSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
 }
 
 // Modify (producers)
-export function setProjectName(_plan: WeekPlan, _projectId: string, _projectName: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Change the name of a project.
+ * 
+ * @param plan the current plan
+ * @param projectId the id of the project to change the name
+ * @param projectName the new name of the project
+ * @returns a new plan with the same weekStart. The project with id projectId
+ *          has its new name set to projectName; everything else in the plan is unchanged
+ *          If no project has that id, the projects are unchanged.
+ */
+export function setProjectName(plan: WeekPlan, projectId: string, projectName: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            if (project.id === projectId) {
+                return {
+                    ...project,
+                    name: projectName
+                };
+            }
+            return project;
+        })
+    };
 }
 
-export function setTaskName(_plan: WeekPlan, _taskId: string, _taskName: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Change the name of a task.
+ * 
+ * @param plan the current plan
+ * @param taskId the id of the task to change the name
+ * @param taskName the new name of the task
+ * @returns a new plan with the same weekStart. The task with id taskId
+ *          has its new name set to taskName; everything else in the plan
+ *          is unchanged. If no task has that id, the projects are unchanged.
+ */
+export function setTaskName(plan: WeekPlan, taskId: string, taskName: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            if (!project.tasks.some(task => task.id === taskId)) {
+                return project;
+            }
+            return {
+                ...project,
+                tasks: project.tasks.map(task => {
+                    if (task.id === taskId) {
+                        return {
+                            ...task,
+                            name: taskName
+                        };
+                    }
+                    return task;
+                })
+            };
+        })
+    };
 }
 
-export function setTaskDescription(_plan: WeekPlan, _taskId: string, _taskDescription: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Change the description of a task.
+ * 
+ * @param plan the current plan
+ * @param taskId the id of the task to change the description
+ * @param taskDescription the new description of the task
+ * @returns a new plan with the same weekStart. The task with id taskId has its
+ *          description set to taskDescription (stored as given, including an empty
+ *          string); everything else in the plan is unchanged. If no task has that
+ *          id, the projects are unchanged.
+ */
+export function setTaskDescription(plan: WeekPlan, taskId: string, taskDescription: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            if (!project.tasks.some(task => task.id === taskId)) {
+                return project;
+            }
+            return {
+                ...project,
+                tasks: project.tasks.map(task => {
+                    if (task.id === taskId) {
+                        return {
+                            ...task,
+                            description: taskDescription
+                        };
+                    }
+                    return task;
+                })
+            };
+        })
+    };
 }
 
-export function setSubtaskDescription(_plan: WeekPlan, _subtaskId: string, _subtaskDescription: string): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Change the description of a subtask.
+ * 
+ * @param plan the current plan
+ * @param subtaskId the id of the subtask to change the description
+ * @param subtaskDescription the new description of the subtask
+ * @returns a new plan with the same weekStart. The subtask with id subtaskId has
+ *          its description set to subtaskDescription (stored as given, including an
+ *          empty string); everything else in the plan is unchanged. If no subtask
+ *          has that id, the projects are unchanged.
+ */
+export function setSubtaskDescription(plan: WeekPlan, subtaskId: string, subtaskDescription: string): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            if (!project.tasks.some(
+                task => task.subtasks.some(s => s.id === subtaskId)
+            )) {
+                return project;
+            }
+            return {
+                ...project,
+                tasks: project.tasks.map(task => {
+                    if (!task.subtasks.some(s => s.id === subtaskId)) {
+                        return task;
+                    }
+                    return {
+                        ...task,
+                        subtasks: task.subtasks.map(s => {
+                            if (s.id === subtaskId) {
+                                return {
+                                    ...s,
+                                    description: subtaskDescription
+                                };
+                            }
+                            return s;
+                        })
+                    };
+                })
+            };
+        })
+    };
 }
 
 export function toggleTask(_plan: WeekPlan, _taskId: string): WeekPlan {
