@@ -28,6 +28,11 @@ function makeTask(id: string): Task {
     return { id, name: id, subtasks: [], isDone: false };
 }
 
+// A minimal valid subtask.
+function makeSubtask(id: string, day: DayOfWeek): Subtask {
+    return { id, isDone: false, assignedDay: day, missedDays: [], weight: 1 };
+}
+
 describe('addProject', () => {
     /**
      * Testing strategy:
@@ -135,5 +140,93 @@ describe('addTask', () => {
         // original project instance and its empty tasks untouched
         expect(plan.projects[0]).toBe(a);
         expect(plan.projects[0]?.tasks).toHaveLength(0);
+    });
+});
+
+describe('addSubtask', () => {
+    /**
+     * Testing strategy:
+     *      - partition on target task's subtasks: empty (first -> strip isDone) | non-empty (no strip)
+     *      - partition on structure: hits the right task, leaving sibling tasks and other projects shared
+     *      - partition on taskId: exists | not found (miss)
+     *
+     *      properties checked when the task is found:
+     *      - a new subtask is appended (id === subtaskId, assignedDay, no missed days, isDone = false, weight = 1)
+     *      - the new subtask is last in that task's subtasks
+     *      - the task ends with no isDone field (doneness derived from subtasks)
+     *      - the target task/project are new objects; sibling tasks and other projects are same instances
+     *      - weekStart is unchanged
+     *      - the input plan is not mutated
+     */
+
+    it('covers found, target task is a leaf: adds first subtask and strips isDone', () => {
+        const leaf = makeTask('t0'); // has isDone, no subtasks
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = addSubtask(plan, 't0', 's1', 'mon');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks).toEqual([
+            { id: 's1', isDone: false, assignedDay: 'mon', missedDays: [], weight: 1 },
+        ]);
+        // isDone dropped now that the task has a subtask
+        expect(task).not.toHaveProperty('isDone');
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers found, target task already has subtasks: appends and leaves isDone absent', () => {
+        const existing = makeSubtask('s0', 'mon');
+        // a task with a subtask carries no isDone (A-careful invariant)
+        const parent: Task = { id: 't0', name: 't0', subtasks: [existing] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = addSubtask(plan, 't0', 's1', 'tue');
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks).toHaveLength(2);
+        // existing subtask kept (same instance) and still first
+        expect(task?.subtasks[0]).toBe(existing);
+        expect(task?.subtasks[1]).toEqual({ id: 's1', isDone: false, assignedDay: 'tue', missedDays: [], weight: 1 });
+        expect(task).not.toHaveProperty('isDone');
+    });
+
+    it('covers found, >1 project and sibling task: only the target task is rebuilt', () => {
+        const target = makeTask('t0');
+        const siblingTask = makeTask('t1');
+        const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const result = addSubtask(plan, 't0', 's1', 'wed');
+
+        // other project shared
+        expect(result.projects[1]).toBe(b);
+        // sibling task shared (same instance)
+        expect(result.projects[0]?.tasks[1]).toBe(siblingTask);
+        // parent project and target task are new objects
+        expect(result.projects[0]).not.toBe(a);
+        expect(result.projects[0]?.tasks[0]).not.toBe(target);
+        expect(result.projects[0]?.tasks[0]?.subtasks).toHaveLength(1);
+    });
+
+    it('covers not found: projects unchanged, no subtask added', () => {
+        const leaf = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = addSubtask(plan, 'nope', 's1', 'mon');
+
+        expect(result.projects[0]).toBe(a);
+        expect(result.projects[0]?.tasks[0]).toBe(leaf);
+    });
+
+    it('covers found: does not mutate the input plan', () => {
+        const leaf = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        addSubtask(plan, 't0', 's1', 'mon');
+
+        // original task instance untouched: still a leaf with isDone and no subtasks
+        expect(plan.projects[0]?.tasks[0]).toBe(leaf);
+        expect(leaf.subtasks).toHaveLength(0);
+        expect(leaf.isDone).toBe(false);
     });
 });

@@ -50,7 +50,7 @@ export function addTask(plan: WeekPlan, projectId: string, taskId: string): Week
         subtasks: []
     };
     return {
-        weekStart: plan.weekStart,
+        ...plan,
         projects: plan.projects.map(project => {
             if (project.id === projectId) {
                 return { ...project, tasks: [...project.tasks, newTask] };
@@ -60,8 +60,49 @@ export function addTask(plan: WeekPlan, projectId: string, taskId: string): Week
     };
 }
 
-export function addSubtask(_plan: WeekPlan, _taskId: string, _subtaskId: string, _assignedDay: DayOfWeek): WeekPlan {
-    throw new Error('unimplemented');
+/**
+ * Add a new subtask to a task.
+ * 
+ * @param plan the current plan
+ * @param taskId the id of the task to add a subtask to
+ * @param subtaskId the id of the new subtask, must be a new unique id
+ * @param assignedDay the day in the week assigned to the subtask
+ * @returns a new plan with the same weekStart and projects, except for the project
+ *          that has a task with id taskId, where a new subtask assigned to assignedDay
+ *          (no missed days, isDone = false, weight = 1) is appended to its subtasks, and
+ *          that task no longer has an isDone field (doneness is now derived from its
+ *          subtasks). If no task has id taskId, the returned plan has the same projects
+ *          (no subtask is added).
+ */
+export function addSubtask(plan: WeekPlan, taskId: string, subtaskId: string, assignedDay: DayOfWeek): WeekPlan {
+    const newSubtask: Subtask = {
+        id: subtaskId,
+        isDone: false,
+        assignedDay: assignedDay,
+        missedDays: [],
+        weight: 1
+    };
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            if (!project.tasks.some(task => task.id === taskId)) {
+                return project;
+            }
+            return {
+                ...project,
+                tasks: project.tasks.map(task => {
+                    if (task.id === taskId) {
+                        const { isDone: _isDone, ...taskWithoutDone } = task;
+                        return {
+                            ...taskWithoutDone,
+                            subtasks: [...task.subtasks, newSubtask]
+                        };
+                    }
+                    return task;
+                })
+            };
+        })
+    };
 }
 
 // Remove (producers)
