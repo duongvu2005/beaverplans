@@ -12,6 +12,7 @@ import {
     setSubtaskDescription,
     toggleTask,
     toggleSubtask,
+    isTaskDone,
     isValidProject,
     isValidSubtask,
     isValidTask,
@@ -987,6 +988,49 @@ describe('toggleTask', () => {
         expect(isValidPlan(result)).toBe(true);
 
         expect(plan.projects[0]?.tasks[0]?.isDone).toBe(false);
+    });
+});
+
+describe('isTaskDone', () => {
+    /**
+     * Testing strategy (precondition: a valid task):
+     *   - leaf (no subtasks): isDone true | false
+     *   - parent (has subtasks), done-set: all done | some done | none done
+     *   ('some done' is the case that separates every(...) from a buggy some(...))
+     */
+
+    it('leaf with isDone true is done', () => {
+        expect(isTaskDone({ ...makeTask('t'), isDone: true })).toBe(true);
+    });
+    it('leaf with isDone false is not done', () => {
+        expect(isTaskDone(makeTask('t'))).toBe(false); // makeTask -> isDone: false
+    });
+    it('parent with all subtasks done is done', () => {
+        const task: Task = {
+            id: 't', name: 't',
+            subtasks: [
+                { ...makeSubtask('s0', 'mon'), isDone: true },
+                { ...makeSubtask('s1', 'tue'), isDone: true },
+            ],
+        };
+        expect(isTaskDone(task)).toBe(true);
+    });
+    it('parent with some subtasks done is not done', () => {
+        const task: Task = {
+            id: 't', name: 't',
+            subtasks: [
+                { ...makeSubtask('s0', 'mon'), isDone: true },
+                makeSubtask('s1', 'tue'), // isDone: false
+            ],
+        };
+        expect(isTaskDone(task)).toBe(false);
+    });
+    it('parent with no subtasks done is not done', () => {
+        const task: Task = {
+            id: 't', name: 't',
+            subtasks: [makeSubtask('s0', 'mon'), makeSubtask('s1', 'tue')], // both false
+        };
+        expect(isTaskDone(task)).toBe(false);
     });
 });
 

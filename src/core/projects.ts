@@ -340,18 +340,32 @@ export function toggleTask(plan: WeekPlan, taskId: string): WeekPlan {
                 }
                 projectChanged = true;
                 // toggle task's completion
+                const target = !isTaskDone(task);
                 if (!task.subtasks.length) {
-                    return { ...task, isDone: !(task.isDone ?? false) }
+                    return { ...task, isDone: target }
                 }
-                const allDone = task.subtasks.every(s => s.isDone);
                 return {
                     ...task,
-                    subtasks: task.subtasks.map(s => ({ ...s, isDone: !allDone }))
+                    subtasks: task.subtasks.map(s => ({ ...s, isDone: target }))
                 };
             });
             return projectChanged ? { ...project, tasks } : project;
         })
     }
+}
+// Accessors (observers)
+/**
+ * Determine whether a task is done.
+ *
+ * @param task any valid task (satisfies isValidTask)
+ * @returns true iff either:
+ *          - the task has subtasks and every one of them is done, or
+ *          - the task has no subtasks and its isDone is true
+ */
+export function isTaskDone(task: Task): boolean {
+    return task.subtasks.length === 0
+        ? task.isDone ?? false  // ?? false: unreachable for a valid leaf
+        : task.subtasks.every(s => s.isDone);
 }
 
 // Validators (observers)
