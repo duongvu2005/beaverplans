@@ -927,3 +927,47 @@ describe('toggleTask', () => {
         expect(plan.projects[0]?.tasks[0]?.isDone).toBe(false);
     });
 });
+
+describe('isValidSubtask', () => {
+    /**
+     * Testing strategy:
+     *   - partition on weight: 1 | 2 | 3 | outside {below (0), above (4), non-integer (2.5)}
+     *   - partition on missedDays vs assignedDay: empty | non-empty valid
+     *       | contains a duplicate | contains assignedDay
+     *   Each axis is varied while the other is held valid.
+     */
+
+    // weight axis (missedDays empty, assignedDay 'mon')
+    it('weight 1 is valid', () => {
+        expect(isValidSubtask(makeSubtask('s', 'mon'))).toBe(true);
+    });
+    it('weight 2 is valid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), weight: 2 })).toBe(true);
+    });
+    it('weight 3 is valid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), weight: 3 })).toBe(true);
+    });
+    it('weight below range (0) is invalid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), weight: 0 })).toBe(false);
+    });
+    it('weight above range (4) is invalid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), weight: 4 })).toBe(false);
+    });
+    it('non-integer weight (2.5) is invalid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), weight: 2.5 })).toBe(false);
+    });
+
+    // missedDays / assignedDay axis (weight held at 1)
+    it('empty missedDays is valid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: [] })).toBe(true);
+    });
+    it('non-empty missedDays excluding assignedDay, no duplicates, is valid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'wed'] })).toBe(true);
+    });
+    it('duplicate day in missedDays is invalid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'tue'] })).toBe(false);
+    });
+    it('assignedDay appearing in missedDays is invalid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['mon'] })).toBe(false);
+    });
+});

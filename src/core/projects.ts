@@ -355,14 +355,37 @@ export function toggleTask(plan: WeekPlan, taskId: string): WeekPlan {
 }
 
 // Validators (observers)
+/**
+ * Check if a subtask is a valid subtask.
+ * 
+ * @param subtask any subtask
+ * @returns true iff the subtask satisfies both:
+ *          - missedDays has no duplicate days and does not contain assignedDay
+ *          - weight is 1, 2, or 3
+ */
+export function isValidSubtask(subtask: Subtask): boolean {
+    const validWeights = [1, 2, 3];
+    if (!validWeights.includes(subtask.weight)) {
+        return false;
+    }
+    if (subtask.missedDays.length !== new Set(subtask.missedDays).size) {
+        return false;
+    }
+    if (subtask.missedDays.includes(subtask.assignedDay)) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Check if a task is a valid task.
+ * 
+ * @param task 
+ */
+export function isValidTask(task: Task): boolean {
+    throw new Error('unimplemented');
+}
+
 export function isValidProject(_project: Project): boolean {
-    throw new Error('unimplemented');
-}
-
-export function isValidTask(_task: Task): boolean {
-    throw new Error('unimplemented');
-}
-
-export function isValidSubtask(_subtask: Subtask): boolean {
     throw new Error('unimplemented');
 }
