@@ -378,12 +378,21 @@ export function isValidSubtask(subtask: Subtask): boolean {
 }
 
 /**
- * Check if a task is a valid task.
- * 
- * @param task 
+ * Check whether a task is well-formed.
+ *
+ * @param task any task
+ * @returns true iff the task satisfies both:
+ *          - every subtask is a valid subtask
+ *          - isDone is a boolean when subtasks is empty, and undefined when
+ *            subtasks is non-empty
  */
 export function isValidTask(task: Task): boolean {
-    throw new Error('unimplemented');
+    const isLeaf = task.subtasks.length === 0;
+    const storesDone = typeof task.isDone === 'boolean';
+    if (isLeaf !== storesDone) {
+        return false;
+    }
+    return task.subtasks.every((s) => isValidSubtask(s));
 }
 
 export function isValidProject(_project: Project): boolean {

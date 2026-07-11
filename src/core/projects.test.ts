@@ -971,3 +971,36 @@ describe('isValidSubtask', () => {
         expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['mon'] })).toBe(false);
     });
 });
+
+describe('isValidTask', () => {
+    /**
+     * Testing strategy: the isDone shape is coupled to subtask presence, so cases
+     * are the leaf/parent x isDone-form truth table, plus one delegation case.
+     *   1. leaf (no subtasks), isDone boolean      -> valid
+     *   2. leaf, isDone undefined                  -> invalid
+     *   3. parent (has subtasks), isDone undefined, subtask valid   -> valid
+     *   4. parent, isDone boolean, subtask valid   -> invalid
+     *   5. parent, isDone undefined, subtask invalid -> invalid (delegates to isValidSubtask)
+     */
+
+    it('leaf with boolean isDone is valid', () => {
+        expect(isValidTask(makeTask('t'))).toBe(true); // makeTask -> { subtasks: [], isDone: false }
+    });
+    it('leaf with undefined isDone is invalid', () => {
+        const task: Task = { id: 't', name: 't', subtasks: [] };
+        expect(isValidTask(task)).toBe(false);
+    });
+    it('parent with undefined isDone and a valid subtask is valid', () => {
+        const task: Task = { id: 't', name: 't', subtasks: [makeSubtask('s', 'mon')] };
+        expect(isValidTask(task)).toBe(true);
+    });
+    it('parent that still stores a boolean isDone is invalid', () => {
+        const task: Task = { id: 't', name: 't', subtasks: [makeSubtask('s', 'mon')], isDone: false };
+        expect(isValidTask(task)).toBe(false);
+    });
+    it('parent containing an invalid subtask is invalid', () => {
+        const badSub: Subtask = { ...makeSubtask('s', 'mon'), weight: 0 };
+        const task: Task = { id: 't', name: 't', subtasks: [badSub] };
+        expect(isValidTask(task)).toBe(false);
+    });
+});
