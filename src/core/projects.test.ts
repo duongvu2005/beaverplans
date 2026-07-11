@@ -14,7 +14,8 @@ import {
     toggleSubtask,
     isValidProject,
     isValidSubtask,
-    isValidTask
+    isValidTask,
+    isValidPlan
 } from './projects';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from "./types";
 
@@ -1022,5 +1023,66 @@ describe('isValidProject', () => {
         const badTask: Task = { id: 't2', name: 't2', subtasks: [] }; // leaf missing boolean isDone
         const project: Project = { ...makeProject('p'), tasks: [makeTask('t1'), badTask] };
         expect(isValidProject(project)).toBe(false);
+    });
+});
+
+describe('isValidPlan', () => {
+    /**
+     * Testing strategy:
+     *   - partition on projects: empty | all valid | contains an invalid project
+     *   - partition on ids: all unique | one duplicate pair, at each collision kind:
+     *       project-project, project-task, project-subtask, task-subtask, subtask-subtask
+     *   (the cross-level kinds guard against a per-level uniqueness check.)
+     */
+
+    // valid plan: ids p1, t1, s1, p2, t2 all distinct; t1 is a parent, t2 a leaf.
+    const parentTask = (id: string, subs: Subtask[]): Task => ({ id, name: id, subtasks: subs });
+    const validPlan: WeekPlan = {
+        weekStart: '2026-07-06',
+        projects: [
+            { id: 'p1', name: 'p1', tasks: [parentTask('t1', [makeSubtask('s1', 'mon')])] },
+            { id: 'p2', name: 'p2', tasks: [makeTask('t2')] },
+        ],
+    };
+
+    it('empty plan (no projects) is valid', () => {
+        expect(isValidPlan({ weekStart: '2026-07-06', projects: [] })).toBe(true);
+    });
+    it('all projects valid and all ids unique is valid', () => {
+        expect(isValidPlan(validPlan)).toBe(true);
+    });
+    it('a plan containing an invalid project is invalid', () => {
+        const badProject: Project = { id: 'p3', name: 'p3', tasks: [{ id: 't3', name: 't3', subtasks: [] }] }; // leaf missing isDone
+        expect(isValidPlan({ ...validPlan, projects: [...validPlan.projects, badProject] })).toBe(false);
+    });
+
+    it('duplicate id across two projects is invalid', () => {
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [makeProject('dup'), makeProject('dup')] };
+        expect(isValidPlan(plan)).toBe(false);
+    });
+    it('project id colliding with a task id is invalid', () => {
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [{ id: 'x', name: 'x', tasks: [makeTask('x')] }] };
+        expect(isValidPlan(plan)).toBe(false);
+    });
+    it('project id colliding with a subtask id is invalid', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [{ id: 'x', name: 'x', tasks: [parentTask('t', [makeSubtask('x', 'mon')])] }],
+        };
+        expect(isValidPlan(plan)).toBe(false);
+    });
+    it('task id colliding with a subtask id is invalid', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [{ id: 'p', name: 'p', tasks: [parentTask('t', [makeSubtask('t', 'mon')])] }],
+        };
+        expect(isValidPlan(plan)).toBe(false);
+    });
+    it('duplicate id across two subtasks is invalid', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [{ id: 'p', name: 'p', tasks: [parentTask('t', [makeSubtask('s', 'mon'), makeSubtask('s', 'tue')])] }],
+        };
+        expect(isValidPlan(plan)).toBe(false);
     });
 });

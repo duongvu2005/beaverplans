@@ -404,3 +404,20 @@ export function isValidTask(task: Task): boolean {
 export function isValidProject(project: Project): boolean {
     return project.tasks.every(task => isValidTask(task));
 }
+
+/**
+ * Check whether a plan is well-formed.
+ * 
+ * @param plan any plan
+ * @returns true iff the plan satisfies both:
+ *          - every project is a valid project
+ *          - all ids across the projects, tasks, and subtasks are unique
+ */
+export function isValidPlan(plan: WeekPlan): boolean {
+    const allIds = plan.projects.flatMap((project) => [
+        project.id,
+        ...project.tasks.flatMap((task) => [task.id, ...task.subtasks.map((s) => s.id)]),
+    ]);
+    const idsUnique = allIds.length === new Set(allIds).size;
+    return idsUnique && plan.projects.every((project) => isValidProject(project));
+}
