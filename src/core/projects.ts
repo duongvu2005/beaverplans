@@ -356,7 +356,7 @@ export function toggleTask(plan: WeekPlan, taskId: string): WeekPlan {
 
 // Validators (observers)
 /**
- * Check if a subtask is a valid subtask.
+ * Check whether a subtask is well-formed.
  * 
  * @param subtask any subtask
  * @returns true iff the subtask satisfies both:
@@ -392,9 +392,15 @@ export function isValidTask(task: Task): boolean {
     if (isLeaf !== storesDone) {
         return false;
     }
-    return task.subtasks.every((s) => isValidSubtask(s));
+    return task.subtasks.every(s => isValidSubtask(s));
 }
 
-export function isValidProject(_project: Project): boolean {
-    throw new Error('unimplemented');
+/**
+ * Check whether a project is well-formed.
+ * 
+ * @param project any project
+ * @returns true iff every task in the project is a valid task
+ */
+export function isValidProject(project: Project): boolean {
+    return project.tasks.every(task => isValidTask(task));
 }

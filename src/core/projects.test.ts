@@ -1004,3 +1004,23 @@ describe('isValidTask', () => {
         expect(isValidTask(task)).toBe(false);
     });
 });
+
+describe('isValidProject', () => {
+    /**
+     * Testing strategy: partition on tasks:
+     *   empty | all tasks valid | contains an invalid task
+     */
+
+    it('project with no tasks is valid', () => {
+        expect(isValidProject(makeProject('p'))).toBe(true);
+    });
+    it('project whose tasks are all valid is valid', () => {
+        const project: Project = { ...makeProject('p'), tasks: [makeTask('t1'), makeTask('t2')] };
+        expect(isValidProject(project)).toBe(true);
+    });
+    it('project containing an invalid task is invalid', () => {
+        const badTask: Task = { id: 't2', name: 't2', subtasks: [] }; // leaf missing boolean isDone
+        const project: Project = { ...makeProject('p'), tasks: [makeTask('t1'), badTask] };
+        expect(isValidProject(project)).toBe(false);
+    });
+});
