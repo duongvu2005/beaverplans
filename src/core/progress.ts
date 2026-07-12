@@ -68,8 +68,25 @@ export function projectProgress(project: Project) : Progress {
     return { done, total };
 }
 
+/**
+ * Calculate the overall progress of a list of projects.
+ * 
+ * @param projects any valid list of projects
+ * @returns the overall weighted progress as a Progress, where `total` is the overall
+ *          total weighted effort and `done` is the weighted effort that is complete
+ */
 export function overallProgress(projects: ReadonlyArray<Project>): Progress {
-    throw new Error('unimplemented');
+    const { done, total } = projects.reduce(
+        (acc, project ) => {
+            const progress = projectProgress(project);
+            return ({
+                done: acc.done + progress.done,
+                total: acc.total + progress.total
+            })
+        },
+        { done: 0, total: 0 }
+    );
+    return { done, total };
 }
 
 export function progressByDay(projects: ReadonlyArray<Project>): ReadonlyArray<DayProgress> {
