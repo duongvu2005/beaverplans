@@ -89,6 +89,39 @@ export function overallProgress(projects: ReadonlyArray<Project>): Progress {
     return { done, total };
 }
 
+/**
+ * Calculate the per day (mon-sun) progress of a list of projects.
+ *
+ * @param projects any valid list of projects
+ * @returns a list of weighted day progress, each a DayProgress, one for each day
+ *          of the week. For each, `day` is the weekday it describes, `assigned` is
+ *          the weighted effort assigned to that day (including subtasks that recorded
+ *          a miss on that day), and `done` is the weighted effort assigned to that day
+ *          AND completed (a recorded miss adds to `assigned` but never to `done`).
+ *          The list is ordered Monday first through Sunday last (length 7).
+ */
 export function progressByDay(projects: ReadonlyArray<Project>): ReadonlyArray<DayProgress> {
-    throw new Error('unimplemented');
+    const weekDays: Array<DayOfWeek> = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const weekProgress: Record<DayOfWeek, { assigned: number; done: number }> = {
+        mon: { assigned: 0, done: 0 },
+        tue: { assigned: 0, done: 0 },
+        wed: { assigned: 0, done: 0 },
+        thu: { assigned: 0, done: 0 },
+        fri: { assigned: 0, done: 0 },
+        sat: { assigned: 0, done: 0 },
+        sun: { assigned: 0, done: 0 },
+    };
+    const allSubtasks = projects.flatMap(p => p.tasks.flatMap(t => t.subtasks));
+    for (const subtask of allSubtasks) {
+        // assigned (missed + currently assigned)
+        for (const day of subtask.missedDays) {
+            weekProgress[day].assigned += subtask.weight;
+        }
+        weekProgress[subtask.assignedDay].assigned += subtask.weight;
+        // done
+        if (subtask.isDone) {
+            weekProgress[subtask.assignedDay].done += subtask.weight;
+        }
+    }
+    return weekDays.map(day => ({day, ...weekProgress[day]}));
 }
