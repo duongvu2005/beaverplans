@@ -1,0 +1,66 @@
+import { describe, it, expect } from 'vitest';
+import type { Project, Task, Subtask } from "./types";
+import { taskProgress } from './progress';
+
+// Minimal valid fixtures; pass overrides to set specific fields.
+function makeSubtask(id: string, overrides: Partial<Subtask> = {}): Subtask {
+    return { id, isDone: false, assignedDay: 'mon', missedDays: [], weight: 1, ...overrides };
+}
+function makeTask(id: string, overrides: Partial<Task> = {}): Task {
+    return { id, name: id, subtasks: [], isDone: false, ...overrides };
+}
+function makeProject(id: string, overrides: Partial<Project> = {}): Project {
+    return { id, name: id, tasks: [], ...overrides };
+}
+
+describe('taskProgress', () => {
+    /*
+     * Testing strategy
+     *     partition on shape: leaf (no subtasks) | has subtasks
+     *     partition on doneness: all done | none done | some done
+     *     partition on weight: all weight 1 | mixed weights
+     */
+
+    it('covers leaf, done', () => {
+        expect(taskProgress(makeTask('t', { isDone: true }))).toEqual({ done: 1, total: 1 });
+    });
+
+    it('covers leaf, undone', () => {
+        expect(taskProgress(makeTask('t'))).toEqual({ done: 0, total: 1 });
+    });
+
+    it('covers has subtasks, all done, weight 1', () => {
+        const t = makeTask('t', {
+            subtasks: [makeSubtask('a', { isDone: true }), makeSubtask('b', { isDone: true })],
+        });
+        expect(taskProgress(t)).toEqual({ done: 2, total: 2 });
+    });
+
+    it('covers has subtasks, none done, weight 1', () => {
+        const t = makeTask('t', { subtasks: [makeSubtask('a'), makeSubtask('b')] });
+        expect(taskProgress(t)).toEqual({ done: 0, total: 2 });
+    });
+
+    it('covers has subtasks, some done, weight 1', () => {
+        const t = makeTask('t', { subtasks: [makeSubtask('a', { isDone: true }), makeSubtask('b')] });
+        expect(taskProgress(t)).toEqual({ done: 1, total: 2 });
+    });
+
+    it('covers has subtasks, mixed weight, mixed done', () => {
+        const t = makeTask('t', {
+            subtasks: [makeSubtask('a', { isDone: true, weight: 3 }), makeSubtask('b', { weight: 2 })],
+        });
+        expect(taskProgress(t)).toEqual({ done: 3, total: 5 });
+    });
+
+    it('covers has subtasks, mixed weight, done on both sides', () => {
+        const t = makeTask('t', {
+            subtasks: [
+                makeSubtask('a', { isDone: true, weight: 1 }),
+                makeSubtask('b', { weight: 3 }),
+                makeSubtask('c', { isDone: true, weight: 2 }),
+            ],
+        });
+        expect(taskProgress(t)).toEqual({ done: 3, total: 6 });
+    });
+});
