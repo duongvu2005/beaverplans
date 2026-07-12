@@ -42,13 +42,30 @@ export function taskProgress(task: Task) : Progress {
             done: acc.done + (s.isDone ? s.weight : 0),
             total: acc.total + s.weight
         }),
-        { done: 0, total: 0 },
+        { done: 0, total: 0 }
     );
     return { done, total };
 }
 
+/**
+ * Calculates the progress of a project
+ * 
+ * @param project any valid project
+ * @returns the project's weighted progress as a Progress, where `total` is the project's
+ *          total weighted effort and `done` is the weighted effort that is complete
+ */
 export function projectProgress(project: Project) : Progress {
-    throw new Error('unimplemented');
+    const { done, total } = project.tasks.reduce(
+        (acc, task) => {
+            const progress = taskProgress(task);
+            return ({
+                done: acc.done + progress.done,
+                total: acc.total + progress.total
+            });
+        },
+        { done: 0, total: 0 }
+    );
+    return { done, total };
 }
 
 export function overallProgress(projects: ReadonlyArray<Project>): Progress {

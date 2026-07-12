@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Project, Task, Subtask } from "./types";
-import { taskProgress } from './progress';
+import { taskProgress, projectProgress } from './progress';
 
 // Minimal valid fixtures; pass overrides to set specific fields.
 function makeSubtask(id: string, overrides: Partial<Subtask> = {}): Subtask {
@@ -62,5 +62,44 @@ describe('taskProgress', () => {
             ],
         });
         expect(taskProgress(t)).toEqual({ done: 3, total: 6 });
+    });
+});
+
+describe('projectProgress', () => {
+    /*
+     * Testing strategy
+     *     partition on number of tasks: none | one | many
+     *     partition on task shape: leaf | parent | mix
+     */
+
+    it('covers no tasks', () => {
+        expect(projectProgress(makeProject('p'))).toEqual({ done: 0, total: 0 });
+    });
+
+    it('covers one leaf task, done', () => {
+        const p = makeProject('p', { tasks: [makeTask('t', { isDone: true })] });
+        expect(projectProgress(p)).toEqual({ done: 1, total: 1 });
+    });
+
+    it('covers many leaf tasks, mixed done', () => {
+        const p = makeProject('p', {
+            tasks: [makeTask('a', { isDone: true }), makeTask('b')],
+        });
+        expect(projectProgress(p)).toEqual({ done: 1, total: 2 });
+    });
+
+    it('covers mixed shapes, leaf + parent', () => {
+        const p = makeProject('p', {
+            tasks: [
+                makeTask('a', { isDone: true }),
+                makeTask('b', {
+                    subtasks: [
+                        makeSubtask('b1', { isDone: true, weight: 3 }),
+                        makeSubtask('b2', { weight: 2 }),
+                    ],
+                }),
+            ],
+        });
+        expect(projectProgress(p)).toEqual({ done: 4, total: 6 });
     });
 });
