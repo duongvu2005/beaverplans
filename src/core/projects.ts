@@ -7,6 +7,7 @@
  * Functions are grouped by the user action they back (create / remove / modify).
  */
 
+import { isValidWeekStart } from "./dates";
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from "./types";
 
 // Create (producers)
@@ -424,14 +425,16 @@ export function isValidProject(project: Project): boolean {
  * 
  * @param plan any plan
  * @returns true iff the plan satisfies both:
+ *          - weekStart is a valid week-start (isValidWeekStart)
  *          - every project is a valid project
  *          - all ids across the projects, tasks, and subtasks are unique
  */
 export function isValidPlan(plan: WeekPlan): boolean {
+    const validWeekStart = isValidWeekStart(plan.weekStart);
     const allIds = plan.projects.flatMap((project) => [
         project.id,
         ...project.tasks.flatMap((task) => [task.id, ...task.subtasks.map((s) => s.id)]),
     ]);
     const idsUnique = allIds.length === new Set(allIds).size;
-    return idsUnique && plan.projects.every((project) => isValidProject(project));
+    return validWeekStart && idsUnique && plan.projects.every((project) => isValidProject(project));
 }

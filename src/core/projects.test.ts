@@ -1190,4 +1190,10 @@ describe('isValidPlan', () => {
         };
         expect(isValidPlan(plan)).toBe(false);
     });
+    it('a plan whose weekStart is not a Monday is invalid', () => {
+        expect(isValidPlan({ weekStart: '2026-07-07', projects: [] })).toBe(false); // Tuesday
+    });
+    it('a plan whose weekStart is malformed is invalid', () => {
+        expect(isValidPlan({ weekStart: '2026-7-6', projects: [] })).toBe(false); // unpadded
+    });
 });
