@@ -3,7 +3,7 @@
  * user's local timezone; DateKey is a local YYYY-MM-DD string
  * (avoid toISOString, which is UTC and shifts the day).
  */
-import type { DateKey, DayOfWeek, DayStatus } from './types';
+import type { DateKey, DayOfWeek, DayStatus, WeekStatus } from './types';
 
 // constants
 const DAYS_PER_WEEK = 7;
@@ -147,6 +147,26 @@ export function dayStatusOf(day: DayOfWeek, weekStart: DateKey, today: DateKey):
         return 'today';
     }
 }
+
+/**
+ * Classifies a weekStart as past, current, or future.
+ * 
+ * @param weekStart any valid weekstart (satisfies isValidWeekStart)
+ * @param today the DateKey of today
+ * @returns the position of weekStart's week relative to the week containing
+ *          today: 'past' if strictly before it, 'current' if the same week,
+ *          'future' if strictly after.
+ */
+export function weekStatusOf(weekStart: DateKey, today: DateKey): WeekStatus {
+    const todayWeek = weekStartOf(parseKey(today));
+    if (todayWeek < weekStart) {
+        return 'future';
+    } else if (todayWeek > weekStart) {
+        return 'past';
+    } else {
+        return 'current';
+    }
+} 
 
 /**
  * Check whether the weekStart is valid.

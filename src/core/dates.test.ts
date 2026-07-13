@@ -17,6 +17,7 @@ import {
   isWeekPast,
   nextWeekStart,
   dayStatusOf,
+  weekStatusOf,
   isValidWeekStart
 } from './dates';
 
@@ -305,6 +306,41 @@ describe('dayStatusOf', () => {
     it('covers today on Sunday, earlier weekday slot -> past', () => {
     // today Sun Jul 12; sat of same week (Jul 11) is the day before -> past
     expect(dayStatusOf('sat', '2026-07-06', '2026-07-12')).toBe('past');
+    });
+});
+
+describe('weekStatusOf', () => {
+    /*
+     * Testing strategy:
+     *      - partition on weekStart's week vs today's week: past | current | future
+     *      - boundary traps (classify by week, not raw day count):
+     *          today on Sunday + same-week Monday -> current (6 raw days apart)
+     *          today on Sunday + next Monday       -> future (only 1 raw day apart)
+     */
+
+    it('covers current week, today mid-week', () => {
+        // Mon Jul 06 vs Thu Jul 09 -> same week
+        expect(weekStatusOf('2026-07-06', '2026-07-09')).toBe('current');
+    });
+
+    it('covers past week, today mid-week', () => {
+        // Mon Jun 29 vs Thu Jul 09 -> previous week
+        expect(weekStatusOf('2026-06-29', '2026-07-09')).toBe('past');
+    });
+
+    it('covers future week, today mid-week', () => {
+        // Mon Jul 13 vs Thu Jul 09 -> next week
+        expect(weekStatusOf('2026-07-13', '2026-07-09')).toBe('future');
+    });
+
+    it('covers current week, today on Sunday (same week despite 6 raw days)', () => {
+        // Mon Jul 06 vs Sun Jul 12 -> same week
+        expect(weekStatusOf('2026-07-06', '2026-07-12')).toBe('current');
+    });
+
+    it('covers future week, today on Sunday (next week despite 1 raw day)', () => {
+        // Mon Jul 13 vs Sun Jul 12 -> next week
+        expect(weekStatusOf('2026-07-13', '2026-07-12')).toBe('future');
     });
 });
 

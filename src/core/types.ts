@@ -1,6 +1,7 @@
 export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export type DateKey = string;  // YYYY-MM-DD
 export type DayStatus = 'past' | 'today' | 'future';
+export type WeekStatus = 'past' | 'current' | 'future';
 
 export type Project = {
     readonly id: string;
