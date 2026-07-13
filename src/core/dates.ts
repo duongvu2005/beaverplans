@@ -4,7 +4,7 @@
  * (avoid toISOString, which is UTC and shifts the day).
  */
 import type { DateKey, DayOfWeek, DayStatus } from './types';
- 
+
 // constants
 const DAYS_PER_WEEK = 7;
 const MS_PER_DAY = 86_400_000;
@@ -146,4 +146,40 @@ export function dayStatusOf(day: DayOfWeek, weekStart: DateKey, today: DateKey):
     } else {
         return 'today';
     }
+}
+
+/**
+ * Check whether the weekStart is valid.
+ * 
+ * @param key any key
+ * @returns true iff key represents a valid calendar date in the format
+ *          "YYYY-MM-DD" (year must be in the range 1000-9999) and that
+ *          date is a Monday.
+ */
+export function isValidWeekStart(key: DateKey): boolean {
+    const regex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const match = key.match(regex);
+    if (!match || !match[1] || !match[2] || !match[3]) {
+        return false;
+    }
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const day = parseInt(match[3], 10);
+    const MON = 1;  // getDay() value for Monday
+
+    if (year < 1000 || year > 9999) {
+        return false;
+    }
+
+    const date = new Date(year, month-1, day, 0, 0, 0, 0);
+
+    if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day ||
+        date.getDay() !== MON
+    ) {
+        return false;
+    }
+    return true;
 }

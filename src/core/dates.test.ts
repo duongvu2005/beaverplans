@@ -17,6 +17,7 @@ import {
   isWeekPast,
   nextWeekStart,
   dayStatusOf,
+  isValidWeekStart
 } from './dates';
 
 describe('weekStartOf', () => {
@@ -304,5 +305,54 @@ describe('dayStatusOf', () => {
     it('covers today on Sunday, earlier weekday slot -> past', () => {
     // today Sun Jul 12; sat of same week (Jul 11) is the day before -> past
     expect(dayStatusOf('sat', '2026-07-06', '2026-07-12')).toBe('past');
+    });
 });
+
+describe('isValidWeekStart', () => {
+    /*
+     * Testing strategy:
+     *      - partition on input: real Monday | real date, not Monday | not a real date
+     *      - partition on not-a-real-date: impossible-but-formatted | malformed string
+     *      - boundary: year+month-boundary Monday; impossible date that rolls onto a Monday
+     */
+
+    it('covers a real Monday, mid-month', () => {
+        expect(isValidWeekStart('2026-07-06')).toBe(true);
+    });
+
+    it('covers a real Monday on a year and month boundary', () => {
+        expect(isValidWeekStart('2024-01-01')).toBe(true);
+    });
+
+    it('covers a real date that is a Sunday', () => {
+        expect(isValidWeekStart('2026-07-12')).toBe(false);
+    });
+
+    it('covers a real date that is a Tuesday', () => {
+        expect(isValidWeekStart('2026-07-07')).toBe(false);
+    });
+
+    it('covers an impossible date that rolls onto a Monday', () => {
+        expect(isValidWeekStart('2026-02-30')).toBe(false);
+    });
+
+    it('covers an impossible leap date that rolls onto a Monday', () => {
+        expect(isValidWeekStart('2027-02-29')).toBe(false);
+    });
+
+    it('covers an impossible month', () => {
+        expect(isValidWeekStart('2026-13-01')).toBe(false);
+    });
+
+    it('covers a malformed unpadded key', () => {
+        expect(isValidWeekStart('2026-7-6')).toBe(false);
+    });
+
+    it('covers an empty string', () => {
+        expect(isValidWeekStart('')).toBe(false);
+    });
+
+    it('covers a garbage string', () => {
+        expect(isValidWeekStart('hello')).toBe(false);
+    });
 });
