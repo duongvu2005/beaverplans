@@ -3,6 +3,8 @@ export type DateKey = string;  // YYYY-MM-DD
 export type DayStatus = 'past' | 'today' | 'future';
 export type WeekStatus = 'past' | 'current' | 'future';
 
+export const WEEK: readonly DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
 export type Project = {
     readonly id: string;
     readonly name: string;

@@ -4,14 +4,12 @@
  * (avoid toISOString, which is UTC and shifts the day).
  */
 import type { DateKey, DayOfWeek, DayStatus, WeekStatus } from './types';
+import { WEEK } from './types';
 
 // constants
 const DAYS_PER_WEEK = 7;
 const MS_PER_DAY = 86_400_000;
 const MS_PER_WEEK = DAYS_PER_WEEK * MS_PER_DAY; // 604_800_000
-const DAY_OFFSET: Record<DayOfWeek, number> = {
-    mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6
-};
 
 /**
  * Finds the Monday that starts the week containing the given date.
@@ -137,7 +135,7 @@ export function nextWeekStart(weekStart: DateKey): DateKey {
  */
 export function dayStatusOf(day: DayOfWeek, weekStart: DateKey, today: DateKey): DayStatus {
     const daySlotDate = parseKey(weekStart);
-    daySlotDate.setDate(daySlotDate.getDate() + DAY_OFFSET[day]);
+    daySlotDate.setDate(daySlotDate.getDate() + WEEK.indexOf(day));
     const daySlotKey = toDateKey(daySlotDate);
     if (daySlotKey > today) {
         return 'future';

@@ -14,6 +14,7 @@
  * done/total pair via math.percent.
  */
 import type { Project, Task, DayOfWeek } from "./types";
+import { WEEK } from "./types";
 
 // progress types
 export type Progress = { 
@@ -101,7 +102,6 @@ export function overallProgress(projects: ReadonlyArray<Project>): Progress {
  *          The list is ordered Monday first through Sunday last (length 7).
  */
 export function progressByDay(projects: ReadonlyArray<Project>): ReadonlyArray<DayProgress> {
-    const weekDays: Array<DayOfWeek> = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     const weekProgress: Record<DayOfWeek, { assigned: number; done: number }> = {
         mon: { assigned: 0, done: 0 },
         tue: { assigned: 0, done: 0 },
@@ -123,5 +123,5 @@ export function progressByDay(projects: ReadonlyArray<Project>): ReadonlyArray<D
             weekProgress[subtask.assignedDay].done += subtask.weight;
         }
     }
-    return weekDays.map(day => ({day, ...weekProgress[day]}));
+    return WEEK.map(day => ({day, ...weekProgress[day]}));
 }
