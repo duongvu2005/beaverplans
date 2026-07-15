@@ -82,21 +82,10 @@ export function addSubtask(plan: WeekPlan, taskId: string, subtaskId: string, as
         missedDays: [],
         weight: 1
     };
-    return {
-        ...plan,
-        projects: plan.projects.map(project => {
-            let projectChanged = false;
-            const tasks = project.tasks.map(task => {
-                if (task.id !== taskId) {
-                    return task;
-                }
-                projectChanged = true;
-                const { isDone: _isDone, ...taskWithoutDone } = task;
-                return { ...taskWithoutDone, subtasks: [...task.subtasks, newSubtask] };
-            });
-            return projectChanged ? {...project, tasks} : project;
-        })
-    };
+    return updateTaskById(plan, taskId, task => {
+        const { isDone: _isDone, ...taskWithoutDone } = task;
+        return { ...taskWithoutDone, subtasks: [...task.subtasks, newSubtask] };
+    });
 }
 
 // Remove (producers)
@@ -199,20 +188,7 @@ export function setProjectName(plan: WeekPlan, projectId: string, projectName: s
  *          is unchanged. If no task has that id, the projects are unchanged.
  */
 export function setTaskName(plan: WeekPlan, taskId: string, taskName: string): WeekPlan {
-    return {
-        ...plan,
-        projects: plan.projects.map(project => {
-            let projectChanged = false;
-            const tasks = project.tasks.map(task => {
-                if (task.id !== taskId) {
-                    return task;
-                }
-                projectChanged = true;
-                return { ...task, name: taskName };
-            });
-            return projectChanged ? { ...project, tasks } : project;
-        })
-    };
+    return updateTaskById(plan, taskId, task => ({ ...task, name: taskName }));
 }
 
 /**
@@ -227,20 +203,7 @@ export function setTaskName(plan: WeekPlan, taskId: string, taskName: string): W
  *          id, the projects are unchanged.
  */
 export function setTaskDescription(plan: WeekPlan, taskId: string, taskDescription: string): WeekPlan {
-    return {
-        ...plan,
-        projects: plan.projects.map(project => {
-            let projectChanged = false;
-            const tasks = project.tasks.map(task => {
-                if (task.id !== taskId) {
-                    return task;
-                }
-                projectChanged = true;
-                return { ...task, description: taskDescription };
-            })
-            return projectChanged ? { ...project, tasks } : project;
-        })
-    };
+    return updateTaskById(plan, taskId, task => ({ ...task, description: taskDescription }));
 }
 
 /**
@@ -255,28 +218,7 @@ export function setTaskDescription(plan: WeekPlan, taskId: string, taskDescripti
  *          has that id, the projects are unchanged.
  */
 export function setSubtaskDescription(plan: WeekPlan, subtaskId: string, subtaskDescription: string): WeekPlan {
-    return {
-        ...plan,
-        projects: plan.projects.map(project => {
-            let projectChanged = false;
-            const tasks = project.tasks.map(task => {
-                let taskChanged = false;
-                const subtasks = task.subtasks.map(s => {
-                    if (s.id !== subtaskId) {
-                        return s;
-                    }
-                    taskChanged = true;
-                    return { ...s, description: subtaskDescription };
-                });
-                if (!taskChanged) {
-                    return task;
-                }
-                projectChanged = true;
-                return { ...task, subtasks };
-            });
-            return projectChanged ? { ...project, tasks } : project;
-        })
-    };
+    return updateSubtaskById(plan, subtaskId, s => ({ ...s, description: subtaskDescription }));
 }
 
 /**
@@ -289,28 +231,7 @@ export function setSubtaskDescription(plan: WeekPlan, subtaskId: string, subtask
  *          If no subtask has that id, the projects are unchanged.
  */
 export function toggleSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
-    return {
-        ...plan,
-        projects: plan.projects.map(project => {
-            let projectChanged = false;
-            const tasks = project.tasks.map(task => {
-                let taskChanged = false;
-                const subtasks = task.subtasks.map(s => {
-                    if (s.id !== subtaskId) {
-                        return s;
-                    }
-                    taskChanged = true;
-                    return { ...s, isDone: !s.isDone };
-                });
-                if (!taskChanged) {
-                    return task;
-                }
-                projectChanged = true;
-                return { ...task, subtasks };
-            });
-            return projectChanged ? { ...project, tasks } : project;
-        })
-    };
+    return updateSubtaskById(plan, subtaskId, s => ({ ...s, isDone: !s.isDone }));
 }
 
 /**
@@ -331,29 +252,18 @@ export function toggleSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
  *          unchanged. If no task has that id, the projects are unchanged.
  */
 export function toggleTask(plan: WeekPlan, taskId: string): WeekPlan {
-    return {
-        ...plan,
-        projects: plan.projects.map(project => {
-            let projectChanged = false;
-            const tasks = project.tasks.map(task => {
-                if (task.id !== taskId) {
-                    return task;
-                }
-                projectChanged = true;
-                // toggle task's completion
-                const target = !isTaskDone(task);
-                if (!task.subtasks.length) {
-                    return { ...task, isDone: target }
-                }
-                return {
-                    ...task,
-                    subtasks: task.subtasks.map(s => ({ ...s, isDone: target }))
-                };
-            });
-            return projectChanged ? { ...project, tasks } : project;
-        })
-    }
+    return updateTaskById(plan, taskId, task => {
+        const target = !isTaskDone(task);
+        if (!task.subtasks.length) {
+            return { ...task, isDone: target }
+        }
+        return {
+            ...task,
+            subtasks: task.subtasks.map(s => ({ ...s, isDone: target }))
+        };
+    });
 }
+
 // Accessors (observers)
 /**
  * Determine whether a task is done.
@@ -437,4 +347,55 @@ export function isValidPlan(plan: WeekPlan): boolean {
     ]);
     const idsUnique = allIds.length === new Set(allIds).size;
     return validWeekStart && idsUnique && plan.projects.every((project) => isValidProject(project));
+}
+
+// Helpers
+// Private helper. Applies f to the one task whose id is taskId and returns a new
+// plan with that result in place. If no task matches, returns plan unchanged.
+// f must return a Task (same node kind); it is called at most once. Projects,
+// tasks, and subtasks not on the path to the change are shared by reference.
+function updateTaskById(plan: WeekPlan, taskId: string, f: (task: Task) => Task): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                if (task.id !== taskId) {
+                    return task;
+                }
+                projectChanged = true;
+                return f(task);
+            })
+            return projectChanged ? { ...project, tasks } : project;
+        })
+    };
+}
+
+// Private helper. Applies f to the one subtask whose id is subtaskId and returns
+// a new plan with that result in place. If no subtask matches, returns plan
+// unchanged. f must return a Subtask; it is called at most once. Nodes not on the
+// path to the change are shared by reference.
+function updateSubtaskById(plan: WeekPlan, subtaskId: string, f: (s: Subtask) => Subtask): WeekPlan {
+    return {
+        ...plan,
+        projects: plan.projects.map(project => {
+            let projectChanged = false;
+            const tasks = project.tasks.map(task => {
+                let taskChanged = false;
+                const subtasks = task.subtasks.map(s => {
+                    if (s.id !== subtaskId) {
+                        return s;
+                    }
+                    taskChanged = true;
+                    return f(s);
+                });
+                if (!taskChanged) {
+                    return task;
+                }
+                projectChanged = true;
+                return { ...task, subtasks };
+            });
+            return projectChanged ? { ...project, tasks } : project;
+        })
+    };
 }
