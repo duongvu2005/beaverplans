@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp } from './math';
+import { clamp, percentOf } from './math';
 
 describe('clamp', () => {
     /*
@@ -78,4 +78,50 @@ describe('clamp', () => {
         const hi = 172;
         expect(clamp(x, lo, hi)).toBeNaN();
     })
+});
+
+describe('percentOf', () => {
+    /*
+     * Testing strategy
+     *     partition on whole: zero; nonzero
+     *     partition on part vs whole (nonzero, same sign): part < whole; part = whole; part > whole
+     *     partition on sign: mixed (one positive, one negative)
+     *     boundary: result is a non-terminating fraction (not rounded)
+     */
+
+    it('covers whole = 0', () => {
+        const part = 7;
+        const whole = 0;
+        expect(percentOf(part, whole)).toBe(0);
+    });
+
+    it('covers part < whole, both positive', () => {
+        const part = 5;
+        const whole = 20;
+        expect(percentOf(part, whole)).toBe(25);
+    });
+
+    it('covers part = whole, both positive', () => {
+        const part = 7;
+        const whole = 7;
+        expect(percentOf(part, whole)).toBe(100);
+    });
+
+    it('covers part > whole, both positive', () => {
+        const part = 30;
+        const whole = 10;
+        expect(percentOf(part, whole)).toBe(300);
+    });
+
+    it('covers mixed sign', () => {
+        const part = -10;
+        const whole = 20;
+        expect(percentOf(part, whole)).toBe(-50);
+    });
+
+    it('covers non-terminating fraction is not rounded', () => {
+        const part = 1;
+        const whole = 3;
+        expect(percentOf(part, whole)).toBeCloseTo(100 / 3);
+    });
 });
