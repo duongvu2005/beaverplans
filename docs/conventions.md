@@ -11,6 +11,13 @@ src/
   core/          pure domain logic. NO React, NO storage, NO DOM imports. ever.
     math.ts      + math.test.ts
     types.ts     (domain types; no functions)
+  storage/       persistence layer. Depends on core/, never the reverse.
+    backend.ts       the Backend interface: load, get/set the week plan and
+                     archive, reset. Implementation-independent specs.
+    localBackend.ts  LocalBackend implements Backend over an injected
+                     KeyValueStore (a narrow slice of the Web Storage API),
+                     so the real localStorage or a fake can be supplied.
+                     + localBackend.test.ts
 ```
 
 Tests are **colocated**: `x.ts` sits next to `x.test.ts`.
