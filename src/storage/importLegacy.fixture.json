@@ -1,0 +1,226 @@
+{
+  "tasks": [
+    {
+      "id": "4rkjbmf",
+      "subs": [
+        {
+          "id": "n7c34q1",
+          "desc": "",
+          "done": true,
+          "slots": [
+            {
+              "day": "mon",
+              "done": true,
+              "missed": []
+            },
+            {
+              "day": "wed",
+              "done": true,
+              "missed": [
+                "tue"
+              ]
+            }
+          ],
+          "title": "Chapter 3 notes",
+          "deadline": null
+        },
+        {
+          "id": "5myt8vc",
+          "desc": "",
+          "done": false,
+          "slots": [],
+          "title": "Return library book",
+          "deadline": "2026-07-17T19:13"
+        }
+      ],
+      "title": "Reading",
+      "deadline": null
+    },
+    {
+      "id": "d87qbcg",
+      "subs": [
+        {
+          "id": "id10hj5",
+          "desc": "",
+          "done": false,
+          "slots": [
+            {
+              "day": "sat",
+              "done": false,
+              "missed": []
+            },
+            {
+              "day": "sat",
+              "done": false,
+              "missed": []
+            }
+          ],
+          "title": "Morning run",
+          "deadline": null
+        },
+        {
+          "id": "acxf75j",
+          "desc": "",
+          "done": false,
+          "slots": [
+            {
+              "day": "fri",
+              "done": false,
+              "missed": []
+            },
+            {
+              "day": "sun",
+              "desc": "focus on hamstrings",
+              "done": false,
+              "missed": []
+            }
+          ],
+          "title": "Stretch routine",
+          "deadline": null
+        }
+      ],
+      "title": "Fitness",
+      "deadline": null
+    },
+    {
+      "id": "4vs8arp",
+      "subs": [
+        {
+          "id": "3tccswj",
+          "desc": "",
+          "done": false,
+          "slots": [
+            {
+              "day": "thu",
+              "done": false,
+              "missed": []
+            }
+          ],
+          "title": "Learn java",
+          "deadline": null
+        }
+      ],
+      "title": "Coding",
+      "deadline": "2026-07-18T18:14"
+    }
+  ],
+  "archives": [
+    {
+      "id": "02c8b6u",
+      "end": "2026-07-11T17:00:00.000Z",
+      "label": "Jul 6 – Jul 12",
+      "start": "2026-07-05T17:00:00.000Z",
+      "perDay": [
+        {
+          "dk": "mon",
+          "pct": 0,
+          "done": 0,
+          "assigned": 0
+        },
+        {
+          "dk": "tue",
+          "pct": 100,
+          "done": 1,
+          "assigned": 1
+        },
+        {
+          "dk": "wed",
+          "pct": 0,
+          "done": 0,
+          "assigned": 0
+        },
+        {
+          "dk": "thu",
+          "pct": 100,
+          "done": 1,
+          "assigned": 1
+        },
+        {
+          "dk": "fri",
+          "pct": 0,
+          "done": 0,
+          "assigned": 1
+        },
+        {
+          "dk": "sat",
+          "pct": 0,
+          "done": 0,
+          "assigned": 0
+        },
+        {
+          "dk": "sun",
+          "pct": 100,
+          "done": 1,
+          "assigned": 1
+        }
+      ],
+      "snapshot": [
+        {
+          "id": "6pi6lwg",
+          "subs": [
+            {
+              "id": "947fn5e",
+              "desc": "",
+              "done": true,
+              "slots": [
+                {
+                  "day": "tue",
+                  "done": true,
+                  "missed": []
+                },
+                {
+                  "day": "thu",
+                  "done": true,
+                  "missed": []
+                },
+                {
+                  "day": "sun",
+                  "done": true,
+                  "missed": []
+                }
+              ],
+              "title": "Problem set 4",
+              "deadline": null
+            },
+            {
+              "id": "di3ply7",
+              "desc": "[url to lecture]",
+              "done": false,
+              "slots": [
+                {
+                  "day": "fri",
+                  "desc": "watch recording",
+                  "done": false,
+                  "missed": []
+                }
+              ],
+              "title": "Lecture review",
+              "deadline": null
+            }
+          ],
+          "title": "Coursework",
+          "deadline": null
+        },
+        {
+          "id": "kzo6ho9",
+          "subs": [
+            {
+              "id": "785hdz7",
+              "desc": "",
+              "done": true,
+              "slots": [],
+              "title": "Fix login bug",
+              "deadline": null
+            }
+          ],
+          "title": "Side project",
+          "deadline": null
+        }
+      ],
+      "doneCount": 4,
+      "overallPct": 80,
+      "totalCount": 5
+    }
+  ],
+  "week_start": "2026-07-13"
+}

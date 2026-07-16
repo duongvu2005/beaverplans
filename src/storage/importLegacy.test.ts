@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import fixture from './importLegacy.fixture.json';
 import { 
     toSubtask,
     toTask,
@@ -11,6 +12,7 @@ import {
 } from './importLegacy';
 import type { Task, Project, WeekPlan } from '../core/types';
 import { isValidPlan } from '../core/projects';
+import { overallProgress, progressByDay } from '../core/progress';
 
 describe('toSubtask', () => {
     /*
@@ -429,6 +431,50 @@ describe('importLegacy', () => {
         expect(isValidPlan(plan)).toBe(true);
         for (const weekPlan of archive) {
             expect(isValidPlan(weekPlan)).toBe(true);
+        }
+    });
+});
+
+describe('importLegacy — real export from a fake account', () => {
+    // `fixture` keeps the full JSON shape (incl. the old stored stats used as an oracle);
+    // importLegacy only reads the LegacyRow subset.
+    const { plan, archive } = importLegacy(fixture as LegacyRow);
+
+    it('every produced WeekPlan is valid', () => {
+        expect(isValidPlan(plan)).toBe(true);
+        for (const wp of archive) {
+            expect(isValidPlan(wp)).toBe(true);
+        }
+    });
+
+    it('conserves counts: projects / tasks / subtasks / archives', () => {
+        const subs = fixture.tasks.reduce((n, t) => n + t.subs.length, 0);
+        const slots = fixture.tasks.reduce((n, t) => n + t.subs.reduce((m, s) => m + s.slots.length, 0), 0);
+        const outTasks = plan.projects.reduce((n, p) => n + p.tasks.length, 0);
+        const outSubtasks = plan.projects.reduce((n, p) => n + p.tasks.reduce((m, t) => m + t.subtasks.length, 0), 0);
+
+        expect(plan.projects.length).toBe(fixture.tasks.length);
+        expect(outTasks).toBe(subs);
+        expect(outSubtasks).toBe(slots);
+        expect(archive.length).toBe(fixture.archives.length);
+    });
+
+    it('reproduces each archive\'s old stored stats (oracle)', () => {
+        for (let i = 0; i < archive.length; i++) {
+            const wp = archive[i];
+            const old = fixture.archives[i];
+            if (!wp || !old) continue; // lengths equal; guard for noUncheckedIndexedAccess
+
+            const { done, total } = overallProgress(wp.projects);
+            expect(done).toBe(old.doneCount);
+            expect(total).toBe(old.totalCount);
+
+            const byDay = progressByDay(wp.projects);
+            for (const oldDay of old.perDay) {
+                const newDay = byDay.find((d) => d.day === oldDay.dk);
+                expect(newDay?.done).toBe(oldDay.done);
+                expect(newDay?.assigned).toBe(oldDay.assigned);
+            }
         }
     });
 });
