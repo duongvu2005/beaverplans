@@ -7,69 +7,102 @@
    adds a manual light/dark/system [data-theme] toggle on top. */
 
 :root {
-  /* neutrals */
-  --bg: #f4f1ea; /* warm paper page background */
-  --paper: #fbfaf6; /* raised surfaces (cards) */
-  --ink: #1c1a17; /* primary text / headings */
-  --ink-soft: #56514a; /* secondary text */
-  --ink-faint: #928b80; /* labels, counts, hints */
-  --line: #e2ddd2; /* borders */
-  --line-strong: #d2ccbe;
+    /* neutrals */
+    --bg: #f4f1ea; /* warm paper page background */
+    --paper: #fbfaf6; /* raised surfaces (cards) */
+    --ink: #1c1a17; /* primary text / headings */
+    --ink-soft: #56514a; /* secondary text */
+    --ink-faint: #928b80; /* labels, counts, hints */
+    --line: #e2ddd2; /* borders */
+    --line-strong: #d2ccbe;
 
-  /* accent + status */
-  --accent: #b5482e; /* terracotta: active, focus, actions */
-  --accent-soft: #e9d9d2; /* accent tint background */
-  --good: #4f7a4a; /* done / complete */
-  --good-soft: #dde7da;
+    /* accent + status */
+    --accent: #b5482e; /* terracotta: active, focus, actions */
+    --accent-soft: #e9d9d2; /* accent tint background */
+    --good: #4f7a4a; /* done / complete */
+    --good-soft: #dde7da;
 
-  /* type — three clear roles:
+    /* type — three clear roles:
      display (Fraunces serif) = wordmark + project/task titles;
      body (Nunito sans) = descriptions + general reading text;
      chrome (JetBrains Mono) = uppercase labels, counts, day names, buttons. */
-  --display: 'Fraunces', Georgia, serif;
-  --sans: 'Nunito', system-ui, -apple-system, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+    --display: 'Fraunces', Georgia, serif;
+    --sans: 'Nunito', system-ui, -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
-  /* shape / metrics */
-  --r: 10px;
-  --tabbar-h: 52px; /* approx height of the phone bottom bar; used to pad the pane */
+    /* spacing scale — one 4px base. Everything (padding, margins, gaps) picks a
+     step from this ladder so every screen shares the same rhythm rather than
+     ad-hoc pixels. Conventions in use: row/card inner padding = --sp-3, gap
+     between rows = --sp-2, gap between sections = --sp-5. */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
 
-  font: 16px/1.5 var(--sans);
-  color-scheme: light dark; /* native form controls follow the theme */
-  color: var(--ink-soft);
-  background: var(--bg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    /* radius scale — three steps, by component size.
+     --r-chip: small controls (checkbox, weight chip, day-column tiles);
+     --r:      the default (rows, day pills) — unchanged, existing callers hold;
+     --r-card: project cards. */
+    --r-chip: 6px;
+    --r: 10px;
+    --r-card: 12px;
+
+    /* type scale — each token pairs a SIZE with the family it's meant for, so the
+     "serif titles / sans body / mono chrome" split (see --display/--sans/--mono
+     above) is applied consistently. Family is not encoded here; set it alongside,
+     e.g. `font: 500 var(--fs-title)/1.25 var(--display)`.
+       --fs-label   mono, UPPERCASE: labels, counts, day names, pills
+       --fs-body    sans: descriptions, tree rows
+       --fs-row     display: a task/subtask row title
+       --fs-title   display: a project card name
+       --fs-section display: a section / pane heading */
+    --fs-label: 11px;
+    --fs-body: 13px;
+    --fs-row: 15px;
+    --fs-title: 16px;
+    --fs-section: 17px;
+
+    /* shape / metrics */
+    --tabbar-h: 52px; /* approx height of the phone bottom bar; used to pad the pane */
+
+    font: 16px/1.5 var(--sans);
+    color-scheme: light dark; /* native form controls follow the theme */
+    color: var(--ink-soft);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* System dark mode. (Day 26: mirror these under [data-theme="dark"] for a manual toggle.) */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1a1815;
-    --paper: #231f1b;
-    --ink: #ece7dd;
-    --ink-soft: #b3ab9e;
-    --ink-faint: #847d70;
-    --line: #332f29;
-    --line-strong: #463f37;
-    --accent: #d46a4e;
-    --accent-soft: #3a2a23;
-    --good: #7ba874;
-    --good-soft: #2a3626;
-  }
+    :root {
+        --bg: #1a1815;
+        --paper: #231f1b;
+        --ink: #ece7dd;
+        --ink-soft: #b3ab9e;
+        --ink-faint: #847d70;
+        --line: #332f29;
+        --line-strong: #463f37;
+        --accent: #d46a4e;
+        --accent-soft: #3a2a23;
+        --good: #7ba874;
+        --good-soft: #2a3626;
+    }
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 body {
-  margin: 0;
+    margin: 0;
 }
 
 /* The app shell fills the viewport as a vertical stack: tab bar + pane. */
 #root {
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
 }
