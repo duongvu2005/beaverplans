@@ -1,0 +1,21 @@
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: var(--sp-3) var(--sp-4);
+    margin-bottom: var(--sp-3);
+}
+
+.name {
+    margin: 0 0 var(--sp-2);
+    font-family: var(--display);
+    font-size: var(--fs-title);
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}

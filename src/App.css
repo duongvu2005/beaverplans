@@ -53,6 +53,25 @@
     overflow: auto;
 }
 
+/* --- plan view: projects + week grid --- */
+/* Stacked in one column by default; at >=1000px the projects tree sits left and
+   the week grid takes the rest. Capped and centred so it doesn't sprawl on wide
+   monitors. */
+.plan-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+    align-items: start;
+}
+
+@media (min-width: 1000px) {
+    .plan-layout {
+        grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+        max-width: 1280px;
+        margin-inline: auto;
+    }
+}
+
 /* --- phone: dock the tab bar to the bottom, spread tabs to full width --- */
 @media (max-width: 640px) {
     .tabs {

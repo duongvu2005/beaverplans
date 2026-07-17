@@ -1,0 +1,29 @@
+.cell {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    padding: var(--sp-1) var(--sp-2);
+    background: var(--bg);
+    border-radius: var(--r-chip);
+}
+
+.text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.project {
+    font-family: var(--mono);
+    font-size: var(--fs-label);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}
+
+.task {
+    font-family: var(--display);
+    font-size: var(--fs-body);
+    color: var(--ink);
+}

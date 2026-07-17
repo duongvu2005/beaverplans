@@ -1,4 +1,6 @@
 import type { DayEntry } from '../core/daySchedule';
+import check from './checkbox.module.css';
+import styles from './DayCell.module.css';
 
 type DayCellProps = {
     entry: DayEntry;
@@ -8,15 +10,18 @@ type DayCellProps = {
 
 export function DayCell({ entry, isMissed, onToggleSubtask }: DayCellProps) {
     return (
-        <li>
+        <li className={styles.cell}>
             <input
                 type="checkbox"
-                checked={entry.subtask.isDone}
+                className={check.box}
+                checked={entry.subtask.isDone && !isMissed}
                 disabled={isMissed}
                 onChange={() => onToggleSubtask(entry.subtask.id)}
             />
-            <span>{entry.projectName}</span>
-            <span>{entry.taskName}</span>
+            <div className={styles.text}>
+                <span className={styles.project}>{entry.projectName}</span>
+                <span className={styles.task}>{entry.taskName}</span>
+            </div>
         </li>
     );
 }

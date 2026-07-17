@@ -1,0 +1,8 @@
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1) 0;
+    font-size: var(--fs-body);
+    color: var(--ink-soft);
+}

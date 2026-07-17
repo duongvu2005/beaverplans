@@ -44,10 +44,10 @@ export default function App() {
             </nav>
             <main className="pane">
                 {view === 'plan' && (
-                    <>
+                    <div className="plan-layout">
                         <ProjectList projects={plan.projects} onToggleTask={handleToggleTask} />
                         <WeekGrid projects={plan.projects} onToggleSubtask={handleToggleSubtask} />
-                    </>
+                    </div>
                 )}
                 {view === 'stats' && <div>stats pane</div>}
                 {view === 'archive' && <div>archive pane</div>}

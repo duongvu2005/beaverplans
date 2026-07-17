@@ -1,0 +1,51 @@
+/* Shared checkbox look. Restyles a native <input type="checkbox"> (keeps its
+   semantics + accessibility) into the terracotta/green box. Imported by any
+   component that renders a checkbox (TaskRow, DayCell, ...). */
+.box {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    display: grid;
+    place-content: center;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.box:hover:not(:disabled) {
+    border-color: var(--accent);
+}
+
+.box:checked {
+    background: var(--good);
+    border-color: var(--good);
+}
+
+/* Checkmark: a rounded-cap tick drawn as a centered mask. The colour comes from
+   --paper via background-color; the SVG supplies only the shape (a mask uses the
+   alpha channel), and center masking aligns it exactly at any size. */
+.box:checked::after {
+    content: '';
+    width: 11px;
+    height: 11px;
+    background-color: var(--paper);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3L5 8.8L9.5 3.7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+        center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3L5 8.8L9.5 3.7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+        center / contain no-repeat;
+}
+
+.box:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.box:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}

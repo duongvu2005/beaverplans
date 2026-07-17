@@ -1,10 +1,9 @@
 /* Global base: design tokens, reset, element defaults.
-   Token names/values mirror the reference app's proven system (warm paper + ink,
-   terracotta accent, muted green for "done") so components port cleanly and
-   theming stays a change of values, not a rewrite.
-   Fonts (Fraunces / Nunito / JetBrains Mono) are loaded via the <link> in
-   index.html. Dark mode currently follows the OS (prefers-color-scheme); day 26
-   adds a manual light/dark/system [data-theme] toggle on top. */
+   A warm paper-and-ink palette with a terracotta accent and a muted green for
+   "done"; theming is a change of token values, not a rewrite.
+   Fonts (Baloo 2 / Nunito / JetBrains Mono) are loaded via the <link> in index.html.
+   The light theme is the default regardless of OS; the dark palette applies only
+   under [data-theme="dark"], so a manual theme toggle can layer on later. */
 
 :root {
     /* neutrals */
@@ -23,10 +22,10 @@
     --good-soft: #dde7da;
 
     /* type — three clear roles:
-     display (Fraunces serif) = wordmark + project/task titles;
+     display (Baloo 2, rounded sans) = wordmark + project/task titles;
      body (Nunito sans) = descriptions + general reading text;
      chrome (JetBrains Mono) = uppercase labels, counts, day names, buttons. */
-    --display: 'Fraunces', Georgia, serif;
+    --display: 'Baloo 2', system-ui, sans-serif;
     --sans: 'Nunito', system-ui, -apple-system, sans-serif;
     --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
@@ -68,28 +67,29 @@
     --tabbar-h: 52px; /* approx height of the phone bottom bar; used to pad the pane */
 
     font: 16px/1.5 var(--sans);
-    color-scheme: light dark; /* native form controls follow the theme */
+    color-scheme: light; /* default is the light theme; native controls follow it */
     color: var(--ink-soft);
     background: var(--bg);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* System dark mode. (Day 26: mirror these under [data-theme="dark"] for a manual toggle.) */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg: #1a1815;
-        --paper: #231f1b;
-        --ink: #ece7dd;
-        --ink-soft: #b3ab9e;
-        --ink-faint: #847d70;
-        --line: #332f29;
-        --line-strong: #463f37;
-        --accent: #d46a4e;
-        --accent-soft: #3a2a23;
-        --good: #7ba874;
-        --good-soft: #2a3626;
-    }
+/* Dark palette, applied ONLY when explicitly selected — the default is light
+   regardless of the OS setting. A theme toggle sets [data-theme="dark"]; a "system"
+   option could re-introduce prefers-color-scheme. */
+:root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #1a1815;
+    --paper: #231f1b;
+    --ink: #ece7dd;
+    --ink-soft: #b3ab9e;
+    --ink-faint: #847d70;
+    --line: #332f29;
+    --line-strong: #463f37;
+    --accent: #d46a4e;
+    --accent-soft: #3a2a23;
+    --good: #7ba874;
+    --good-soft: #2a3626;
 }
 
 * {
