@@ -33,7 +33,14 @@ export const sampleWeek: WeekPlan = {
                     description: 'topbar + view switcher',
                     subtasks: [
                         // assigned thu, but recorded missed on tue -> MISSED tag; weight 3
-                        { id: 's3', isDone: false, assignedDay: 'thu', missedDays: ['tue'], weight: 3, description: 'wire the tabs' },
+                        {
+                            id: 's3',
+                            isDone: false,
+                            assignedDay: 'thu',
+                            missedDays: ['tue'],
+                            weight: 3,
+                            description: 'wire the tabs',
+                        },
                         { id: 's4', isDone: true, assignedDay: 'mon', missedDays: [], weight: 1 },
                         { id: 's5', isDone: false, assignedDay: 'fri', missedDays: [], weight: 2 },
                     ],
@@ -57,7 +64,13 @@ export const sampleWeek: WeekPlan = {
                     name: 'integrated korean chap1',
                     subtasks: [
                         // assigned sun, missed tue & wed -> multi-miss
-                        { id: 's8', isDone: false, assignedDay: 'sun', missedDays: ['tue', 'wed'], weight: 1 },
+                        {
+                            id: 's8',
+                            isDone: false,
+                            assignedDay: 'sun',
+                            missedDays: ['tue', 'wed'],
+                            weight: 1,
+                        },
                     ],
                 },
             ],

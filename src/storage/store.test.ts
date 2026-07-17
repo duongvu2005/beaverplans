@@ -58,9 +58,18 @@ class SpyBackend implements Backend {
 }
 
 // --- fixtures ---
-const localPlan: WeekPlan = { weekStart: '2026-07-13', projects: [{ id: 'local-p', name: 'Local', tasks: [] }] };
-const cloudPlan: WeekPlan = { weekStart: '2026-07-20', projects: [{ id: 'cloud-p', name: 'Cloud', tasks: [] }] };
-const newPlan: WeekPlan = { weekStart: '2026-07-13', projects: [{ id: 'new-p', name: 'New', tasks: [] }] };
+const localPlan: WeekPlan = {
+    weekStart: '2026-07-13',
+    projects: [{ id: 'local-p', name: 'Local', tasks: [] }],
+};
+const cloudPlan: WeekPlan = {
+    weekStart: '2026-07-20',
+    projects: [{ id: 'cloud-p', name: 'Cloud', tasks: [] }],
+};
+const newPlan: WeekPlan = {
+    weekStart: '2026-07-13',
+    projects: [{ id: 'new-p', name: 'New', tasks: [] }],
+};
 const cloudArchive: Archive = [];
 
 // A store wired with a real, seeded LocalBackend and an observable spy cloud.
@@ -119,10 +128,14 @@ describe('Store', () => {
 
         // Hold cloud.load() open so we can see whether store.load() waits for it.
         let release!: () => void;
-        cloud.loadGate = new Promise<void>((resolve) => { release = resolve; });
+        cloud.loadGate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
 
         let settled = false;
-        const loading = store.load().then(() => { settled = true; });
+        const loading = store.load().then(() => {
+            settled = true;
+        });
 
         await new Promise((r) => setTimeout(r, 0)); // drain microtasks
         expect(cloud.loadCalls).toBe(1); // delegated to cloud

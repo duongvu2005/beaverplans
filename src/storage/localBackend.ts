@@ -1,7 +1,7 @@
-import type { Archive, WeekPlan } from "../core/types";
-import type { Backend } from "./backend";
-import { weekStartOf } from "../core/dates";
-import { isValidPlan } from "../core/projects"
+import type { Archive, WeekPlan } from '../core/types';
+import type { Backend } from './backend';
+import { weekStartOf } from '../core/dates';
+import { isValidPlan } from '../core/projects';
 
 export const STORAGE_KEY = 'beaverplans.state.v1';
 
@@ -74,10 +74,11 @@ export class LocalBackend implements Backend {
         if (!storageJSON) {
             return this.emptyState();
         }
-       try {
+        try {
             const parsed = JSON.parse(storageJSON) as { plan: WeekPlan; archive: Archive };
             if (!isValidPlan(parsed.plan)) return this.emptyState();
-            if (!Array.isArray(parsed.archive) || !parsed.archive.every(isValidPlan)) return this.emptyState();
+            if (!Array.isArray(parsed.archive) || !parsed.archive.every(isValidPlan))
+                return this.emptyState();
             return { plan: parsed.plan, archive: parsed.archive };
         } catch {
             return this.emptyState();

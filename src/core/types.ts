@@ -1,5 +1,5 @@
 export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-export type DateKey = string;  // YYYY-MM-DD
+export type DateKey = string; // YYYY-MM-DD
 export type DayStatus = 'past' | 'today' | 'future';
 export type WeekStatus = 'past' | 'current' | 'future';
 
@@ -15,7 +15,7 @@ export type Project = {
 export type Task = {
     readonly id: string;
     readonly name: string;
-    readonly isDone?: boolean;  // only need this if task has no subtask
+    readonly isDone?: boolean; // only need this if task has no subtask
     readonly subtasks: ReadonlyArray<Subtask>;
     readonly deadline?: string;
     readonly description?: string;
@@ -68,6 +68,6 @@ export type Subtask = {
 export type WeekPlan = {
     readonly weekStart: DateKey;
     readonly projects: ReadonlyArray<Project>;
-}
+};
 
 export type Archive = ReadonlyArray<WeekPlan>;

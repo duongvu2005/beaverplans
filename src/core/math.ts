@@ -1,6 +1,6 @@
 /**
  * Clamps x to the interval [lo, hi]
- * 
+ *
  * @param x the number to clamp
  * @param lo the lower bound of the range
  * @param hi the upper bound of the range, requires lo <= hi
@@ -21,5 +21,5 @@ export function percentOf(part: number, whole: number): number {
     if (whole === 0) {
         return 0;
     }
-    return 100 * part / whole;
+    return (100 * part) / whole;
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fixture from './importLegacy.fixture.json';
-import { 
+import {
     toSubtask,
     toTask,
     toProject,
@@ -8,7 +8,7 @@ import {
     activeToWeekPlan,
     archiveToWeekPlan,
     importLegacy,
-    type LegacyRow
+    type LegacyRow,
 } from './importLegacy';
 import type { Task, Project, WeekPlan } from '../core/types';
 import { isValidPlan } from '../core/projects';
@@ -85,7 +85,10 @@ describe('toTask', () => {
 
     it('covers parent (>=1 slots): isDone omitted, deadline + description kept, ids unique', () => {
         const sub = {
-            id: 'old', title: 'Essays', desc: 'the writing project', done: false,
+            id: 'old',
+            title: 'Essays',
+            desc: 'the writing project',
+            done: false,
             deadline: '2026-07-20',
             slots: [
                 { day: 'mon', done: true, missed: [] },
@@ -101,7 +104,13 @@ describe('toTask', () => {
             description: 'the writing project',
             subtasks: [
                 { id: undefined, assignedDay: 'mon', isDone: true, weight: 1, missedDays: [] },
-                { id: undefined, assignedDay: 'wed', isDone: false, weight: 1, missedDays: ['tue'] },
+                {
+                    id: undefined,
+                    assignedDay: 'wed',
+                    isDone: false,
+                    weight: 1,
+                    missedDays: ['tue'],
+                },
             ],
         });
 
@@ -111,27 +120,46 @@ describe('toTask', () => {
 
     it('covers parent, null deadline + empty desc: both omitted', () => {
         const sub = {
-            id: 'old', title: 'Reading', desc: '', done: true, deadline: null,
+            id: 'old',
+            title: 'Reading',
+            desc: '',
+            done: true,
+            deadline: null,
             slots: [{ day: 'fri', done: false, missed: [] }],
         };
         expect(stripIds(toTask(sub, counter()))).toEqual({
             id: undefined,
             name: 'Reading',
-            subtasks: [{ id: undefined, assignedDay: 'fri', isDone: false, weight: 1, missedDays: [] }],
+            subtasks: [
+                { id: undefined, assignedDay: 'fri', isDone: false, weight: 1, missedDays: [] },
+            ],
         });
     });
 
     it('covers leaf (no slots), done true: isDone set, empty subtasks', () => {
         const sub = { id: 'old', title: 'Errand', desc: '', done: true, deadline: null, slots: [] };
         expect(stripIds(toTask(sub, counter()))).toEqual({
-            id: undefined, name: 'Errand', isDone: true, subtasks: [],
+            id: undefined,
+            name: 'Errand',
+            isDone: true,
+            subtasks: [],
         });
     });
 
     it('covers leaf (no slots), done false: isDone false', () => {
-        const sub = { id: 'old', title: 'Errand', desc: '', done: false, deadline: null, slots: [] };
+        const sub = {
+            id: 'old',
+            title: 'Errand',
+            desc: '',
+            done: false,
+            deadline: null,
+            slots: [],
+        };
         expect(stripIds(toTask(sub, counter()))).toEqual({
-            id: undefined, name: 'Errand', isDone: false, subtasks: [],
+            id: undefined,
+            name: 'Errand',
+            isDone: false,
+            subtasks: [],
         });
     });
 });
@@ -163,10 +191,16 @@ describe('toProject', () => {
 
     it('covers non-null deadline, >=1 subs: deadline kept, subs delegated, ids unique', () => {
         const task = {
-            id: 'old', title: 'Coursework', deadline: '2026-07-20',
+            id: 'old',
+            title: 'Coursework',
+            deadline: '2026-07-20',
             subs: [
                 {
-                    id: 'old-a', title: 'Essay', desc: '', done: false, deadline: null,
+                    id: 'old-a',
+                    title: 'Essay',
+                    desc: '',
+                    done: false,
+                    deadline: null,
                     slots: [{ day: 'mon', done: true, missed: [] }],
                 },
                 { id: 'old-b', title: 'Errand', desc: '', done: true, deadline: null, slots: [] },
@@ -183,7 +217,13 @@ describe('toProject', () => {
                     id: undefined,
                     name: 'Essay',
                     subtasks: [
-                        { id: undefined, assignedDay: 'mon', isDone: true, weight: 1, missedDays: [] },
+                        {
+                            id: undefined,
+                            assignedDay: 'mon',
+                            isDone: true,
+                            weight: 1,
+                            missedDays: [],
+                        },
                     ],
                 },
                 { id: undefined, name: 'Errand', isDone: true, subtasks: [] },
@@ -200,8 +240,12 @@ describe('toProject', () => {
 
     it('covers null deadline: omitted', () => {
         const task = {
-            id: 'old', title: 'Misc', deadline: null,
-            subs: [{ id: 'old-a', title: 'Errand', desc: '', done: false, deadline: null, slots: [] }],
+            id: 'old',
+            title: 'Misc',
+            deadline: null,
+            subs: [
+                { id: 'old-a', title: 'Errand', desc: '', done: false, deadline: null, slots: [] },
+            ],
         };
         expect(stripIds(toProject(task, counter()))).toEqual({
             id: undefined,
@@ -281,8 +325,19 @@ describe('activeToWeekPlan', () => {
     it('covers weekStart passthrough + projects mapped, ids unique', () => {
         const tasks = [
             {
-                id: 'old', title: 'Coursework', deadline: null,
-                subs: [{ id: 'old-a', title: 'Errand', desc: '', done: true, deadline: null, slots: [] }],
+                id: 'old',
+                title: 'Coursework',
+                deadline: null,
+                subs: [
+                    {
+                        id: 'old-a',
+                        title: 'Errand',
+                        desc: '',
+                        done: true,
+                        deadline: null,
+                        slots: [],
+                    },
+                ],
             },
         ];
         const plan = activeToWeekPlan(tasks, '2026-07-13', counter());
@@ -331,34 +386,47 @@ describe('archiveToWeekPlan', () => {
     const stripIds = (plan: WeekPlan) => ({
         ...plan,
         projects: plan.projects.map((p) => ({
-            ...p, id: undefined,
+            ...p,
+            id: undefined,
             tasks: p.tasks.map((t) => ({
-                ...t, id: undefined,
+                ...t,
+                id: undefined,
                 subtasks: t.subtasks.map((s) => ({ ...s, id: undefined })),
             })),
         })),
     });
 
     const snapshot = [
-        { id: 'old', title: 'Real Analysis', deadline: null,
-          subs: [{ id: 'old-a', title: 'ch 0', desc: '', done: true, deadline: null, slots: [] }] },
+        {
+            id: 'old',
+            title: 'Real Analysis',
+            deadline: null,
+            subs: [{ id: 'old-a', title: 'ch 0', desc: '', done: true, deadline: null, slots: [] }],
+        },
     ];
     const expected = {
         weekStart: '2026-07-06',
         projects: [
-            { id: undefined, name: 'Real Analysis',
-              tasks: [{ id: undefined, name: 'ch 0', isDone: true, subtasks: [] }] },
+            {
+                id: undefined,
+                name: 'Real Analysis',
+                tasks: [{ id: undefined, name: 'ch 0', isDone: true, subtasks: [] }],
+            },
         ],
     };
 
     it('covers Sunday-reading start (real archive) -> correct Monday', () => {
         // 2026-07-05T17:00Z reads as Sunday in the NY-pinned runner
-        expect(stripIds(archiveToWeekPlan({ start: '2026-07-05T17:00:00.000Z', snapshot }, counter()))).toEqual(expected);
+        expect(
+            stripIds(archiveToWeekPlan({ start: '2026-07-05T17:00:00.000Z', snapshot }, counter())),
+        ).toEqual(expected);
     });
 
     it('covers Monday-reading start -> that Monday', () => {
         // 2026-07-06T13:00Z reads as Monday in the NY-pinned runner
-        expect(stripIds(archiveToWeekPlan({ start: '2026-07-06T13:00:00.000Z', snapshot }, counter()))).toEqual(expected);
+        expect(
+            stripIds(archiveToWeekPlan({ start: '2026-07-06T13:00:00.000Z', snapshot }, counter())),
+        ).toEqual(expected);
     });
 });
 
@@ -378,9 +446,11 @@ describe('importLegacy', () => {
     const stripIds = (plan: WeekPlan) => ({
         ...plan,
         projects: plan.projects.map((p) => ({
-            ...p, id: undefined,
+            ...p,
+            id: undefined,
             tasks: p.tasks.map((t) => ({
-                ...t, id: undefined,
+                ...t,
+                id: undefined,
                 subtasks: t.subtasks.map((s) => ({ ...s, id: undefined })),
             })),
         })),
@@ -389,15 +459,43 @@ describe('importLegacy', () => {
     const row: LegacyRow = {
         week_start: '2026-07-13',
         tasks: [
-            { id: 'p1', title: 'Coursework', deadline: null,
-              subs: [{ id: 's1', title: 'Errand', desc: '', done: false, deadline: null,
-                       slots: [{ day: 'mon', done: true, missed: [] }] }] },
+            {
+                id: 'p1',
+                title: 'Coursework',
+                deadline: null,
+                subs: [
+                    {
+                        id: 's1',
+                        title: 'Errand',
+                        desc: '',
+                        done: false,
+                        deadline: null,
+                        slots: [{ day: 'mon', done: true, missed: [] }],
+                    },
+                ],
+            },
         ],
         archives: [
-            { start: '2026-07-05T17:00:00.000Z', snapshot: [
-                { id: 'ap1', title: 'Past', deadline: null,
-                  subs: [{ id: 'as1', title: 'done thing', desc: '', done: true, deadline: null, slots: [] }] },
-            ] },
+            {
+                start: '2026-07-05T17:00:00.000Z',
+                snapshot: [
+                    {
+                        id: 'ap1',
+                        title: 'Past',
+                        deadline: null,
+                        subs: [
+                            {
+                                id: 'as1',
+                                title: 'done thing',
+                                desc: '',
+                                done: true,
+                                deadline: null,
+                                slots: [],
+                            },
+                        ],
+                    },
+                ],
+            },
             { start: '2025-09-07T17:00:00.000Z', snapshot: [] },
         ],
     };
@@ -408,20 +506,39 @@ describe('importLegacy', () => {
         expect(stripIds(result.plan)).toEqual({
             weekStart: '2026-07-13',
             projects: [
-                { id: undefined, name: 'Coursework', tasks: [
-                    { id: undefined, name: 'Errand', subtasks: [
-                        { id: undefined, assignedDay: 'mon', isDone: true, weight: 1, missedDays: [] },
-                    ] },
-                ] },
+                {
+                    id: undefined,
+                    name: 'Coursework',
+                    tasks: [
+                        {
+                            id: undefined,
+                            name: 'Errand',
+                            subtasks: [
+                                {
+                                    id: undefined,
+                                    assignedDay: 'mon',
+                                    isDone: true,
+                                    weight: 1,
+                                    missedDays: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
             ],
         });
 
         expect(result.archive.map(stripIds)).toEqual([
-            { weekStart: '2026-07-06', projects: [
-                { id: undefined, name: 'Past', tasks: [
-                    { id: undefined, name: 'done thing', isDone: true, subtasks: [] },
-                ] },
-            ] },
+            {
+                weekStart: '2026-07-06',
+                projects: [
+                    {
+                        id: undefined,
+                        name: 'Past',
+                        tasks: [{ id: undefined, name: 'done thing', isDone: true, subtasks: [] }],
+                    },
+                ],
+            },
             { weekStart: '2025-09-08', projects: [] },
         ]);
     });
@@ -449,9 +566,15 @@ describe('importLegacy — real export from a fake account', () => {
 
     it('conserves counts: projects / tasks / subtasks / archives', () => {
         const subs = fixture.tasks.reduce((n, t) => n + t.subs.length, 0);
-        const slots = fixture.tasks.reduce((n, t) => n + t.subs.reduce((m, s) => m + s.slots.length, 0), 0);
+        const slots = fixture.tasks.reduce(
+            (n, t) => n + t.subs.reduce((m, s) => m + s.slots.length, 0),
+            0,
+        );
         const outTasks = plan.projects.reduce((n, p) => n + p.tasks.length, 0);
-        const outSubtasks = plan.projects.reduce((n, p) => n + p.tasks.reduce((m, t) => m + t.subtasks.length, 0), 0);
+        const outSubtasks = plan.projects.reduce(
+            (n, p) => n + p.tasks.reduce((m, t) => m + t.subtasks.length, 0),
+            0,
+        );
 
         expect(plan.projects.length).toBe(fixture.tasks.length);
         expect(outTasks).toBe(subs);
@@ -459,7 +582,7 @@ describe('importLegacy — real export from a fake account', () => {
         expect(archive.length).toBe(fixture.archives.length);
     });
 
-    it('reproduces each archive\'s old stored stats (oracle)', () => {
+    it("reproduces each archive's old stored stats (oracle)", () => {
         for (let i = 0; i < archive.length; i++) {
             const wp = archive[i];
             const old = fixture.archives[i];

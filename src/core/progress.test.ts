@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Project, Task, Subtask, DayOfWeek } from "./types";
+import type { Project, Task, Subtask, DayOfWeek } from './types';
 import type { DayProgress } from './progress';
 import { taskProgress, projectProgress, overallProgress, progressByDay } from './progress';
 
@@ -20,7 +20,7 @@ function makeProject(id: string, overrides: Partial<Project> = {}): Project {
 function makeProgressByDay(
     overrides: Partial<Record<DayOfWeek, { assigned: number; done: number }>> = {},
 ): DayProgress[] {
-    return WEEK.map(day => ({ day, assigned: 0, done: 0, ...overrides[day] }));
+    return WEEK.map((day) => ({ day, assigned: 0, done: 0, ...overrides[day] }));
 }
 
 describe('taskProgress', () => {
@@ -52,13 +52,18 @@ describe('taskProgress', () => {
     });
 
     it('covers has subtasks, some done, weight 1', () => {
-        const t = makeTask('t', { subtasks: [makeSubtask('a', { isDone: true }), makeSubtask('b')] });
+        const t = makeTask('t', {
+            subtasks: [makeSubtask('a', { isDone: true }), makeSubtask('b')],
+        });
         expect(taskProgress(t)).toEqual({ done: 1, total: 2 });
     });
 
     it('covers has subtasks, mixed weight, mixed done', () => {
         const t = makeTask('t', {
-            subtasks: [makeSubtask('a', { isDone: true, weight: 3 }), makeSubtask('b', { weight: 2 })],
+            subtasks: [
+                makeSubtask('a', { isDone: true, weight: 3 }),
+                makeSubtask('b', { weight: 2 }),
+            ],
         });
         expect(taskProgress(t)).toEqual({ done: 3, total: 5 });
     });
@@ -174,13 +179,15 @@ describe('progressByDay', () => {
 
     it('covers no misses, subtasks across days, mixed done', () => {
         const p = makeProject('p', {
-            tasks: [makeTask('t', {
-                subtasks: [
-                    makeSubtask('s1', { assignedDay: 'mon', isDone: true }),
-                    makeSubtask('s2', { assignedDay: 'tue' }),
-                    makeSubtask('s3', { assignedDay: 'mon', isDone: true }),
-                ],
-            })],
+            tasks: [
+                makeTask('t', {
+                    subtasks: [
+                        makeSubtask('s1', { assignedDay: 'mon', isDone: true }),
+                        makeSubtask('s2', { assignedDay: 'tue' }),
+                        makeSubtask('s3', { assignedDay: 'mon', isDone: true }),
+                    ],
+                }),
+            ],
         });
         expect(progressByDay([p])).toEqual(
             makeProgressByDay({ mon: { assigned: 2, done: 2 }, tue: { assigned: 1, done: 0 } }),
@@ -189,11 +196,18 @@ describe('progressByDay', () => {
 
     it('covers a single miss, weight 2, done on its live day', () => {
         const p = makeProject('p', {
-            tasks: [makeTask('t', {
-                subtasks: [
-                    makeSubtask('s', { assignedDay: 'wed', isDone: true, weight: 2, missedDays: ['mon'] }),
-                ],
-            })],
+            tasks: [
+                makeTask('t', {
+                    subtasks: [
+                        makeSubtask('s', {
+                            assignedDay: 'wed',
+                            isDone: true,
+                            weight: 2,
+                            missedDays: ['mon'],
+                        }),
+                    ],
+                }),
+            ],
         });
         expect(progressByDay([p])).toEqual(
             makeProgressByDay({ mon: { assigned: 2, done: 0 }, wed: { assigned: 2, done: 2 } }),
@@ -202,11 +216,13 @@ describe('progressByDay', () => {
 
     it('covers multiple misses on one subtask, undone', () => {
         const p = makeProject('p', {
-            tasks: [makeTask('t', {
-                subtasks: [
-                    makeSubtask('s', { assignedDay: 'fri', missedDays: ['mon', 'tue', 'wed'] }),
-                ],
-            })],
+            tasks: [
+                makeTask('t', {
+                    subtasks: [
+                        makeSubtask('s', { assignedDay: 'fri', missedDays: ['mon', 'tue', 'wed'] }),
+                    ],
+                }),
+            ],
         });
         expect(progressByDay([p])).toEqual(
             makeProgressByDay({
@@ -220,17 +236,21 @@ describe('progressByDay', () => {
 
     it('covers misses from different subtasks colliding on one day', () => {
         const a = makeProject('a', {
-            tasks: [makeTask('ta', {
-                subtasks: [makeSubtask('sa', { assignedDay: 'tue', missedDays: ['mon'] })],
-            })],
+            tasks: [
+                makeTask('ta', {
+                    subtasks: [makeSubtask('sa', { assignedDay: 'tue', missedDays: ['mon'] })],
+                }),
+            ],
         });
         const b = makeProject('b', {
-            tasks: [makeTask('tb', {
-                subtasks: [
-                    makeSubtask('sb', { assignedDay: 'wed', weight: 2, missedDays: ['mon'] }),
-                    makeSubtask('sc', { assignedDay: 'mon', isDone: true }),
-                ],
-            })],
+            tasks: [
+                makeTask('tb', {
+                    subtasks: [
+                        makeSubtask('sb', { assignedDay: 'wed', weight: 2, missedDays: ['mon'] }),
+                        makeSubtask('sc', { assignedDay: 'mon', isDone: true }),
+                    ],
+                }),
+            ],
         });
         expect(progressByDay([a, b])).toEqual(
             makeProgressByDay({

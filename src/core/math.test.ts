@@ -77,7 +77,7 @@ describe('clamp', () => {
         const lo = 10;
         const hi = 172;
         expect(clamp(x, lo, hi)).toBeNaN();
-    })
+    });
 });
 
 describe('percentOf', () => {

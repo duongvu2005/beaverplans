@@ -1,6 +1,6 @@
-import type { Archive, WeekPlan } from "../core/types";
-import type { Backend } from "./backend";
-import type { LocalBackend } from "./localBackend";
+import type { Archive, WeekPlan } from '../core/types';
+import type { Backend } from './backend';
+import type { LocalBackend } from './localBackend';
 
 export type BackendName = 'local' | 'cloud';
 
@@ -60,7 +60,7 @@ export class Store implements Backend {
 
     /**
      * Set the active backend to name ('local' | 'cloud')
-     * 
+     *
      * @param name the backend to be made active
      */
     public useBackend(name: BackendName): void {
@@ -69,7 +69,7 @@ export class Store implements Backend {
         } else if (name === 'cloud') {
             this.active = this.cloud;
         } else {
-            const _exhaustive: never = name;  // compile error if a BackendName is unhandled
+            const _exhaustive: never = name; // compile error if a BackendName is unhandled
             throw new Error(`unknown backend: ${String(_exhaustive)}`);
         }
     }

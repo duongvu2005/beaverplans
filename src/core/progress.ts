@@ -13,79 +13,79 @@
  * to neither their combined 2/102); pct is derived only at the edge from a final
  * done/total pair via math.percent.
  */
-import type { Project, Task, DayOfWeek } from "./types";
-import { WEEK } from "./types";
+import type { Project, Task, DayOfWeek } from './types';
+import { WEEK } from './types';
 
 // progress types
-export type Progress = { 
+export type Progress = {
     readonly done: number;
     readonly total: number;
 };
 export type DayProgress = {
     readonly day: DayOfWeek;
-    readonly assigned: number;  // include misses
+    readonly assigned: number; // include misses
     readonly done: number;
 };
 
 /**
  * Calculates the progress of a task.
- * 
+ *
  * @param task any valid task
  * @returns the task's weighted progress as a Progress, where `total` is the task's
  *          total weighted effort and `done` is the weighted effort that is complete
  */
-export function taskProgress(task: Task) : Progress {
+export function taskProgress(task: Task): Progress {
     if (task.subtasks.length === 0) {
         return { done: task.isDone ? 1 : 0, total: 1 };
     }
     const { done, total } = task.subtasks.reduce(
         (acc, s) => ({
             done: acc.done + (s.isDone ? s.weight : 0),
-            total: acc.total + s.weight
+            total: acc.total + s.weight,
         }),
-        { done: 0, total: 0 }
+        { done: 0, total: 0 },
     );
     return { done, total };
 }
 
 /**
  * Calculates the progress of a project
- * 
+ *
  * @param project any valid project
  * @returns the project's weighted progress as a Progress, where `total` is the project's
  *          total weighted effort and `done` is the weighted effort that is complete
  */
-export function projectProgress(project: Project) : Progress {
+export function projectProgress(project: Project): Progress {
     const { done, total } = project.tasks.reduce(
         (acc, task) => {
             const progress = taskProgress(task);
-            return ({
+            return {
                 done: acc.done + progress.done,
-                total: acc.total + progress.total
-            });
+                total: acc.total + progress.total,
+            };
         },
-        { done: 0, total: 0 }
+        { done: 0, total: 0 },
     );
     return { done, total };
 }
 
 /**
  * Calculate the overall progress of a list of projects.
- * 
+ *
  * @param projects any valid list of projects
  * @returns the overall weighted progress as a Progress, where `total` is the overall
  *          total weighted effort and `done` is the weighted effort that is complete
  */
 export function overallProgress(projects: ReadonlyArray<Project>): Progress {
     const { done, total } = projects.reduce(
-        (acc, project ) => {
+        (acc, project) => {
             const progress = projectProgress(project);
-            return ({
+            return {
                 done: acc.done + progress.done,
-                total: acc.total + progress.total
-            })
+                total: acc.total + progress.total,
+            };
         },
-        { done: 0, total: 0 }
+        { done: 0, total: 0 },
     );
     return { done, total };
 }
@@ -111,7 +111,7 @@ export function progressByDay(projects: ReadonlyArray<Project>): ReadonlyArray<D
         sat: { assigned: 0, done: 0 },
         sun: { assigned: 0, done: 0 },
     };
-    const allSubtasks = projects.flatMap(p => p.tasks.flatMap(t => t.subtasks));
+    const allSubtasks = projects.flatMap((p) => p.tasks.flatMap((t) => t.subtasks));
     for (const subtask of allSubtasks) {
         // assigned (missed + currently assigned)
         for (const day of subtask.missedDays) {
@@ -123,5 +123,5 @@ export function progressByDay(projects: ReadonlyArray<Project>): ReadonlyArray<D
             weekProgress[subtask.assignedDay].done += subtask.weight;
         }
     }
-    return WEEK.map(day => ({day, ...weekProgress[day]}));
+    return WEEK.map((day) => ({ day, ...weekProgress[day] }));
 }

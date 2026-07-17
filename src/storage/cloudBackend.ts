@@ -1,5 +1,5 @@
-import type { Archive, WeekPlan } from "../core/types";
-import type { Backend } from "./backend";
+import type { Archive, WeekPlan } from '../core/types';
+import type { Backend } from './backend';
 
 export class CloudBackend implements Backend {
     /**

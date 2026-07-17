@@ -45,4 +45,3 @@ export interface Backend {
      */
     reset(): void;
 }
-

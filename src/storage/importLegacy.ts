@@ -38,9 +38,8 @@
  * ignored (slots never had one), which guarantees the uniqueness RI.
  */
 
-import type { Subtask, Task, Project, WeekPlan, Archive, DateKey, DayOfWeek} from "../core/types";
-import { toDateKey } from "../core/dates";
-
+import type { Subtask, Task, Project, WeekPlan, Archive, DateKey, DayOfWeek } from '../core/types';
+import { toDateKey } from '../core/dates';
 
 // can be mapped to a Subtask in beaverplans
 export type LegacySlot = {
@@ -54,8 +53,8 @@ export type LegacySlot = {
 export type LegacySub = {
     id: string;
     title: string;
-    desc: string;   
-    done: boolean;  // only keep this if the old sub has no slot
+    desc: string;
+    done: boolean; // only keep this if the old sub has no slot
     deadline: string | null;
     slots: LegacySlot[];
 };
@@ -78,9 +77,8 @@ export type LegacyArchive = {
 export type LegacyRow = {
     tasks: LegacyTask[];
     archives: LegacyArchive[];
-    week_start: string;  // start of the current active week
+    week_start: string; // start of the current active week
 };
-
 
 // --- tree converters (pure given newId) ---
 /**
@@ -127,7 +125,7 @@ export function toTask(sub: LegacySub, newId: () => string): Task {
         id: newId(),
         name: sub.title,
         ...(!sub.slots.length ? { isDone: sub.done } : {}),
-        subtasks: sub.slots.map(slot => toSubtask(slot, newId)),
+        subtasks: sub.slots.map((slot) => toSubtask(slot, newId)),
         ...(sub.deadline ? { deadline: sub.deadline } : {}),
         ...(sub.desc ? { description: sub.desc } : {}),
     };
@@ -135,7 +133,7 @@ export function toTask(sub: LegacySub, newId: () => string): Task {
 
 /**
  * Convert a task from the old planner into a beaverplans Project.
- * 
+ *
  * @param task   a task from the old planner
  * @param newId  called once for every node produced — the project, each of
  *               its tasks, and each of their subtasks — supplying all their ids
@@ -149,9 +147,9 @@ export function toProject(task: LegacyTask, newId: () => string): Project {
     return {
         id: newId(),
         name: task.title,
-        tasks: task.subs.map(sub => toTask(sub, newId)),
-        ...(task.deadline ? { deadline: task.deadline }: {})
-    }
+        tasks: task.subs.map((sub) => toTask(sub, newId)),
+        ...(task.deadline ? { deadline: task.deadline } : {}),
+    };
 }
 
 // --- weekStart recovery (pure) ---
@@ -168,22 +166,16 @@ export function toProject(task: LegacyTask, newId: () => string): Project {
 export function weekStartFromIso(iso: string): DateKey {
     // timezone ranges from UTC-12 to UTC+14, so a 12am Monday anywhere
     // in UTC time can be from a Sunday 10am to a Monday 12pm
-    const SUNDAY = 0
+    const SUNDAY = 0;
     const date = new Date(iso);
-    const offset = (date.getDay() === SUNDAY) ? 1 : 0;
-    return toDateKey(
-        new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate() + offset
-        )
-    );
+    const offset = date.getDay() === SUNDAY ? 1 : 0;
+    return toDateKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset));
 }
 
 // --- WeekPlan builders (pure given newId) ---
 /**
  * Convert the curent active plan in the old planner to a beaverplans WeekPlan.
- * 
+ *
  * @param tasks the list of (old) active tasks
  * @param weekStart the row's week_start (see module doc)
  * @param newId  supplies a fresh id for every node in the resulting plan
@@ -192,16 +184,20 @@ export function weekStartFromIso(iso: string): DateKey {
  *          - weekStart: weekStart,
  *          - projects: tasks with each task converted to a project
  */
-export function activeToWeekPlan(tasks: LegacyTask[], weekStart: string, newId: () => string): WeekPlan {
+export function activeToWeekPlan(
+    tasks: LegacyTask[],
+    weekStart: string,
+    newId: () => string,
+): WeekPlan {
     return {
         weekStart,
-        projects: tasks.map(task => toProject(task, newId))
+        projects: tasks.map((task) => toProject(task, newId)),
     };
 }
 
 /**
  * Convert an archive entry in the old planner to a beaverplans WeekPlan.
- * 
+ *
  * @param archive an (old) archive entry
  * @param newId supplies a fresh id for every node in the resulting plan
  *              (each project, task, and subtask). See module doc.
@@ -212,7 +208,7 @@ export function activeToWeekPlan(tasks: LegacyTask[], weekStart: string, newId: 
 export function archiveToWeekPlan(archive: LegacyArchive, newId: () => string): WeekPlan {
     return {
         weekStart: weekStartFromIso(archive.start),
-        projects: archive.snapshot.map(task => toProject(task, newId))
+        projects: archive.snapshot.map((task) => toProject(task, newId)),
     };
 }
 
@@ -231,12 +227,15 @@ export function archiveToWeekPlan(archive: LegacyArchive, newId: () => string): 
  *          - plan    = the live week (row.tasks + row.week_start)
  *          - archive = row.archives, each converted to a WeekPlan, in order
  */
-export function importLegacy(row: LegacyRow, newId?: () => string): { plan: WeekPlan; archive: Archive } {
+export function importLegacy(
+    row: LegacyRow,
+    newId?: () => string,
+): { plan: WeekPlan; archive: Archive } {
     if (!newId) {
         newId = () => crypto.randomUUID();
     }
     return {
         plan: activeToWeekPlan(row.tasks, row.week_start, newId),
-        archive: row.archives.map(archive => archiveToWeekPlan(archive, newId))
+        archive: row.archives.map((archive) => archiveToWeekPlan(archive, newId)),
     };
 }

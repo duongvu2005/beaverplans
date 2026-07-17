@@ -13,14 +13,14 @@ const MS_PER_WEEK = DAYS_PER_WEEK * MS_PER_DAY; // 604_800_000
 
 /**
  * Finds the Monday that starts the week containing the given date.
- * 
+ *
  * @param date any datetime
  * @returns the DateKey of that week's Monday
  */
 export function weekStartOf(date: Date): DateKey {
     const result = new Date(date);
     const day = result.getDay();
-    const MON = 1;  // getDay() value for Monday
+    const MON = 1; // getDay() value for Monday
     const daysSinceMonday = (day - MON + 7) % 7;
     result.setDate(result.getDate() - daysSinceMonday);
 
@@ -29,7 +29,7 @@ export function weekStartOf(date: Date): DateKey {
 
 /**
  * Formats a date as a YYYY-MM-DD key.
- * 
+ *
  * @param date any datetime
  * @returns the YYYY-MM-DD DateKey for that day
  */
@@ -43,7 +43,7 @@ export function toDateKey(date: Date): DateKey {
 /**
  * Computes the DateKey of today.
  * Non-deterministic: reads the system clock.
- * 
+ *
  * @returns the YYYY-MM-DD DateKey for today
  */
 export function todayKey(): DateKey {
@@ -52,7 +52,7 @@ export function todayKey(): DateKey {
 
 /**
  * Shifts a week-start by n weeks.
- * 
+ *
  * @param weekStart a DateKey that is a Monday (week-start)
  * @param n whole number of weeks to move; may be negative (earlier) or zero
  * @returns the week-start n weeks from weekStart; also a Monday
@@ -77,8 +77,8 @@ export function addWeeks(weekStart: DateKey, n: number): DateKey {
  */
 export function weeksBetween(date: DateKey, reference: DateKey): number {
     return Math.round(
-        ( weekStartDate(date).getTime()
-        - weekStartDate(reference).getTime() ) / MS_PER_WEEK);
+        (weekStartDate(date).getTime() - weekStartDate(reference).getTime()) / MS_PER_WEEK,
+    );
 }
 
 /**
@@ -101,11 +101,10 @@ function parseKey(key: DateKey): Date {
     return new Date(key + 'T00:00:00');
 }
 
-
 /**
  * Reports whether a week has already ended, i.e. its week-start is
  * strictly before the current week.
- * 
+ *
  * @param weekStart a DateKey that is a Monday (week-start)
  * @param today the DateKey of today
  * @returns true iff weekStart's week is strictly before today's week
@@ -116,7 +115,7 @@ export function isWeekPast(weekStart: DateKey, today: DateKey): boolean {
 
 /**
  * Gives the week-start of the week immediately after the given one.
- * 
+ *
  * @param weekStart a DateKey that is a Monday (week-start)
  * @returns the Monday one week after weekStart
  */
@@ -127,7 +126,7 @@ export function nextWeekStart(weekStart: DateKey): DateKey {
 /**
  * Classifies a weekday slot as past, today, or future by resolving it
  * to a calendar date within weekStart's week and comparing to today.
- * 
+ *
  * @param day the weekday slot within the week
  * @param weekStart a DateKey that is a Monday (week-start)
  * @param today the DateKey of today
@@ -148,7 +147,7 @@ export function dayStatusOf(day: DayOfWeek, weekStart: DateKey, today: DateKey):
 
 /**
  * Classifies a weekStart as past, current, or future.
- * 
+ *
  * @param weekStart any valid weekstart (satisfies isValidWeekStart)
  * @param today the DateKey of today
  * @returns the position of weekStart's week relative to the week containing
@@ -164,11 +163,11 @@ export function weekStatusOf(weekStart: DateKey, today: DateKey): WeekStatus {
     } else {
         return 'current';
     }
-} 
+}
 
 /**
  * Check whether the weekStart is valid.
- * 
+ *
  * @param key any key
  * @returns true iff key represents a valid calendar date in the format
  *          "YYYY-MM-DD" (year must be in the range 1000-9999) and that
@@ -183,13 +182,13 @@ export function isValidWeekStart(key: DateKey): boolean {
     const year = parseInt(match[1], 10);
     const month = parseInt(match[2], 10);
     const day = parseInt(match[3], 10);
-    const MON = 1;  // getDay() value for Monday
+    const MON = 1; // getDay() value for Monday
 
     if (year < 1000 || year > 9999) {
         return false;
     }
 
-    const date = new Date(year, month-1, day, 0, 0, 0, 0);
+    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
 
     if (
         date.getFullYear() !== year ||

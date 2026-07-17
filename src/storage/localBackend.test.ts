@@ -26,7 +26,11 @@ class ThrowingStorage extends FakeStorage {
 const samplePlan: WeekPlan = {
     weekStart: '2026-07-13',
     projects: [
-        { id: 'p1', name: 'Essays', tasks: [{ id: 't1', name: 'Draft', isDone: false, subtasks: [] }] },
+        {
+            id: 'p1',
+            name: 'Essays',
+            tasks: [{ id: 't1', name: 'Draft', isDone: false, subtasks: [] }],
+        },
     ],
 };
 const sampleArchive: Archive = [{ weekStart: '2026-07-06', projects: [] }];

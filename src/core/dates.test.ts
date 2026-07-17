@@ -9,16 +9,16 @@
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
-  weekStartOf,
-  toDateKey,
-  todayKey,
-  addWeeks,
-  weeksBetween,
-  isWeekPast,
-  nextWeekStart,
-  dayStatusOf,
-  weekStatusOf,
-  isValidWeekStart
+    weekStartOf,
+    toDateKey,
+    todayKey,
+    addWeeks,
+    weeksBetween,
+    isWeekPast,
+    nextWeekStart,
+    dayStatusOf,
+    weekStatusOf,
+    isValidWeekStart,
 } from './dates';
 
 describe('weekStartOf', () => {
@@ -99,7 +99,6 @@ describe('toDateKey', () => {
         expect(toDateKey(new Date(2026, 2, 5, 12, 0))).toBe('2026-03-05');
     });
 });
-
 
 describe('todayKey', () => {
     /**
@@ -304,8 +303,8 @@ describe('dayStatusOf', () => {
     });
 
     it('covers today on Sunday, earlier weekday slot -> past', () => {
-    // today Sun Jul 12; sat of same week (Jul 11) is the day before -> past
-    expect(dayStatusOf('sat', '2026-07-06', '2026-07-12')).toBe('past');
+        // today Sun Jul 12; sat of same week (Jul 11) is the day before -> past
+        expect(dayStatusOf('sat', '2026-07-06', '2026-07-12')).toBe('past');
     });
 });
 

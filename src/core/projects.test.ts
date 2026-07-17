@@ -16,9 +16,9 @@ import {
     isValidProject,
     isValidSubtask,
     isValidTask,
-    isValidPlan
+    isValidPlan,
 } from './projects';
-import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from "./types";
+import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from './types';
 
 // A minimal valid project.
 function makeProject(id: string): Project {
@@ -53,7 +53,11 @@ describe('addProject', () => {
         expect(isValidPlan(result)).toBe(true);
 
         expect(result.projects).toHaveLength(1);
-        expect(result.projects[result.projects.length - 1]).toEqual({ id: 'p1', name: '', tasks: [] });
+        expect(result.projects[result.projects.length - 1]).toEqual({
+            id: 'p1',
+            name: '',
+            tasks: [],
+        });
         expect(result.weekStart).toBe('2026-07-06');
     });
 
@@ -197,7 +201,13 @@ describe('addSubtask', () => {
         expect(task?.subtasks).toHaveLength(2);
         // existing subtask kept (same instance) and still first
         expect(task?.subtasks[0]).toBe(existing);
-        expect(task?.subtasks[1]).toEqual({ id: 's1', isDone: false, assignedDay: 'tue', missedDays: [], weight: 1 });
+        expect(task?.subtasks[1]).toEqual({
+            id: 's1',
+            isDone: false,
+            assignedDay: 'tue',
+            missedDays: [],
+            weight: 1,
+        });
         expect(task).not.toHaveProperty('isDone');
     });
 
@@ -654,7 +664,13 @@ describe('setTaskName', () => {
      */
 
     it('covers found among siblings: sets name, preserves other fields, shares the rest', () => {
-        const target: Task = { id: 't0', name: 't0', subtasks: [], isDone: false, deadline: '2026-07-10' };
+        const target: Task = {
+            id: 't0',
+            name: 't0',
+            subtasks: [],
+            isDone: false,
+            deadline: '2026-07-10',
+        };
         const siblingTask = makeTask('t1');
         const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
         const b = makeProject('b');
@@ -830,7 +846,13 @@ describe('toggleSubtask', () => {
     });
 
     it('covers found, currently done: flips isDone to false', () => {
-        const s0: Subtask = { id: 's0', isDone: true, assignedDay: 'mon', missedDays: [], weight: 1 };
+        const s0: Subtask = {
+            id: 's0',
+            isDone: true,
+            assignedDay: 'mon',
+            missedDays: [],
+            weight: 1,
+        };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
         const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
@@ -917,8 +939,20 @@ describe('toggleTask', () => {
     });
 
     it('covers parent, all subtasks done: sets all undone', () => {
-        const s0: Subtask = { id: 's0', isDone: true, assignedDay: 'mon', missedDays: [], weight: 1 };
-        const s1: Subtask = { id: 's1', isDone: true, assignedDay: 'tue', missedDays: [], weight: 1 };
+        const s0: Subtask = {
+            id: 's0',
+            isDone: true,
+            assignedDay: 'mon',
+            missedDays: [],
+            weight: 1,
+        };
+        const s1: Subtask = {
+            id: 's1',
+            isDone: true,
+            assignedDay: 'tue',
+            missedDays: [],
+            weight: 1,
+        };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
         const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
@@ -926,7 +960,7 @@ describe('toggleTask', () => {
         expect(isValidPlan(result)).toBe(true);
 
         const subs = result.projects[0]?.tasks[0]?.subtasks;
-        expect(subs?.map(s => s.isDone)).toEqual([false, false]);
+        expect(subs?.map((s) => s.isDone)).toEqual([false, false]);
     });
 
     it('covers parent, all subtasks undone: sets all done', () => {
@@ -939,11 +973,17 @@ describe('toggleTask', () => {
         expect(isValidPlan(result)).toBe(true);
 
         const subs = result.projects[0]?.tasks[0]?.subtasks;
-        expect(subs?.map(s => s.isDone)).toEqual([true, true]);
+        expect(subs?.map((s) => s.isDone)).toEqual([true, true]);
     });
 
     it('covers parent, mixed: sets all done (target, not per-subtask flip)', () => {
-        const s0: Subtask = { id: 's0', isDone: true, assignedDay: 'mon', missedDays: [], weight: 1 };
+        const s0: Subtask = {
+            id: 's0',
+            isDone: true,
+            assignedDay: 'mon',
+            missedDays: [],
+            weight: 1,
+        };
         const s1 = makeSubtask('s1', 'tue'); // isDone: false
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
@@ -953,7 +993,7 @@ describe('toggleTask', () => {
 
         const subs = result.projects[0]?.tasks[0]?.subtasks;
         // both true: a per-subtask flip would have given [false, true]
-        expect(subs?.map(s => s.isDone)).toEqual([true, true]);
+        expect(subs?.map((s) => s.isDone)).toEqual([true, true]);
     });
 
     it('covers found among >1 projects and sibling task: only the target is rebuilt', () => {
@@ -1007,7 +1047,8 @@ describe('isTaskDone', () => {
     });
     it('parent with all subtasks done is done', () => {
         const task: Task = {
-            id: 't', name: 't',
+            id: 't',
+            name: 't',
             subtasks: [
                 { ...makeSubtask('s0', 'mon'), isDone: true },
                 { ...makeSubtask('s1', 'tue'), isDone: true },
@@ -1017,7 +1058,8 @@ describe('isTaskDone', () => {
     });
     it('parent with some subtasks done is not done', () => {
         const task: Task = {
-            id: 't', name: 't',
+            id: 't',
+            name: 't',
             subtasks: [
                 { ...makeSubtask('s0', 'mon'), isDone: true },
                 makeSubtask('s1', 'tue'), // isDone: false
@@ -1027,7 +1069,8 @@ describe('isTaskDone', () => {
     });
     it('parent with no subtasks done is not done', () => {
         const task: Task = {
-            id: 't', name: 't',
+            id: 't',
+            name: 't',
             subtasks: [makeSubtask('s0', 'mon'), makeSubtask('s1', 'tue')], // both false
         };
         expect(isTaskDone(task)).toBe(false);
@@ -1068,10 +1111,14 @@ describe('isValidSubtask', () => {
         expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: [] })).toBe(true);
     });
     it('non-empty missedDays excluding assignedDay, no duplicates, is valid', () => {
-        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'wed'] })).toBe(true);
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'wed'] })).toBe(
+            true,
+        );
     });
     it('duplicate day in missedDays is invalid', () => {
-        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'tue'] })).toBe(false);
+        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'tue'] })).toBe(
+            false,
+        );
     });
     it('assignedDay appearing in missedDays is invalid', () => {
         expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['mon'] })).toBe(false);
@@ -1101,7 +1148,12 @@ describe('isValidTask', () => {
         expect(isValidTask(task)).toBe(true);
     });
     it('parent that still stores a boolean isDone is invalid', () => {
-        const task: Task = { id: 't', name: 't', subtasks: [makeSubtask('s', 'mon')], isDone: false };
+        const task: Task = {
+            id: 't',
+            name: 't',
+            subtasks: [makeSubtask('s', 'mon')],
+            isDone: false,
+        };
         expect(isValidTask(task)).toBe(false);
     });
     it('parent containing an invalid subtask is invalid', () => {
@@ -1157,16 +1209,28 @@ describe('isValidPlan', () => {
         expect(isValidPlan(validPlan)).toBe(true);
     });
     it('a plan containing an invalid project is invalid', () => {
-        const badProject: Project = { id: 'p3', name: 'p3', tasks: [{ id: 't3', name: 't3', subtasks: [] }] }; // leaf missing isDone
-        expect(isValidPlan({ ...validPlan, projects: [...validPlan.projects, badProject] })).toBe(false);
+        const badProject: Project = {
+            id: 'p3',
+            name: 'p3',
+            tasks: [{ id: 't3', name: 't3', subtasks: [] }],
+        }; // leaf missing isDone
+        expect(isValidPlan({ ...validPlan, projects: [...validPlan.projects, badProject] })).toBe(
+            false,
+        );
     });
 
     it('duplicate id across two projects is invalid', () => {
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [makeProject('dup'), makeProject('dup')] };
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [makeProject('dup'), makeProject('dup')],
+        };
         expect(isValidPlan(plan)).toBe(false);
     });
     it('project id colliding with a task id is invalid', () => {
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [{ id: 'x', name: 'x', tasks: [makeTask('x')] }] };
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [{ id: 'x', name: 'x', tasks: [makeTask('x')] }],
+        };
         expect(isValidPlan(plan)).toBe(false);
     });
     it('project id colliding with a subtask id is invalid', () => {
@@ -1186,7 +1250,13 @@ describe('isValidPlan', () => {
     it('duplicate id across two subtasks is invalid', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
-            projects: [{ id: 'p', name: 'p', tasks: [parentTask('t', [makeSubtask('s', 'mon'), makeSubtask('s', 'tue')])] }],
+            projects: [
+                {
+                    id: 'p',
+                    name: 'p',
+                    tasks: [parentTask('t', [makeSubtask('s', 'mon'), makeSubtask('s', 'tue')])],
+                },
+            ],
         };
         expect(isValidPlan(plan)).toBe(false);
     });

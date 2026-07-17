@@ -1,6 +1,5 @@
 export type ParsedDeadline =
-    | { ok: true; date: Date; hasTime: boolean }
-    | { ok: false; reason: 'empty' | 'invalid' };
+    { ok: true; date: Date; hasTime: boolean } | { ok: false; reason: 'empty' | 'invalid' };
 
 /**
  * Interprets a deadline string as a local deadline, or reports why it
@@ -17,10 +16,10 @@ export type ParsedDeadline =
  *       - hasTime is true iff the input explicitly specifies a time,
  *         and false for date-only inputs.
  */
-export function parseDeadline(s: string|null): ParsedDeadline {
+export function parseDeadline(s: string | null): ParsedDeadline {
     // check for empty string
     if (!s || s.trim() === '') {
-        return { ok: false, reason: 'empty'};
+        return { ok: false, reason: 'empty' };
     }
     // match YYYY-MM-DD or YYYY-MM-DDThh:mm
     const regex = /^(\d{4})-(\d{2})-(\d{2})(T(\d{2}):(\d{2}))?$/;
@@ -38,15 +37,12 @@ export function parseDeadline(s: string|null): ParsedDeadline {
         return { ok: false, reason: 'invalid' };
     }
 
-    const hasTime =
-        match[4] !== undefined &&
-        match[5] !== undefined &&
-        match[6] !== undefined;
+    const hasTime = match[4] !== undefined && match[5] !== undefined && match[6] !== undefined;
     // match[5] and match[6] cannot be undefined if hasTime is true
     const hour = hasTime ? parseInt(match[5]!, 10) : 23;
     const minute = hasTime ? parseInt(match[6]!, 10) : 59;
 
-    const localDate = new Date(year, month-1, day, hour, minute, 0, 0);
+    const localDate = new Date(year, month - 1, day, hour, minute, 0, 0);
 
     // check for valid month/day/hour/minute
     if (
