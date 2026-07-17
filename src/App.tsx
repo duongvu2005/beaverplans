@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ProjectList } from './components/ProjectList';
+import { WeekGrid } from './components/WeekGrid';
 import { sampleWeek } from './fixtures/sampleWeek';
 
 import './App.css';
 import type { WeekPlan } from './core/types';
-import { toggleTask } from './core/projects';
+import { toggleSubtask, toggleTask } from './core/projects';
 
 type View = 'plan' | 'stats' | 'archive';
 
@@ -14,6 +15,10 @@ export default function App() {
 
     function handleToggleTask(taskId: string) {
         setPlan((current) => toggleTask(current, taskId));
+    }
+
+    function handleToggleSubtask(subtaskId: string) {
+        setPlan((current) => toggleSubtask(current, subtaskId));
     }
     return (
         <>
@@ -39,10 +44,10 @@ export default function App() {
             </nav>
             <main className="pane">
                 {view === 'plan' && (
-                    <div>
-                        {' '}
+                    <>
                         <ProjectList projects={plan.projects} onToggleTask={handleToggleTask} />
-                    </div>
+                        <WeekGrid projects={plan.projects} onToggleSubtask={handleToggleSubtask} />
+                    </>
                 )}
                 {view === 'stats' && <div>stats pane</div>}
                 {view === 'archive' && <div>archive pane</div>}
