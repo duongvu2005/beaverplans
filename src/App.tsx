@@ -13,7 +13,7 @@ export default function App() {
     const [plan, setPlan] = useState<WeekPlan>(sampleWeek);
 
     function handleToggleTask(taskId: string) {
-        setPlan(current => toggleTask(current, taskId));
+        setPlan((current) => toggleTask(current, taskId));
     }
     return (
         <>

@@ -1,5 +1,6 @@
 export type ParsedDeadline =
-    { ok: true; date: Date; hasTime: boolean } | { ok: false; reason: 'empty' | 'invalid' };
+    | { readonly ok: true; readonly date: Date; readonly hasTime: boolean }
+    | { readonly ok: false; readonly reason: 'empty' | 'invalid' };
 
 /**
  * Interprets a deadline string as a local deadline, or reports why it
