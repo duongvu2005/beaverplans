@@ -5,7 +5,16 @@ import { sampleWeek } from './fixtures/sampleWeek';
 
 import './App.css';
 import type { WeekPlan } from './core/types';
-import { toggleSubtask, toggleTask } from './core/projects';
+import {
+    addProject,
+    addTask,
+    removeProject,
+    removeTask,
+    setProjectName,
+    setTaskName,
+    toggleSubtask,
+    toggleTask,
+} from './core/projects';
 
 type View = 'plan' | 'stats' | 'archive';
 
@@ -19,6 +28,30 @@ export default function App() {
 
     function handleToggleSubtask(subtaskId: string) {
         setPlan((current) => toggleSubtask(current, subtaskId));
+    }
+
+    function handleAddProject() {
+        setPlan((current) => addProject(current, crypto.randomUUID()));
+    }
+
+    function handleAddTask(projectId: string) {
+        setPlan((current) => addTask(current, projectId, crypto.randomUUID()));
+    }
+
+    function handleRenameTask(taskId: string, name: string) {
+        setPlan((current) => setTaskName(current, taskId, name));
+    }
+
+    function handleRenameProject(projectId: string, name: string) {
+        setPlan((current) => setProjectName(current, projectId, name));
+    }
+
+    function handleRemoveProject(projectId: string) {
+        setPlan((current) => removeProject(current, projectId));
+    }
+
+    function handleRemoveTask(taskId: string) {
+        setPlan((current) => removeTask(current, taskId));
     }
     return (
         <>
@@ -45,7 +78,16 @@ export default function App() {
             <main className="pane">
                 {view === 'plan' && (
                     <div className="plan-layout">
-                        <ProjectList projects={plan.projects} onToggleTask={handleToggleTask} />
+                        <ProjectList
+                            projects={plan.projects}
+                            onToggleTask={handleToggleTask}
+                            onAddProject={handleAddProject}
+                            onAddTask={handleAddTask}
+                            onRenameProject={handleRenameProject}
+                            onRenameTask={handleRenameTask}
+                            onRemoveProject={handleRemoveProject}
+                            onRemoveTask={handleRemoveTask}
+                        />
                         <WeekGrid projects={plan.projects} onToggleSubtask={handleToggleSubtask} />
                     </div>
                 )}

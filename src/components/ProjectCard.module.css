@@ -6,16 +6,156 @@
     margin-bottom: var(--sp-3);
 }
 
+/* header row: grip beside the project name */
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-2);
+}
+
+/* seamless inline-edit input (old-app .mt-title): looks like text, editable in
+   place, no border/background/focus box. */
 .name {
-    margin: 0 0 var(--sp-2);
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 2px 0;
+    border: none;
+    background: none;
+    outline: none;
     font-family: var(--display);
     font-size: var(--fs-title);
     font-weight: 600;
+    letter-spacing: -0.01em; /* old app tightened the title slightly */
     color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.name::placeholder {
+    color: var(--ink-faint);
+}
+
+/* trailing action group: the ◷ set-deadline button + the × delete, hover-revealed. */
+.actions {
+    flex: none;
+    display: flex;
+    gap: 2px;
+}
+
+/* hover-revealed icon button (old-app .iconbtn). Reserved slot, neutral hover. */
+.iconBtn {
+    flex: none;
+    appearance: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0; /* iOS Safari gives buttons a default padding that shifts the icon */
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    color: var(--ink-faint);
+    opacity: 0;
+    transition:
+        opacity 0.12s ease,
+        background-color 0.13s,
+        color 0.13s;
+}
+.iconBtn svg {
+    display: block;
+    width: var(--icon-size);
+    height: var(--icon-size);
+}
+.header:hover .iconBtn {
+    opacity: 1;
+}
+.iconBtn:hover {
+    background: var(--line);
+    color: var(--ink);
+}
+.iconBtn:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* drag handle — the <Grip> component (Material "drag_indicator" SVG, fill via
+   currentColor). Reserved gutter: always occupies its slot, transparent until
+   the header is hovered, so the header never shifts. Not wired for dragging yet. */
+.grip {
+    flex: none;
+    width: var(--grip-size);
+    height: var(--grip-size);
+    color: var(--ink-faint);
+    opacity: 0;
+    cursor: grab;
+    transition: opacity 0.12s ease;
+}
+.header:hover .grip {
+    opacity: 0.55;
+}
+.header:hover .grip:hover {
+    opacity: 0.9;
+}
+.grip:active {
+    cursor: grabbing;
 }
 
 .list {
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+/* quiet "+ add task" row (old-app .addsub). Reproduces a row's columns — a
+   grip-width spacer, then the + in a checkbox-width box — so the + lands in the
+   checkbox column and the label lines up under task names, no magic offset. */
+.addTask {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    width: calc(100% + 2 * var(--sp-2));
+    padding: var(--sp-1) var(--sp-2);
+    margin: 0 calc(-1 * var(--sp-2));
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: var(--fs-body);
+    color: var(--ink-faint);
+    border-radius: var(--r);
+    transition:
+        background-color 0.12s,
+        color 0.12s;
+}
+.addTask:hover {
+    background: var(--hover-neutral);
+    color: var(--ink-soft);
+}
+.addTask .spacer {
+    flex: none;
+    width: var(--grip-size);
+}
+.addTask .plus {
+    flex: none;
+    width: var(--check-size);
+    height: var(--check-size);
+    display: grid;
+    place-items: center;
+    font-size: 17px;
+    line-height: 1;
+}
+
+/* touch devices (no hover) OR narrow phone widths — reveal the grip + action
+   buttons so they're reachable without a pointer. */
+@media (hover: none), (max-width: 640px) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
 }

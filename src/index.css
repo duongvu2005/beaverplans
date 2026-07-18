@@ -14,6 +14,7 @@
     --ink-faint: #928b80; /* labels, counts, hints */
     --line: #e2ddd2; /* borders */
     --line-strong: #d2ccbe;
+    --hover-neutral: #f6f3ec; /* neutral row hover */
 
     /* accent + status */
     --accent: #b5482e; /* terracotta: active, focus, actions */
@@ -22,10 +23,10 @@
     --good-soft: #dde7da;
 
     /* type — three clear roles:
-     display (Baloo 2, rounded sans) = wordmark + project/task titles;
+     display (Hanken Grotesk, humanist sans) = wordmark + project/task titles;
      body (Nunito sans) = descriptions + general reading text;
      chrome (JetBrains Mono) = uppercase labels, counts, day names, buttons. */
-    --display: 'Baloo 2', system-ui, sans-serif;
+    --display: 'Hanken Grotesk', system-ui, sans-serif;
     --sans: 'Nunito', system-ui, -apple-system, sans-serif;
     --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
@@ -59,12 +60,21 @@
        --fs-section display: a section / pane heading */
     --fs-label: 11px;
     --fs-body: 13px;
-    --fs-row: 15px;
-    --fs-title: 16px;
+    --fs-row: 15.5px;
+    --fs-title: 18px;
     --fs-section: 17px;
 
     /* shape / metrics */
     --tabbar-h: 52px; /* approx height of the phone bottom bar; used to pad the pane */
+
+    /* tree column widths — single source of truth so a row's grip/checkbox and
+       the "+ add task" row's spacer/plus stay aligned by construction. */
+    --grip-size: 16px;
+    --check-size: 18px;
+
+    /* size of the action glyphs (delete ×, editor, deadline) inside the 26px
+       icon buttons — one knob scales all three. ~1/3 of the button. */
+    --icon-size: 13px;
 
     font: 16px/1.5 var(--sans);
     color-scheme: light; /* default is the light theme; native controls follow it */
@@ -86,6 +96,7 @@
     --ink-faint: #847d70;
     --line: #332f29;
     --line-strong: #463f37;
+    --hover-neutral: #2a2621;
     --accent: #d46a4e;
     --accent-soft: #3a2a23;
     --good: #7ba874;

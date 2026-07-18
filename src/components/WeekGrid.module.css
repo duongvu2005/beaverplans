@@ -2,7 +2,7 @@
    minmax(0,1fr) stops long entries from blowing out a column's width. */
 .grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr); /* not bare 1fr: let the column shrink below content */
     gap: var(--sp-2);
 }
 

@@ -1,0 +1,26 @@
+/* "+ add project" (old-app .addmain): a full-width dashed button under the cards
+   that appends a blank project; goes terracotta on hover. */
+.addProject {
+    width: 100%;
+    padding: var(--sp-3);
+    border: 1.4px dashed var(--line-strong);
+    border-radius: var(--r);
+    background: none;
+    cursor: pointer;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition:
+        border-color 0.15s,
+        color 0.15s;
+}
+.addProject:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.addProject:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}

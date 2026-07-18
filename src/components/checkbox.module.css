@@ -5,8 +5,8 @@
     appearance: none;
     -webkit-appearance: none;
     flex: none;
-    width: 18px;
-    height: 18px;
+    width: var(--check-size);
+    height: var(--check-size);
     margin: 0;
     display: grid;
     place-content: center;
@@ -15,10 +15,6 @@
     background: var(--paper);
     cursor: pointer;
     transition: 0.15s;
-}
-
-.box:hover:not(:disabled) {
-    border-color: var(--accent);
 }
 
 .box:checked {

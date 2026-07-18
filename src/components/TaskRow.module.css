@@ -1,8 +1,162 @@
+/* full-bleed hover highlight (old-app .sub): horizontal padding + a matching
+   negative margin, so the grip still starts at the card edge but the rounded
+   highlight extends into the card's padding. */
 .row {
     display: flex;
     align-items: center;
     gap: var(--sp-2);
-    padding: var(--sp-1) 0;
-    font-size: var(--fs-body);
-    color: var(--ink-soft);
+    padding: var(--sp-1) var(--sp-2);
+    margin: 0 calc(-1 * var(--sp-2));
+    border-radius: var(--r);
+    transition: background-color 0.12s;
+}
+.row:hover {
+    background: var(--hover-neutral);
+}
+
+/* seamless inline-edit input (old-app .sub-title): display font at the row-title
+   scale (15.5px), editable in place, no border/background/focus box. */
+.name {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 2px 0;
+    border: none;
+    background: none;
+    outline: none;
+    font-family: var(--display);
+    font-size: var(--fs-row);
+    font-weight: 500;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.name::placeholder {
+    color: var(--ink-faint);
+}
+
+/* assign-days CTA (old-app .assignhint): shown for a task with no subtasks — a
+   terracotta prompt whose → arrow appears on row hover. Opens the editor. */
+.assignHint {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    appearance: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--accent);
+    padding: 2px 0;
+    opacity: 0.85;
+    transition: opacity 0.13s;
+}
+.assignHint:hover {
+    opacity: 1;
+}
+.arrow {
+    display: none;
+    font-size: 13px;
+    line-height: 1;
+    transform: translateY(-0.5px);
+}
+.row:hover .arrow {
+    display: inline-block;
+}
+
+/* trailing action group: the ◳ editor button + the × delete, hover-revealed. */
+.actions {
+    flex: none;
+    display: flex;
+    gap: 2px;
+}
+
+/* hover-revealed icon button (old-app .iconbtn). Reserved slot, neutral hover. */
+.iconBtn {
+    flex: none;
+    appearance: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0; /* iOS Safari gives buttons a default padding that shifts the icon */
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    color: var(--ink-faint);
+    opacity: 0;
+    transition:
+        opacity 0.12s ease,
+        background-color 0.13s,
+        color 0.13s;
+}
+.iconBtn svg {
+    display: block;
+    width: var(--icon-size);
+    height: var(--icon-size);
+}
+.row:hover .iconBtn {
+    opacity: 1;
+}
+.iconBtn:hover {
+    background: var(--line);
+    color: var(--ink);
+}
+.iconBtn:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* undated task (no subtasks): the ◳ lights up as a terracotta "assign days"
+   call-to-action (old-app .assign-cta). */
+.assignCta {
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+.assignCta:hover {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+/* drag handle — the <Grip> component (Material "drag_indicator" SVG, fill via
+   currentColor). Reserved gutter: always occupies its slot, transparent until
+   the row is hovered, so the row never shifts. Not wired for dragging yet. */
+.grip {
+    flex: none;
+    width: var(--grip-size);
+    height: var(--grip-size);
+    color: var(--ink-faint);
+    opacity: 0;
+    cursor: grab;
+    transition: opacity 0.12s ease;
+}
+.row:hover .grip {
+    opacity: 0.55;
+}
+.row:hover .grip:hover {
+    opacity: 0.9;
+}
+.grip:active {
+    cursor: grabbing;
+}
+
+/* touch devices (no hover) OR narrow phone widths — reveal the affordances that
+   are otherwise shown on row hover, so everything is reachable without a pointer.
+   Placed AFTER the base .grip rule so it wins at equal specificity. */
+@media (hover: none), (max-width: 640px) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
+    /* no arrow on touch — the "assign days" label alone reads fine without hover */
 }
