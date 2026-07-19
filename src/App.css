@@ -75,6 +75,7 @@
 /* The week column holds two views of the same week. Below 1000px the phone
    focus-day (day rail + one day) shows and the 7-col grid is hidden; at 1000px+
    they swap. */
+.projectView,
 .weekView {
     min-width: 0;
 }

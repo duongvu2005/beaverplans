@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ProjectList } from './components/ProjectList';
+import { ProjectView } from './components/ProjectView';
 import { WeekView } from './components/WeekView';
 import { sampleWeek } from './fixtures/sampleWeek';
 
@@ -78,7 +78,7 @@ export default function App() {
             <main className="pane">
                 {view === 'plan' && (
                     <div className="plan-layout">
-                        <ProjectList
+                        <ProjectView
                             projects={plan.projects}
                             onToggleTask={handleToggleTask}
                             onAddProject={handleAddProject}
