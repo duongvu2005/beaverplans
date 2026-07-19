@@ -66,8 +66,8 @@
 
 @media (min-width: 1000px) {
     .plan-layout {
-        grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
-        max-width: 1280px;
+        grid-template-columns: minmax(0, 25rem) minmax(0, 1fr);
+        max-width: 1440px;
         margin-inline: auto;
     }
 }

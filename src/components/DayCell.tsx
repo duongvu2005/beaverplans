@@ -9,18 +9,37 @@ type DayCellProps = {
 };
 
 export function DayCell({ entry, isMissed, onToggleSubtask }: DayCellProps) {
+    const { subtask, taskName, projectName } = entry;
+    const cellClass = [
+        styles.cell,
+        subtask.isDone && !isMissed && styles.done,
+        isMissed && styles.missed,
+    ]
+        .filter(Boolean)
+        .join(' ');
     return (
-        <li className={styles.cell}>
+        <li className={cellClass}>
             <input
                 type="checkbox"
-                className={check.box}
-                checked={entry.subtask.isDone && !isMissed}
+                className={isMissed ? `${check.box} ${styles.missedCheck}` : check.box}
+                checked={subtask.isDone && !isMissed}
                 disabled={isMissed}
-                onChange={() => onToggleSubtask(entry.subtask.id)}
+                onChange={() => onToggleSubtask(subtask.id)}
             />
             <div className={styles.text}>
-                <span className={styles.project}>{entry.projectName}</span>
-                <span className={styles.task}>{entry.taskName}</span>
+                <div className={styles.eyebrow}>
+                    <span className={styles.project}>{projectName}</span>
+                    <span className={styles.weight} aria-label={`weight ${subtask.weight} of 3`}>
+                        {[1, 2, 3].map((n) => (
+                            <span
+                                key={n}
+                                className={n <= subtask.weight ? `${styles.pip} ${styles.on}` : styles.pip}
+                            />
+                        ))}
+                    </span>
+                </div>
+                <div className={styles.task}>{taskName}</div>
+                {isMissed && <span className={styles.missTag}>missed</span>}
             </div>
         </li>
     );

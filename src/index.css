@@ -1,7 +1,8 @@
 /* Global base: design tokens, reset, element defaults.
    A warm paper-and-ink palette with a terracotta accent and a muted green for
    "done"; theming is a change of token values, not a rewrite.
-   Fonts (Baloo 2 / Nunito / JetBrains Mono) are loaded via the <link> in index.html.
+   Fonts (Be Vietnam Pro / JetBrains Mono) are loaded via the <link> in index.html;
+   Hanken Grotesk stays loaded too so the display face can be toggled.
    The light theme is the default regardless of OS; the dark palette applies only
    under [data-theme="dark"], so a manual theme toggle can layer on later. */
 
@@ -19,15 +20,22 @@
     /* accent + status */
     --accent: #b5482e; /* terracotta: active, focus, actions */
     --accent-soft: #e9d9d2; /* accent tint background */
+    --hover-accent: #f7ece8; /* pale terracotta wash: a moved/missed cell */
     --good: #4f7a4a; /* done / complete */
     --good-soft: #dde7da;
 
-    /* type — three clear roles:
-     display (Hanken Grotesk, humanist sans) = wordmark + project/task titles;
-     body (Nunito sans) = descriptions + general reading text;
-     chrome (JetBrains Mono) = uppercase labels, counts, day names, buttons. */
-    --display: 'Hanken Grotesk', system-ui, sans-serif;
-    --sans: 'Nunito', system-ui, -apple-system, sans-serif;
+    /* type — two families, two roles:
+     Be Vietnam Pro (humanist sans) carries everything readable — display titles
+     (heavier, via the weight tokens) and body/reading text (--sans, regular);
+     JetBrains Mono (chrome) = uppercase labels, counts, day names, buttons.
+     Each display face reads best at its own weight, so the family and the two
+     weight tokens below travel together — swap all three to change the display
+     face. Hanken Grotesk is kept loaded for a one-block toggle (see alt line). */
+    --display: 'Be Vietnam Pro', system-ui, sans-serif;
+    --w-title: 600; /* project card names, section headings */
+    --w-row: 400; /* task / subtask row titles */
+    /* toggle back to Hanken: --display:'Hanken Grotesk',…; --w-title:600; --w-row:500; */
+    --sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
     --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
     /* spacing scale — one 4px base. Everything (padding, margins, gaps) picks a
@@ -60,9 +68,9 @@
        --fs-section display: a section / pane heading */
     --fs-label: 11px;
     --fs-body: 13px;
-    --fs-row: 15.5px;
-    --fs-title: 18px;
-    --fs-section: 17px;
+    --fs-row: 14px;
+    --fs-title: 16px;
+    --fs-section: 15px;
 
     /* shape / metrics */
     --tabbar-h: 52px; /* approx height of the phone bottom bar; used to pad the pane */
@@ -99,6 +107,7 @@
     --hover-neutral: #2a2621;
     --accent: #d46a4e;
     --accent-soft: #3a2a23;
+    --hover-accent: #31251f;
     --good: #7ba874;
     --good-soft: #2a3626;
 }

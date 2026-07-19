@@ -26,7 +26,7 @@
     outline: none;
     font-family: var(--display);
     font-size: var(--fs-row);
-    font-weight: 500;
+    font-weight: var(--w-row);
     color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
