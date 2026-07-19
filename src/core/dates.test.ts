@@ -19,6 +19,7 @@ import {
     dayStatusOf,
     weekStatusOf,
     isValidWeekStart,
+    todayInWeek,
 } from './dates';
 
 describe('weekStartOf', () => {
@@ -389,5 +390,60 @@ describe('isValidWeekStart', () => {
 
     it('covers a garbage string', () => {
         expect(isValidWeekStart('hello')).toBe(false);
+    });
+});
+
+/*
+ * todayInWeek(weekStart) — the weekday of weekStart's week that is today, or
+ * undefined when today is in a different week.
+ * Testing strategy:
+ *   partition on weekStart's week vs today: current | future | past
+ *   within the current week, partition on today's weekday: Monday (start) |
+ *     midweek | Sunday (end) — Sunday is the getDay()===0 trap
+ *   boundary: today = Sunday but weekStart = the following Monday (different week)
+ *   boundary: year-boundary week; DST week
+ * Frozen clock via vi.setSystemTime; TZ pinned to America/New_York in vite config.
+ */
+describe('todayInWeek', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('covers current week, midweek', () => {
+        vi.setSystemTime(new Date('2026-07-16T12:00:00')); // Thu
+        expect(todayInWeek('2026-07-13')).toBe('thu');
+    });
+
+    it('covers current week, Monday start', () => {
+        vi.setSystemTime(new Date('2026-07-13T12:00:00')); // Mon
+        expect(todayInWeek('2026-07-13')).toBe('mon');
+    });
+
+    it('covers current week, Sunday end (getDay()===0 trap)', () => {
+        vi.setSystemTime(new Date('2026-07-19T12:00:00')); // Sun
+        expect(todayInWeek('2026-07-13')).toBe('sun');
+    });
+
+    it('covers a future week -> undefined', () => {
+        vi.setSystemTime(new Date('2026-07-16T12:00:00'));
+        expect(todayInWeek('2026-07-20')).toBeUndefined();
+    });
+
+    it('covers a past week -> undefined', () => {
+        vi.setSystemTime(new Date('2026-07-16T12:00:00'));
+        expect(todayInWeek('2026-07-06')).toBeUndefined();
+    });
+
+    it('covers Sunday belonging to its own week, not the next', () => {
+        vi.setSystemTime(new Date('2026-07-19T12:00:00')); // Sun in the 07-13 week
+        expect(todayInWeek('2026-07-20')).toBeUndefined();
+    });
+
+    it('covers a year-boundary week', () => {
+        vi.setSystemTime(new Date('2026-01-01T12:00:00')); // Thu, in the Mon 2025-12-29 week
+        expect(todayInWeek('2025-12-29')).toBe('thu');
+    });
+
+    it('covers a DST-week Sunday', () => {
+        vi.setSystemTime(new Date('2026-03-08T12:00:00')); // spring-forward Sun, in the Mon 2026-03-02 week
+        expect(todayInWeek('2026-03-02')).toBe('sun');
     });
 });

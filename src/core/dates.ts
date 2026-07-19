@@ -200,3 +200,22 @@ export function isValidWeekStart(key: DateKey): boolean {
     }
     return true;
 }
+
+/**
+ * The day of a given week that is today, or undefined if that week does not
+ * contain today.
+ *
+ * @param weekStart  the Monday (local YYYY-MM-DD) of the week in question
+ * @returns  the DayOfWeek that is today, if weekStart's week contains today;
+ *           otherwise undefined
+ *
+ * Impure: reads the system clock.
+ */
+export function todayInWeek(weekStart: DateKey): DayOfWeek | undefined {
+    const todayDate = new Date();
+    if (weekStartOf(todayDate) !== weekStart) {
+        return undefined;
+    }
+    const MON = 1; // getDay() value for Monday
+    return WEEK[(todayDate.getDay() + DAYS_PER_WEEK - MON) % DAYS_PER_WEEK];
+}
