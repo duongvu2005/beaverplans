@@ -1,11 +1,19 @@
-/* The day columns wrap by available width: a min column width lets the grid fit
-   as many as it can and flow the rest onto a second row — so it reads 7-across
-   when wide and settles into 4/3 (then fewer) as it narrows. auto-fit stretches
-   the used columns to fill and drops empty trailing tracks. Columns stretch to
-   equal height within each row (see DayColumn's min-height floor). */
+/* The 7 day columns show as a single row when the week pane is wide enough, and
+   jump straight to a 4-3 layout when it isn't — no in-between 6- or 5-column
+   steps. The switch is a container query on the week pane (its width, not the
+   viewport's, is what matters inside the two-pane layout — see .weekGridPane's
+   container-type). Columns stretch to equal height within each row (see
+   DayColumn's min-height floor). */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--sp-2);
     align-items: stretch;
+}
+
+/* enough room for 7 comfortable columns -> one row. Tune the threshold to taste. */
+@container (min-width: 960px) {
+    .grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
 }

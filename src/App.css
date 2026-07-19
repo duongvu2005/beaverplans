@@ -83,6 +83,8 @@
 
 .weekGridPane {
     min-width: 0;
+    /* the week grid's column count keys off this pane's width, not the viewport */
+    container-type: inline-size;
 }
 
 .focusPane {

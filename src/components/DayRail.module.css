@@ -41,7 +41,7 @@
 
 /* weighted-done bar under the letter */
 .bar {
-    width: 22px;
+    width: 60%; /* a fraction of the pill, so it scales with the pill width */
     height: 3px;
     border-radius: 2px;
     background: var(--line-strong);
