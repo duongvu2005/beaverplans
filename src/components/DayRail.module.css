@@ -1,0 +1,85 @@
+/* The 7-day rail for the focus-day (phone) plan view: one tappable pill per
+   weekday. A pill shows the weekday letter and a weighted-done bar. Two
+   independent marks stack — today = terracotta ring, selected = terracotta
+   fill; when today is the selected day the fill wins and the ring sits just
+   outside so "today" still reads. */
+.rail {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.pill {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    border-radius: var(--r);
+    padding: 8px 0 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition:
+        border-color 0.12s,
+        background-color 0.12s;
+}
+
+.letter {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--ink-soft);
+}
+
+/* weighted-done bar under the letter */
+.bar {
+    width: 22px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    overflow: hidden;
+}
+
+.fill {
+    display: block;
+    height: 100%;
+    background: var(--good);
+}
+
+/* today: terracotta ring, letter goes accent */
+.today {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+.today .letter {
+    color: var(--accent);
+}
+
+/* selected: terracotta fill */
+.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+.selected .letter {
+    color: var(--paper);
+}
+.selected .bar {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* today AND selected: fill wins; the ring sits just outside (a gap in page bg) */
+.today.selected {
+    box-shadow:
+        0 0 0 2px var(--bg),
+        0 0 0 3px var(--accent);
+}
+.today.selected .letter {
+    color: var(--paper);
+}
+
+.pill:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
