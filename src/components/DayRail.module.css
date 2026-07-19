@@ -25,6 +25,12 @@
         background-color 0.12s;
 }
 
+/* hovering a non-focused day hints it's clickable — a neutral wash, not the
+   terracotta fill (that's reserved for the selected day). */
+.pill:not(.selected):hover {
+    background: var(--hover-neutral);
+}
+
 .letter {
     font-family: var(--mono);
     font-size: 12px;
@@ -48,10 +54,11 @@
     background: var(--good);
 }
 
-/* today: terracotta ring, letter goes accent */
+/* today: terracotta ring drawn INSIDE (inset) so the pill keeps the same
+   footprint as the others; the accent border + inset make a 2px ring. */
 .today {
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
 }
 .today .letter {
     color: var(--accent);
@@ -69,11 +76,10 @@
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* today AND selected: fill wins; the ring sits just outside (a gap in page bg) */
+/* today AND selected: fill wins; mark "today" with a light ring INSIDE the fill
+   (inset), again keeping the footprint identical to the other pills. */
 .today.selected {
-    box-shadow:
-        0 0 0 2px var(--bg),
-        0 0 0 3px var(--accent);
+    box-shadow: inset 0 0 0 1.5px var(--paper);
 }
 .today.selected .letter {
     color: var(--paper);

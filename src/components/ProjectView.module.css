@@ -1,0 +1,20 @@
+/* The projects column's header: a mono eyebrow. Matches the week header's height
+   and top-aligns, so the two eyebrows sit on the same line and both column bodies
+   start together; the space below is a slot for copy/paste-plan later. */
+.head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    /* single row, matched to the week header so the two eyebrows align; the
+       32px row is taller than the text, so that gap separates it from the body */
+    min-height: 32px;
+}
+
+.eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}

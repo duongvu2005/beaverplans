@@ -1,14 +1,11 @@
-/* Mobile-first: days stack in one column; at >=720px they become the 7-up grid.
-   minmax(0,1fr) stops long entries from blowing out a column's width. */
+/* The day columns wrap by available width: a min column width lets the grid fit
+   as many as it can and flow the rest onto a second row — so it reads 7-across
+   when wide and settles into 4/3 (then fewer) as it narrows. auto-fit stretches
+   the used columns to fill and drops empty trailing tracks. Columns stretch to
+   equal height within each row (see DayColumn's min-height floor). */
 .grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr); /* not bare 1fr: let the column shrink below content */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: var(--sp-2);
-}
-
-@media (min-width: 720px) {
-    .grid {
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        align-items: start;
-    }
+    align-items: stretch;
 }

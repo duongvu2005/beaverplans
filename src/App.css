@@ -72,9 +72,10 @@
     }
 }
 
-/* The week column holds two views of the same week. Below 1000px the phone
-   focus-day (day rail + one day) shows and the 7-col grid is hidden; at 1000px+
-   they swap. */
+/* The week column holds two views of the same week. Below 1000px it is always
+   the phone focus-day (rail + one day); the 7-col grid is hidden and the Week/Day
+   mode is irrelevant. At 1000px+ the mode (set on .weekView[data-mode]) decides
+   which of the two panes shows. */
 .projectView,
 .weekView {
     min-width: 0;
@@ -94,10 +95,19 @@
     .weekGridPane {
         display: none;
     }
+    /* stacked (1-column) layout leads with the day view — rail + focused day —
+       and puts the projects tree below, since the day is the daily driver. The
+       2-pane layout keeps the tree on the left (no order override there). */
+    .weekView {
+        order: -1;
+    }
 }
 
 @media (min-width: 1000px) {
-    .focusPane {
+    .weekView[data-mode='grid'] .focusPane {
+        display: none;
+    }
+    .weekView[data-mode='focus'] .weekGridPane {
         display: none;
     }
 }

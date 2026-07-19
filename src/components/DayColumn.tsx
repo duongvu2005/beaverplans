@@ -1,16 +1,25 @@
+import type { DayOfWeek } from '../core/types';
 import type { DaySchedule } from '../core/daySchedule';
 import { DayCell } from './DayCell';
 import styles from './DayColumn.module.css';
 
 type DayColumnProps = {
     daySchedule: DaySchedule;
+    onFocusDay: (day: DayOfWeek) => void;
     onToggleSubtask: (subtaskId: string) => void;
 };
 
-export function DayColumn({ daySchedule, onToggleSubtask }: DayColumnProps) {
+export function DayColumn({ daySchedule, onFocusDay, onToggleSubtask }: DayColumnProps) {
     return (
         <section className={styles.column}>
-            <h4 className={styles.day}>{daySchedule.day}</h4>
+            <button
+                type="button"
+                className={styles.day}
+                onClick={() => onFocusDay(daySchedule.day)}
+                title="Focus this day"
+            >
+                {daySchedule.day}
+            </button>
             <ul className={styles.list}>
                 {daySchedule.items.map((entry) => (
                     <DayCell

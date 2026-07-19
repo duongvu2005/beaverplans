@@ -3,10 +3,22 @@
     background: var(--paper);
     border: 1px solid var(--line);
     border-radius: var(--r);
+    /* a floor so a near-empty week still reads as columns, not slivers; the grid
+       stretches every column past this to match the tallest one */
+    min-height: 9rem;
 }
 
+/* the day name doubles as a button: click to focus that day. Reset the native
+   button and keep the mono label; no hover wash by request. */
 .day {
+    display: block;
+    width: 100%;
     margin: 0 0 var(--sp-2);
+    padding: 3px 0;
+    appearance: none;
+    border: none;
+    background: none;
+    cursor: pointer;
     font-family: var(--mono);
     font-size: var(--fs-label);
     font-weight: 500;
@@ -14,6 +26,15 @@
     letter-spacing: 0.08em;
     color: var(--ink-faint);
     text-align: center;
+    border-radius: var(--r-chip);
+    transition:
+        background-color 0.12s,
+        color 0.12s;
+}
+
+.day:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
 }
 
 .list {

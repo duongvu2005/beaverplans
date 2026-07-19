@@ -1,0 +1,63 @@
+/* The week column's header (desktop-only chrome): a mono eyebrow over a line
+   that reflects the mode — the date range in week view, or which day is focused
+   plus a "show all days" link back, in day view. On a phone the week column is
+   just the focus view, which carries its own day heading. */
+.head {
+    display: none;
+}
+
+@media (min-width: 1000px) {
+    .head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        /* single row (eyebrow left, hint/link right) matched to the projects
+           header so the two eyebrows align and neither reserves a blank line.
+           The 32px row is taller than the ~18px text, so that gap alone
+           separates the header from the body — no margin needed. */
+        min-height: 32px;
+    }
+}
+
+.eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}
+
+.line {
+    font-family: var(--display);
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+
+.line b {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+/* the "show all days" link back to the grid */
+.link {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.link:hover {
+    opacity: 0.8;
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+}

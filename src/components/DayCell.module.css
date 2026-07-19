@@ -40,7 +40,7 @@
 
 .task {
     font-family: var(--display);
-    font-size: 15px;
+    font-size: var(--fs-row);
     font-weight: var(--w-row);
     line-height: 1.3;
     color: var(--ink);
@@ -95,13 +95,10 @@
     text-decoration-color: var(--line-strong);
 }
 
-/* missed: a day the subtask was moved OFF — terracotta wash, soft border, struck
-   title, dashed faded check, a small "missed" marker. */
-.cell.missed {
-    background: var(--hover-accent);
-    border-color: var(--accent-soft);
-}
-
+/* missed: a day the subtask was moved OFF — struck title, dashed faded check, a
+   small "missed" marker. The terracotta wash is left to the boxed compact tile
+   (see .cell.compact.missed); the borderless roomy focus row would render it as
+   a hard-edged rectangle, so it relies on the strike + tag instead. */
 .cell.missed .task {
     color: var(--ink-soft);
     text-decoration: line-through;
@@ -121,9 +118,8 @@
     border-radius: var(--r-chip);
 }
 
-/* .cell.compact sets a background/border, and comes after .cell.missed in the
-   file at equal specificity — so without this, a compact missed tile would lose
-   its wash. Re-apply it at higher specificity. */
+/* the terracotta wash lives here, on the boxed tile only: rounded corners and a
+   border contain it, unlike the borderless roomy row. */
 .cell.compact.missed {
     background: var(--hover-accent);
     border-color: var(--accent-soft);

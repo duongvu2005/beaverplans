@@ -18,9 +18,10 @@ type DayRailProps = {
     selectedDay: DayOfWeek;
     todayDay: DayOfWeek | undefined;
     onSelectDay: (day: DayOfWeek) => void;
+    onBackToGrid: () => void;
 };
 
-export function DayRail({ byDay, selectedDay, todayDay, onSelectDay }: DayRailProps) {
+export function DayRail({ byDay, selectedDay, todayDay, onSelectDay, onBackToGrid }: DayRailProps) {
     return (
         <div className={styles.rail}>
             {byDay.map(({ day, assigned, done }) => {
@@ -38,7 +39,7 @@ export function DayRail({ byDay, selectedDay, todayDay, onSelectDay }: DayRailPr
                         type="button"
                         className={classes}
                         aria-pressed={day === selectedDay}
-                        onClick={() => onSelectDay(day)}
+                        onClick={() => (day === selectedDay ? onBackToGrid() : onSelectDay(day))}
                     >
                         <span className={styles.letter}>{LETTER[day]}</span>
                         <span className={styles.bar}>
