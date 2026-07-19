@@ -17,6 +17,7 @@ export function DayColumn({ daySchedule, onToggleSubtask }: DayColumnProps) {
                         key={entry.subtask.id}
                         entry={entry}
                         isMissed={daySchedule.day !== entry.subtask.assignedDay}
+                        compact={true}
                         onToggleSubtask={onToggleSubtask}
                     />
                 ))}

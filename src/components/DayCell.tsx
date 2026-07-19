@@ -5,13 +5,15 @@ import styles from './DayCell.module.css';
 type DayCellProps = {
     entry: DayEntry;
     isMissed: boolean;
+    compact?: boolean;
     onToggleSubtask: (subtaskId: string) => void;
 };
 
-export function DayCell({ entry, isMissed, onToggleSubtask }: DayCellProps) {
+export function DayCell({ entry, isMissed, compact = false, onToggleSubtask }: DayCellProps) {
     const { subtask, taskName, projectName } = entry;
     const cellClass = [
         styles.cell,
+        compact && styles.compact,
         subtask.isDone && !isMissed && styles.done,
         isMissed && styles.missed,
     ]
@@ -33,12 +35,15 @@ export function DayCell({ entry, isMissed, onToggleSubtask }: DayCellProps) {
                         {[1, 2, 3].map((n) => (
                             <span
                                 key={n}
-                                className={n <= subtask.weight ? `${styles.pip} ${styles.on}` : styles.pip}
+                                className={
+                                    n <= subtask.weight ? `${styles.pip} ${styles.on}` : styles.pip
+                                }
                             />
                         ))}
                     </span>
                 </div>
                 <div className={styles.task}>{taskName}</div>
+                {subtask.description && <span className={styles.desc}>{subtask.description}</span>}
                 {isMissed && <span className={styles.missTag}>missed</span>}
             </div>
         </li>
