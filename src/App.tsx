@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ProjectList } from './components/ProjectList';
-import { WeekGrid } from './components/WeekGrid';
+import { WeekView } from './components/WeekView';
 import { sampleWeek } from './fixtures/sampleWeek';
 
 import './App.css';
@@ -88,7 +88,11 @@ export default function App() {
                             onRemoveProject={handleRemoveProject}
                             onRemoveTask={handleRemoveTask}
                         />
-                        <WeekGrid projects={plan.projects} onToggleSubtask={handleToggleSubtask} />
+                        <WeekView
+                            projects={plan.projects}
+                            weekStart={plan.weekStart}
+                            onToggleSubtask={handleToggleSubtask}
+                        />
                     </div>
                 )}
                 {view === 'stats' && <div>stats pane</div>}

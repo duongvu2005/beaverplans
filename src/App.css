@@ -72,6 +72,35 @@
     }
 }
 
+/* The week column holds two views of the same week. Below 1000px the phone
+   focus-day (day rail + one day) shows and the 7-col grid is hidden; at 1000px+
+   they swap. */
+.weekView {
+    min-width: 0;
+}
+
+.weekGridPane {
+    min-width: 0;
+}
+
+.focusPane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+}
+
+@media (max-width: 999px) {
+    .weekGridPane {
+        display: none;
+    }
+}
+
+@media (min-width: 1000px) {
+    .focusPane {
+        display: none;
+    }
+}
+
 /* --- phone: dock the tab bar to the bottom, spread tabs to full width --- */
 @media (max-width: 640px) {
     .tabs {

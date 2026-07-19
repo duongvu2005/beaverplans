@@ -1,15 +1,13 @@
-import type { Project } from '../core/types';
-import { scheduleByDay } from '../core/daySchedule';
+import type { DaySchedule } from '../core/daySchedule';
 import { DayColumn } from './DayColumn';
 import styles from './WeekGrid.module.css';
 
 type WeekGridProps = {
-    projects: ReadonlyArray<Project>;
+    schedule: ReadonlyArray<DaySchedule>;
     onToggleSubtask: (subtaskId: string) => void;
 };
 
-export function WeekGrid({ projects, onToggleSubtask }: WeekGridProps) {
-    const schedule = scheduleByDay(projects);
+export function WeekGrid({ schedule, onToggleSubtask }: WeekGridProps) {
     return (
         <div className={styles.grid}>
             {schedule.map((daySchedule) => (

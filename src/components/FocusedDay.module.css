@@ -1,0 +1,37 @@
+/* The single focused day beneath the rail (phone plan view): a card holding the
+   selected day's roomy cell list. Empty days show a quiet placeholder. */
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 13px 14px;
+}
+
+.head {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 4px;
+}
+
+.count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin: 0 0 12px;
+}
+
+.list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.empty {
+    font-family: var(--display);
+    font-size: 14px;
+    color: var(--ink-faint);
+    padding: 6px 0 2px;
+}

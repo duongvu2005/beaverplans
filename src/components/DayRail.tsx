@@ -1,7 +1,6 @@
-import type { DayOfWeek, Project } from '../core/types';
-import { progressByDay } from '../core/progress';
+import type { DayOfWeek } from '../core/types';
+import type { DayProgress } from '../core/progress';
 import { percentOf } from '../core/math';
-import { dayStatusOf, todayKey } from '../core/dates';
 import styles from './DayRail.module.css';
 
 const LETTER: Record<DayOfWeek, string> = {
@@ -15,22 +14,20 @@ const LETTER: Record<DayOfWeek, string> = {
 };
 
 type DayRailProps = {
-    projects: ReadonlyArray<Project>;
-    weekStart: string;
+    byDay: ReadonlyArray<DayProgress>;
     selectedDay: DayOfWeek;
+    todayDay: DayOfWeek | undefined;
     onSelectDay: (day: DayOfWeek) => void;
 };
 
-export function DayRail({ projects, weekStart, selectedDay, onSelectDay }: DayRailProps) {
-    const byDay = progressByDay(projects);
-    const today = todayKey();
+export function DayRail({ byDay, selectedDay, todayDay, onSelectDay }: DayRailProps) {
     return (
         <div className={styles.rail}>
             {byDay.map(({ day, assigned, done }) => {
                 const pct = percentOf(done, assigned);
                 const classes = [
                     styles.pill,
-                    dayStatusOf(day, weekStart, today) === 'today' && styles.today,
+                    day === todayDay && styles.today,
                     day === selectedDay && styles.selected,
                 ]
                     .filter(Boolean)
