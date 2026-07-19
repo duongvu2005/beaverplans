@@ -121,11 +121,6 @@
     border-radius: var(--r-chip);
 }
 
-/* boxed tiles sit apart via the column's gap, not a divider */
-.cell.compact + .cell.compact {
-    border-top: none;
-}
-
 /* .cell.compact sets a background/border, and comes after .cell.missed in the
    file at equal specificity — so without this, a compact missed tile would lose
    its wash. Re-apply it at higher specificity. */
