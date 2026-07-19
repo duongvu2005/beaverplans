@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ProjectView } from './components/ProjectView';
 import { WeekView } from './components/WeekView';
 import { sampleWeek } from './fixtures/sampleWeek';
-
+import { newId } from './utils/newId';
 import './App.css';
 import type { WeekPlan } from './core/types';
 import {
@@ -31,11 +31,11 @@ export default function App() {
     }
 
     function handleAddProject() {
-        setPlan((current) => addProject(current, crypto.randomUUID()));
+        setPlan((current) => addProject(current, newId()));
     }
 
     function handleAddTask(projectId: string) {
-        setPlan((current) => addTask(current, projectId, crypto.randomUUID()));
+        setPlan((current) => addTask(current, projectId, newId()));
     }
 
     function handleRenameTask(taskId: string, name: string) {
