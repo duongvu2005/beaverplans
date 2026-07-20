@@ -162,6 +162,22 @@ export function removeSubtask(plan: WeekPlan, subtaskId: string): WeekPlan {
 
 // Modify (producers)
 /**
+ * Replace a task with a new version of it.
+ *
+ * @param plan the current plan
+ * @param taskId the id of the task to replace
+ * @param nextTask the replacement task
+ * @returns a new plan with the same weekStart. If nextTask.id equals taskId and a
+ *          task with that id exists, that task is replaced by nextTask, keeping its
+ *          position among its siblings; the containing project and everything else
+ *          in the plan is unchanged. If nextTask.id does not equal taskId, or no
+ *          task has id taskId, the projects are unchanged.
+ */
+export function replaceTask(plan: WeekPlan, taskId: string, nextTask: Task): WeekPlan {
+    return updateTaskById(plan, taskId, (task) => (taskId === nextTask.id ? nextTask : task));
+}
+
+/**
  * Change the name of a project.
  *
  * @param plan the current plan

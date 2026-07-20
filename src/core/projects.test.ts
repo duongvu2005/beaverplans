@@ -6,6 +6,7 @@ import {
     removeProject,
     removeTask,
     removeSubtask,
+    replaceTask,
     setProjectName,
     setTaskName,
     setTaskDescription,
@@ -606,6 +607,90 @@ describe('removeSubtask', () => {
         // input task still has its subtask and still no isDone (restore happened on a copy)
         expect(plan.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
         expect(plan.projects[0]?.tasks[0]).not.toHaveProperty('isDone');
+    });
+});
+
+describe('replaceTask', () => {
+    /*
+     * Testing strategy:
+     *      - partition on taskId: exists (among siblings) | not found
+     *      - partition on nextTask.id vs taskId: match | mismatch (mismatch -> no-op)
+     *      - partition on nextTask shape vs old: same count | added subtask | removed
+     *        subtask (proves the whole node is swapped, not field-merged)
+     *
+     *      properties checked when replaced:
+     *      - the task at taskId is nextTask, at the same index among its siblings
+     *      - sibling tasks / other projects shared by reference
+     *      - weekStart unchanged; input not mutated
+     */
+
+    it('covers found among siblings: replaces the node, keeps position, shares the rest', () => {
+        const t0 = makeTask('t0');
+        const t1 = makeTask('t1'); // sibling, must stay the same instance
+        const a: Project = { id: 'a', name: 'a', tasks: [t0, t1] };
+        const b = makeProject('b'); // other project, must stay the same instance
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a] };
+        const next: Task = { id: 't0', name: 'renamed', subtasks: [], isDone: true };
+        const result = replaceTask(plan, 't0', next);
+        expect(isValidPlan(result)).toBe(true);
+
+        const tasks = result.projects[1]?.tasks;
+        expect(tasks?.[0]).toBe(next); // replaced, at the same index
+        expect(tasks?.[1]).toBe(t1); // sibling task shared
+        expect(result.projects[0]).toBe(b); // other project shared
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers replacement adds subtasks (leaf -> parent): whole node swapped', () => {
+        const t0 = makeTask('t0'); // leaf, isDone: false
+        const a: Project = { id: 'a', name: 'a', tasks: [t0] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const next: Task = { id: 't0', name: 't0', subtasks: [makeSubtask('s0', 'mon')] };
+        const result = replaceTask(plan, 't0', next);
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]).toBe(next);
+        expect(result.projects[0]?.tasks[0]?.subtasks).toHaveLength(1);
+    });
+
+    it('covers replacement removes subtasks (parent -> leaf): whole node swapped', () => {
+        const parent: Task = { id: 't0', name: 't0', subtasks: [makeSubtask('s0', 'mon')] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const next: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
+        const result = replaceTask(plan, 't0', next);
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]).toBe(next);
+        expect(result.projects[0]?.tasks[0]?.subtasks).toHaveLength(0);
+    });
+
+    it('covers taskId not found: projects unchanged (same instances)', () => {
+        const t0 = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [t0] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const next: Task = { id: 'nope', name: 'x', subtasks: [], isDone: false };
+        const result = replaceTask(plan, 'nope', next);
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]).toBe(a); // project untouched
+    });
+
+    it('covers nextTask.id !== taskId: projects unchanged (no-op)', () => {
+        const t0 = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [t0] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const mismatched: Task = { id: 'other', name: 'x', subtasks: [], isDone: false };
+        const result = replaceTask(plan, 't0', mismatched);
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]).toBe(t0); // untouched
+    });
+
+    it('covers replaced: does not mutate the input plan', () => {
+        const t0 = makeTask('t0');
+        const a: Project = { id: 'a', name: 'a', tasks: [t0] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const next: Task = { id: 't0', name: 'renamed', subtasks: [], isDone: false };
+        replaceTask(plan, 't0', next);
+        expect(plan.projects[0]?.tasks[0]).toBe(t0);
+        expect(t0.name).toBe('t0');
     });
 });
 
