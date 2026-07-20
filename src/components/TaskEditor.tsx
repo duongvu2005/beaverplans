@@ -6,6 +6,7 @@ import { WEEK } from '../core/types';
 import type { Task, Subtask, DayOfWeek } from '../core/types';
 import { newId } from '../utils/newId';
 import styles from './TaskEditor.module.css';
+import { SubtaskRow } from './SubtaskRow';
 
 type TaskEditorProps = {
     task: Task;
@@ -34,6 +35,10 @@ const DAY_NAME: Record<DayOfWeek, string> = {
     sun: 'Sunday',
 };
 
+function makeSubtask(day: DayOfWeek): Subtask {
+    return { id: newId(), isDone: false, assignedDay: day, missedDays: [], weight: 1 };
+}
+
 export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorProps) {
     const stored = task.deadline ?? '';
     const seed = parseDeadline(stored).ok ? stored : ''; // ignore a corrupt stored value
@@ -46,25 +51,35 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
     const activeDays = new Set(subtasks.map((s) => s.assignedDay));
 
     function toggleDay(day: DayOfWeek) {
-        setSubtasks((current) => {
-            if (current.some((s) => s.assignedDay === day)) {
-                return current.filter((s) => s.assignedDay !== day);
-            }
-            const added: Subtask = {
-                id: newId(),
-                isDone: false,
-                assignedDay: day,
-                missedDays: [],
-                weight: 1,
-            };
-            return [...current, added];
-        });
+        setSubtasks((current) =>
+            current.some((s) => s.assignedDay === day)
+                ? current.filter((s) => s.assignedDay !== day)
+                : [...current, makeSubtask(day)],
+        );
+    }
+
+    function addSubtaskOn(day: DayOfWeek) {
+        setSubtasks((current) => [...current, makeSubtask(day)]);
+    }
+
+    function removeSubtask(id: string) {
+        setSubtasks((current) => current.filter((s) => s.id !== id));
+    }
+
+    function setSubtaskWeight(id: string, weight: number) {
+        setSubtasks((current) => current.map((s) => (s.id === id ? { ...s, weight } : s)));
+    }
+
+    function setSubtaskNote(id: string, note: string) {
+        setSubtasks((current) => current.map((s) => (s.id === id ? { ...s, description: note } : s)));
     }
 
     function handleSave() {
         const deadline = date ? (time ? `${date}T${time}` : date) : undefined;
         onSave(buildTask(task, { description, subtasks, deadline }));
     }
+
+    const activeDaysInOrder = WEEK.filter((day) => activeDays.has(day));
 
     return (
         <Dialog open onClose={onClose} labelledBy={titleId}>
@@ -117,8 +132,38 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                             );
                         })}
                     </div>
+
+                    {activeDaysInOrder.length > 0 && (
+                        <div className={styles.subs}>
+                            {activeDaysInOrder.map((day) => (
+                                <div key={day} className={styles.daygroup}>
+                                    <div className={styles.daylabel}>{DAY_NAME[day]}</div>
+                                    {subtasks
+                                        .filter((s) => s.assignedDay === day)
+                                        .map((s) => (
+                                            <SubtaskRow
+                                                key={s.id}
+                                                subtask={s}
+                                                onSetWeight={setSubtaskWeight}
+                                                onSetNote={setSubtaskNote}
+                                                onRemove={removeSubtask}
+                                            />
+                                        ))}
+                                    <button
+                                        type="button"
+                                        className={styles.addsub}
+                                        onClick={() => addSubtaskOn(day)}
+                                    >
+                                        + add another
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <p className={styles.note}>
-                        Pick the days you&rsquo;ll work on this &mdash; each becomes a checkbox that day.
+                        Pick the days you&rsquo;ll work on this &mdash; each becomes a checkbox that
+                        day. The dots set how much each one counts.
                     </p>
                 </div>
 

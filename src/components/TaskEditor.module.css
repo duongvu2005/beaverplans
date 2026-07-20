@@ -166,48 +166,6 @@
     color: var(--ink-faint);
 }
 
-.row {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-}
-
-/* the note input is the only bordered box in the row */
-.subnote {
-    flex: 1;
-    min-width: 0;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-chip);
-    background: var(--paper);
-    font: var(--fs-body) var(--sans);
-    color: var(--ink);
-    padding: var(--sp-2) 9px;
-}
-
-.subnote::placeholder {
-    color: var(--ink-faint);
-}
-
-.subnote:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-.del {
-    flex: none;
-    border: none;
-    background: transparent;
-    color: var(--ink-faint);
-    font-size: var(--icon-size);
-    line-height: 1;
-    cursor: pointer;
-    padding: var(--sp-1);
-}
-
-.del:hover {
-    color: var(--accent);
-}
-
 .addsub {
     align-self: flex-start;
     border: none;

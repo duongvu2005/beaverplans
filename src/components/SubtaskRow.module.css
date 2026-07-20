@@ -1,0 +1,68 @@
+/* One subtask row in the editor: grip · note · weight dots · delete. Grip and
+   delete hover-reveal like the tree row (old-app behaviour); note + dots stay
+   visible as the primary controls. */
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+/* the note input is the only bordered box in the row */
+.subnote {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    font: var(--fs-body) var(--sans);
+    color: var(--ink);
+    padding: var(--sp-2) 9px;
+}
+
+.subnote::placeholder {
+    color: var(--ink-faint);
+}
+
+.subnote:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* grip: shared gutter from rowKit + hover-reveal */
+.grip {
+    composes: grip from './rowKit.module.css';
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+.row:hover .grip {
+    opacity: 0.55;
+}
+.row:hover .grip:hover {
+    opacity: 0.9;
+}
+
+/* delete: shared icon-button chrome from rowKit + hover-reveal */
+.iconBtn {
+    composes: iconBtn from './rowKit.module.css';
+    opacity: 0;
+    transition:
+        opacity 0.12s ease,
+        background-color 0.13s,
+        color 0.13s;
+}
+.row:hover .iconBtn {
+    opacity: 1;
+}
+.iconBtn:focus-visible {
+    opacity: 1;
+}
+
+/* touch / narrow widths: reveal without hover */
+@media (hover: none), (max-width: 640px) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
+}

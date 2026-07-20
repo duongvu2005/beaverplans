@@ -1,0 +1,47 @@
+/* Three dots that set a subtask's weight (Easy / Medium / Hard). Clicking or
+   tapping a dot sets that level; pips fill left to right. No box around them —
+   only the dots show. (The desktop hover-hint and mobile sheet from the mock
+   are a later polish pass; this is the functional core that works on both.) */
+.dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+}
+
+.seg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.pip {
+    box-sizing: border-box;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--ink-faint);
+    transition:
+        background-color 0.1s ease,
+        border-color 0.1s ease;
+}
+
+.pip.on {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.seg:focus-visible {
+    outline: none;
+}
+
+.seg:focus-visible .pip {
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
