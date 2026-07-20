@@ -18,9 +18,16 @@ type FocusedDayProps = {
     items: ReadonlyArray<DayEntry>;
     isToday: boolean;
     onToggleSubtask: (subtaskId: string) => void;
+    onEditSubtask: (subtaskId: string) => void;
 };
 
-export function FocusedDay({ day, items, isToday, onToggleSubtask }: FocusedDayProps) {
+export function FocusedDay({
+    day,
+    items,
+    isToday,
+    onToggleSubtask,
+    onEditSubtask,
+}: FocusedDayProps) {
     const assigned = items.filter((entry) => entry.subtask.assignedDay === day);
     const doneCount = assigned.filter((entry) => entry.subtask.isDone).length;
     return (
@@ -44,6 +51,7 @@ export function FocusedDay({ day, items, isToday, onToggleSubtask }: FocusedDayP
                             entry={entry}
                             isMissed={entry.subtask.assignedDay !== day}
                             onToggleSubtask={onToggleSubtask}
+                            onEditSubtask={onEditSubtask}
                         />
                     ))}
                 </ul>

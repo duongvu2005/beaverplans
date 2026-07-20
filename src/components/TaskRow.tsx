@@ -8,12 +8,19 @@ import check from './checkbox.module.css';
 
 type TaskRowProps = {
     task: Task;
+    onEditTask: (taskId: string) => void;
     onToggleTask: (taskId: string) => void;
     onRenameTask: (taskId: string, name: string) => void;
     onRemoveTask: (taskId: string) => void;
 };
 
-export function TaskRow({ task, onToggleTask, onRenameTask, onRemoveTask }: TaskRowProps) {
+export function TaskRow({
+    task,
+    onEditTask,
+    onToggleTask,
+    onRenameTask,
+    onRemoveTask,
+}: TaskRowProps) {
     const undated = task.subtasks.length === 0;
     return (
         <li className={styles.row}>
@@ -46,6 +53,7 @@ export function TaskRow({ task, onToggleTask, onRenameTask, onRemoveTask }: Task
                 <button
                     type="button"
                     className={undated ? `${styles.iconBtn} ${styles.assignCta}` : styles.iconBtn}
+                    onClick={() => onEditTask(task.id)}
                     aria-label="Edit task"
                     title="Assign days / split / deadline"
                 >

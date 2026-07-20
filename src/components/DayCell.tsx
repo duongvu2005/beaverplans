@@ -7,9 +7,16 @@ type DayCellProps = {
     isMissed: boolean;
     compact?: boolean;
     onToggleSubtask: (subtaskId: string) => void;
+    onEditSubtask: (subtaskId: string) => void;
 };
 
-export function DayCell({ entry, isMissed, compact = false, onToggleSubtask }: DayCellProps) {
+export function DayCell({
+    entry,
+    isMissed,
+    compact = false,
+    onToggleSubtask,
+    onEditSubtask,
+}: DayCellProps) {
     const { subtask, taskName, projectName } = entry;
     const cellClass = [
         styles.cell,
@@ -28,7 +35,7 @@ export function DayCell({ entry, isMissed, compact = false, onToggleSubtask }: D
                 disabled={isMissed}
                 onChange={() => onToggleSubtask(subtask.id)}
             />
-            <div className={styles.text}>
+            <div className={styles.text} onClick={() => onEditSubtask(subtask.id)}>
                 <div className={styles.eyebrow}>
                     <span className={styles.project}>{projectName}</span>
                     <span className={styles.weight} aria-label={`weight ${subtask.weight} of 3`}>

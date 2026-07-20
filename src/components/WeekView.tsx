@@ -24,9 +24,10 @@ type WeekViewProps = {
     projects: ReadonlyArray<Project>;
     weekStart: string;
     onToggleSubtask: (subtaskId: string) => void;
+    onEditSubtask: (subtaskId: string) => void;
 };
 
-export function WeekView({ projects, weekStart, onToggleSubtask }: WeekViewProps) {
+export function WeekView({ projects, weekStart, onToggleSubtask, onEditSubtask }: WeekViewProps) {
     const schedule = scheduleByDay(projects);
     const byDay = progressByDay(projects);
     const todayDay = todayInWeek(weekStart);
@@ -64,14 +65,23 @@ export function WeekView({ projects, weekStart, onToggleSubtask }: WeekViewProps
                     <span className={styles.line}>
                         Focusing <b>{SHORT[selectedDay]}</b>
                         {selectedDay === todayDay ? ' (today)' : ''} ·{' '}
-                        <button type="button" className={styles.link} onClick={() => setMode('grid')}>
+                        <button
+                            type="button"
+                            className={styles.link}
+                            onClick={() => setMode('grid')}
+                        >
                             show all days
                         </button>
                     </span>
                 )}
             </div>
             <div className="weekGridPane">
-                <WeekGrid schedule={schedule} onFocusDay={focusDay} onToggleSubtask={onToggleSubtask} />
+                <WeekGrid
+                    schedule={schedule}
+                    onFocusDay={focusDay}
+                    onToggleSubtask={onToggleSubtask}
+                    onEditSubtask={onEditSubtask}
+                />
             </div>
             <div className="focusPane">
                 <DayRail
@@ -86,6 +96,7 @@ export function WeekView({ projects, weekStart, onToggleSubtask }: WeekViewProps
                     items={focused ? focused.items : []}
                     isToday={selectedDay === todayDay}
                     onToggleSubtask={onToggleSubtask}
+                    onEditSubtask={onEditSubtask}
                 />
             </div>
         </div>

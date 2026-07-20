@@ -22,9 +22,12 @@
     gap: 6px;
 }
 
+/* the text region opens the task editor on click (the checkbox, outside it,
+   still just toggles) */
 .text {
     flex: 1;
     min-width: 0;
+    cursor: pointer;
 }
 
 .project {

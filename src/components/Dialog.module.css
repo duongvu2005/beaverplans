@@ -1,0 +1,41 @@
+/* Reusable overlay primitive. Mobile-first: the panel is a bottom sheet (docked
+   to the bottom edge, full width). At the desktop breakpoint it becomes a centered
+   modal. Scrim covers the viewport and closes on click; the panel stops propagation
+   so clicks inside don't close it. */
+
+.scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end; /* dock to bottom -> sheet */
+    justify-content: center;
+    background: rgba(28, 26, 23, 0.34); /* translucent wash over --ink; no token for scrim */
+}
+
+.panel {
+    width: 100%;
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    border-top-left-radius: var(--r-card);
+    border-top-right-radius: var(--r-card);
+    box-shadow: 0 -8px 30px rgba(28, 26, 23, 0.18);
+    padding-bottom: env(safe-area-inset-bottom); /* iOS home-indicator */
+}
+
+.panel:focus {
+    outline: none;
+}
+
+@media (min-width: 640px) {
+    .scrim {
+        align-items: center; /* centered -> modal */
+    }
+    .panel {
+        width: min(520px, 92vw);
+        max-height: 88dvh;
+        border-radius: var(--r-card);
+    }
+}

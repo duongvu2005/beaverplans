@@ -245,9 +245,9 @@ export function setSubtaskDescription(
 export function setSubtaskWeight(
     plan: WeekPlan,
     subtaskId: string,
-    subtaskWeight: number
-) : WeekPlan {
-    return updateSubtaskById(plan, subtaskId, (s) => ({ ...s, weight: subtaskWeight}));
+    subtaskWeight: number,
+): WeekPlan {
+    return updateSubtaskById(plan, subtaskId, (s) => ({ ...s, weight: subtaskWeight }));
 }
 
 /**

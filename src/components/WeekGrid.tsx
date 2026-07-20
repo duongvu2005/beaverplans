@@ -7,9 +7,10 @@ type WeekGridProps = {
     schedule: ReadonlyArray<DaySchedule>;
     onFocusDay: (day: DayOfWeek) => void;
     onToggleSubtask: (subtaskId: string) => void;
+    onEditSubtask: (subtaskId: string) => void;
 };
 
-export function WeekGrid({ schedule, onFocusDay, onToggleSubtask }: WeekGridProps) {
+export function WeekGrid({ schedule, onFocusDay, onToggleSubtask, onEditSubtask }: WeekGridProps) {
     return (
         <div className={styles.grid}>
             {schedule.map((daySchedule) => (
@@ -18,6 +19,7 @@ export function WeekGrid({ schedule, onFocusDay, onToggleSubtask }: WeekGridProp
                     daySchedule={daySchedule}
                     onFocusDay={onFocusDay}
                     onToggleSubtask={onToggleSubtask}
+                    onEditSubtask={onEditSubtask}
                 />
             ))}
         </div>

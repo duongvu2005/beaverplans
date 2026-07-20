@@ -15,12 +15,34 @@ import {
     toggleSubtask,
     toggleTask,
 } from './core/projects';
+import { TaskEditor } from './components/TaskEditor';
 
 type View = 'plan' | 'stats' | 'archive';
 
 export default function App() {
     const [view, setView] = useState<View>('plan');
     const [plan, setPlan] = useState<WeekPlan>(sampleWeek);
+    const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+
+    const editingProject = editingTaskId
+        ? plan.projects.find((p) => p.tasks.some((t) => t.id === editingTaskId))
+        : undefined;
+    const editingTask = editingProject?.tasks.find((t) => t.id === editingTaskId);
+
+    function handleEditTask(taskId: string) {
+        setEditingTaskId(taskId);
+    }
+
+    function handleCloseEditor() {
+        setEditingTaskId(null);
+    }
+
+    function handleEditSubtask(subtaskId: string) {
+        const task = plan.projects
+            .flatMap((p) => p.tasks)
+            .find((t) => t.subtasks.some((s) => s.id === subtaskId));
+        if (task) setEditingTaskId(task.id);
+    }
 
     function handleToggleTask(taskId: string) {
         setPlan((current) => toggleTask(current, taskId));
@@ -80,6 +102,7 @@ export default function App() {
                     <div className="plan-layout">
                         <ProjectView
                             projects={plan.projects}
+                            onEditTask={handleEditTask}
                             onToggleTask={handleToggleTask}
                             onAddProject={handleAddProject}
                             onAddTask={handleAddTask}
@@ -92,12 +115,20 @@ export default function App() {
                             projects={plan.projects}
                             weekStart={plan.weekStart}
                             onToggleSubtask={handleToggleSubtask}
+                            onEditSubtask={handleEditSubtask}
                         />
                     </div>
                 )}
                 {view === 'stats' && <div>stats pane</div>}
                 {view === 'archive' && <div>archive pane</div>}
             </main>
+            {editingTask && editingProject && (
+                <TaskEditor
+                    task={editingTask}
+                    projectName={editingProject.name}
+                    onClose={handleCloseEditor}
+                />
+            )}
         </>
     );
 }

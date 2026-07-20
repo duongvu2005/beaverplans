@@ -4,6 +4,7 @@ import styles from './ProjectView.module.css';
 
 type ProjectViewProps = {
     projects: ReadonlyArray<Project>;
+    onEditTask: (taskId: string) => void;
     onToggleTask: (taskId: string) => void;
     onAddProject: () => void;
     onAddTask: (projectId: string) => void;

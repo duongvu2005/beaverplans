@@ -7,9 +7,15 @@ type DayColumnProps = {
     daySchedule: DaySchedule;
     onFocusDay: (day: DayOfWeek) => void;
     onToggleSubtask: (subtaskId: string) => void;
+    onEditSubtask: (subtaskId: string) => void;
 };
 
-export function DayColumn({ daySchedule, onFocusDay, onToggleSubtask }: DayColumnProps) {
+export function DayColumn({
+    daySchedule,
+    onFocusDay,
+    onToggleSubtask,
+    onEditSubtask,
+}: DayColumnProps) {
     return (
         <section className={styles.column}>
             <button
@@ -28,6 +34,7 @@ export function DayColumn({ daySchedule, onFocusDay, onToggleSubtask }: DayColum
                         isMissed={daySchedule.day !== entry.subtask.assignedDay}
                         compact={true}
                         onToggleSubtask={onToggleSubtask}
+                        onEditSubtask={onEditSubtask}
                     />
                 ))}
             </ul>

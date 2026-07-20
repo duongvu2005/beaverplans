@@ -4,6 +4,7 @@ import styles from './ProjectList.module.css';
 
 type ProjectListProps = {
     projects: ReadonlyArray<Project>;
+    onEditTask: (taskId: string) => void;
     onToggleTask: (taskId: string) => void;
     onAddTask: (projectId: string) => void;
     onAddProject: () => void;
@@ -15,6 +16,7 @@ type ProjectListProps = {
 
 export function ProjectList({
     projects,
+    onEditTask,
     onToggleTask,
     onAddTask,
     onAddProject,
@@ -29,6 +31,7 @@ export function ProjectList({
                 <ProjectCard
                     key={project.id}
                     project={project}
+                    onEditTask={onEditTask}
                     onToggleTask={onToggleTask}
                     onAddTask={onAddTask}
                     onRenameProject={onRenameProject}

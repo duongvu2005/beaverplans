@@ -1,0 +1,61 @@
+/* The task editor shell: head / scrollable body / foot, rendered inside Dialog.
+   Body is empty for now (fields land later). */
+
+.head {
+    padding: var(--sp-4) var(--sp-4) var(--sp-3);
+    border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+    font: var(--fs-label) / 1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+}
+
+.title {
+    margin: var(--sp-1) 0 0;
+    font: 600 var(--fs-title) / 1.25 var(--display);
+    color: var(--ink);
+}
+
+.body {
+    padding: var(--sp-4);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+}
+
+.empty {
+    margin: 0;
+    color: var(--ink-faint);
+    font: var(--fs-body) var(--sans);
+}
+
+.foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    border-top: 1px solid var(--line);
+}
+
+.btn {
+    font: 500 var(--fs-body) var(--sans);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--r);
+    cursor: pointer;
+}
+
+.ghost {
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    color: var(--ink-soft);
+}
+
+.primary {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+}
