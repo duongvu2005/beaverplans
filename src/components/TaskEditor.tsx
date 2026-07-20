@@ -1,14 +1,17 @@
 import { Dialog } from './Dialog';
 import type { Task } from '../core/types';
 import styles from './TaskEditor.module.css';
+import { useState } from 'react';
 
 type TaskEditorProps = {
     task: Task;
     projectName: string;
-    onClose: () => void;
+    onClose: () => void; // Cancel / scrim / Esc
+    onSave: (nextTask: Task) => void; // Save
 };
 
-export function TaskEditor({ task, projectName, onClose }: TaskEditorProps) {
+export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorProps) {
+    const [draft, _setDraft] = useState<Task>(task);
     const titleId = 'task-editor-title';
     return (
         <Dialog open onClose={onClose} labelledBy={titleId}>
@@ -28,7 +31,7 @@ export function TaskEditor({ task, projectName, onClose }: TaskEditorProps) {
                 <button
                     type="button"
                     className={`${styles.btn} ${styles.primary}`}
-                    onClick={onClose}
+                    onClick={() => onSave(draft)}
                 >
                     Save
                 </button>

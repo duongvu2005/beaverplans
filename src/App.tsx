@@ -4,12 +4,13 @@ import { WeekView } from './components/WeekView';
 import { sampleWeek } from './fixtures/sampleWeek';
 import { newId } from './utils/newId';
 import './App.css';
-import type { WeekPlan } from './core/types';
+import type { Task, WeekPlan } from './core/types';
 import {
     addProject,
     addTask,
     removeProject,
     removeTask,
+    replaceTask,
     setProjectName,
     setTaskName,
     toggleSubtask,
@@ -42,6 +43,11 @@ export default function App() {
             .flatMap((p) => p.tasks)
             .find((t) => t.subtasks.some((s) => s.id === subtaskId));
         if (task) setEditingTaskId(task.id);
+    }
+
+    function handleSaveTask(nextTask: Task) {
+        setPlan((current) => replaceTask(current, nextTask.id, nextTask));
+        setEditingTaskId(null);
     }
 
     function handleToggleTask(taskId: string) {
@@ -127,6 +133,7 @@ export default function App() {
                     task={editingTask}
                     projectName={editingProject.name}
                     onClose={handleCloseEditor}
+                    onSave={handleSaveTask}
                 />
             )}
         </>
