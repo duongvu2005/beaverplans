@@ -76,42 +76,21 @@
     gap: 2px;
 }
 
-/* hover-revealed icon button (old-app .iconbtn). Reserved slot, neutral hover. */
+/* icon button: shared chrome from rowKit + TaskRow's hover-reveal (kept out of the
+   way in the dense tree; shown on row hover / focus / touch). */
 .iconBtn {
-    flex: none;
-    appearance: none;
-    border: none;
-    background: none;
-    cursor: pointer;
-    padding: 0; /* iOS Safari gives buttons a default padding that shifts the icon */
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
-    display: grid;
-    place-items: center;
-    color: var(--ink-faint);
+    composes: iconBtn from './rowKit.module.css';
     opacity: 0;
     transition:
         opacity 0.12s ease,
         background-color 0.13s,
         color 0.13s;
 }
-.iconBtn svg {
-    display: block;
-    width: var(--icon-size);
-    height: var(--icon-size);
-}
 .row:hover .iconBtn {
     opacity: 1;
 }
-.iconBtn:hover {
-    background: var(--line);
-    color: var(--ink);
-}
 .iconBtn:focus-visible {
     opacity: 1;
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
 }
 
 /* undated task (no subtasks): the ◳ lights up as a terracotta "assign days"
@@ -126,16 +105,11 @@
     background: var(--accent-soft);
 }
 
-/* drag handle — the <Grip> component (Material "drag_indicator" SVG, fill via
-   currentColor). Reserved gutter: always occupies its slot, transparent until
-   the row is hovered, so the row never shifts. Not wired for dragging yet. */
+/* drag grip: shared gutter from rowKit + TaskRow's hover-reveal. Reserved slot,
+   transparent until the row is hovered so the row never shifts. Not wired yet. */
 .grip {
-    flex: none;
-    width: var(--grip-size);
-    height: var(--grip-size);
-    color: var(--ink-faint);
+    composes: grip from './rowKit.module.css';
     opacity: 0;
-    cursor: grab;
     transition: opacity 0.12s ease;
 }
 .row:hover .grip {
@@ -143,9 +117,6 @@
 }
 .row:hover .grip:hover {
     opacity: 0.9;
-}
-.grip:active {
-    cursor: grabbing;
 }
 
 /* touch devices (no hover) OR narrow phone widths — reveal the affordances that

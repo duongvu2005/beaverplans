@@ -1,0 +1,51 @@
+/* Shared row affordances, used by TaskRow (project tree) and SubtaskRow (editor):
+   the icon-button chrome that wraps <CloseIcon>/<EditIcon>/etc., and the drag-grip
+   gutter for <Grip>. These are the always-visible BASE styles; a row that wants
+   hover-reveal (TaskRow's dense tree) composes these and layers opacity on top of
+   its own class. Reordering/drag is not wired yet. */
+
+.iconBtn {
+    flex: none;
+    appearance: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0; /* iOS Safari default button padding would shift the icon */
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    color: var(--ink-faint);
+    transition:
+        background-color 0.13s,
+        color 0.13s;
+}
+
+.iconBtn svg {
+    display: block;
+    width: var(--icon-size);
+    height: var(--icon-size);
+}
+
+.iconBtn:hover {
+    background: var(--line);
+    color: var(--ink);
+}
+
+.iconBtn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.grip {
+    flex: none;
+    width: var(--grip-size);
+    height: var(--grip-size);
+    color: var(--ink-faint);
+    cursor: grab;
+}
+
+.grip:active {
+    cursor: grabbing;
+}
