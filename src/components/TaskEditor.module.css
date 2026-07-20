@@ -33,6 +33,191 @@
     font: var(--fs-body) var(--sans);
 }
 
+/* a labelled field block */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.label {
+    font: var(--fs-label) / 1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+}
+
+.textarea {
+    width: 100%;
+    min-height: 54px;
+    resize: vertical;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    background: var(--paper);
+    color: var(--ink);
+    font: var(--fs-body) / 1.4 var(--sans);
+    padding: var(--sp-2) var(--sp-3);
+}
+
+.textarea::placeholder {
+    color: var(--ink-faint);
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* deadline row: date grows, time fixed and disabled until a date exists.
+   Native date/time inputs carry their own calendar/clock icons. */
+.deadrow {
+    display: flex;
+    gap: var(--sp-2);
+}
+
+.deadrow input {
+    font: var(--fs-body) var(--sans);
+    color: var(--ink);
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    background: var(--paper);
+}
+
+.deadrow input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.date {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.time {
+    flex: 0 0 120px;
+}
+
+.time:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* a quiet hint line under a field */
+.note {
+    margin: 0;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-faint);
+}
+
+/* day-toggle strip: 7 equal boxes, single centered letter, on = accent tint */
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--sp-1);
+}
+
+.day {
+    display: grid;
+    place-content: center;
+    min-height: 34px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    color: var(--ink-faint);
+    font: var(--fs-body) / 1 var(--mono);
+    cursor: pointer;
+}
+
+.day:hover {
+    background: var(--hover-neutral);
+}
+
+.day.on {
+    background: var(--accent-soft);
+    border-color: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* subtask rows: one connected card, day groups split by hairlines */
+.subs {
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    overflow: hidden;
+    background: var(--paper);
+}
+
+.daygroup {
+    padding: var(--sp-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.daygroup + .daygroup {
+    border-top: 1px solid var(--line);
+}
+
+.daylabel {
+    font: var(--fs-label) / 1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+/* the note input is the only bordered box in the row */
+.subnote {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    font: var(--fs-body) var(--sans);
+    color: var(--ink);
+    padding: var(--sp-2) 9px;
+}
+
+.subnote::placeholder {
+    color: var(--ink-faint);
+}
+
+.subnote:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.del {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: var(--icon-size);
+    line-height: 1;
+    cursor: pointer;
+    padding: var(--sp-1);
+}
+
+.del:hover {
+    color: var(--accent);
+}
+
+.addsub {
+    align-self: flex-start;
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font: var(--fs-body) var(--sans);
+    cursor: pointer;
+    padding: var(--sp-1) 0;
+}
+
 .foot {
     display: flex;
     justify-content: flex-end;
