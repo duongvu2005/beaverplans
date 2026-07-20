@@ -1,6 +1,6 @@
 import { Grip } from './Grip';
 import { CloseIcon } from './CloseIcon';
-import { WeightDots } from './WeightDots';
+import { WeightChip } from './WeightChip';
 import type { Subtask } from '../core/types';
 import styles from './SubtaskRow.module.css';
 
@@ -21,7 +21,11 @@ export function SubtaskRow({ subtask, onSetWeight, onSetNote, onRemove }: Subtas
                 placeholder="add a note (optional)"
                 onChange={(e) => onSetNote(subtask.id, e.target.value)}
             />
-            <WeightDots weight={subtask.weight} onChange={(w) => onSetWeight(subtask.id, w)} />
+            <WeightChip
+                weight={subtask.weight}
+                onChange={(w) => onSetWeight(subtask.id, w)}
+                label={subtask.description || undefined}
+            />
             <button
                 type="button"
                 className={styles.iconBtn}

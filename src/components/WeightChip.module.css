@@ -1,0 +1,132 @@
+/* Pointer-adaptive weight control:
+   - fine pointer (mouse/trackpad): inline dots (WeightDots), click a dot to set.
+   - coarse pointer (touch): a compact chip that opens a bottom-sheet picker.
+   Both render; CSS shows the one matching the device's primary pointer. */
+.wrap {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+}
+
+.fine {
+    display: inline-flex;
+}
+
+.chip {
+    display: none; /* revealed on coarse pointers below */
+    align-items: center;
+    gap: 3px;
+    min-height: 26px;
+    padding: 0 var(--sp-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    cursor: pointer;
+}
+
+.chip:active {
+    background: var(--hover-neutral);
+}
+
+@media (pointer: coarse) {
+    .fine {
+        display: none;
+    }
+    .chip {
+        display: inline-flex;
+    }
+}
+
+/* pips: the chip glyph and the sheet-option glyphs */
+.pips {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex: none;
+}
+
+.pip {
+    box-sizing: border-box;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--ink-faint);
+}
+
+.pip.lg {
+    width: 10px;
+    height: 10px;
+}
+
+.pip.on {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* bottom-sheet content, rendered inside the shared Dialog panel */
+.sheet {
+    padding: var(--sp-2) var(--sp-3) var(--sp-4);
+    padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom));
+}
+
+.grab {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    margin: var(--sp-1) auto var(--sp-3);
+}
+
+.sheetTitle {
+    margin: 0 0 var(--sp-2);
+    font: var(--fs-label) / 1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+}
+
+.opt {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    min-height: 44px;
+    padding: var(--sp-3);
+    border: none;
+    border-radius: var(--r);
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.opt:hover {
+    background: var(--hover-neutral);
+}
+
+.optSel {
+    background: var(--accent-soft);
+}
+
+.optLabel {
+    font: 500 var(--fs-row) var(--sans);
+    color: var(--ink);
+}
+
+.optSel .optLabel {
+    color: var(--accent);
+}
+
+.optMeta {
+    margin-left: auto;
+    /* mono: the design's font for counts/labels, and monospaced so ×1/×2/×3 align.
+       (Be Vietnam Pro ships without tabular figures, so tabular-nums is a no-op there.) */
+    font: var(--fs-body) var(--mono);
+    color: var(--ink-faint);
+}
+
+.sheetSub {
+    margin: 0 0 var(--sp-2);
+    font: var(--fs-body) / 1.4 var(--sans);
+    color: var(--ink-faint);
+}

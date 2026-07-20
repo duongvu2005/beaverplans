@@ -25,6 +25,16 @@ const DAY_INITIAL: Record<DayOfWeek, string> = {
     sun: 'S',
 };
 
+const DAY_SHORT: Record<DayOfWeek, string> = {
+    mon: 'Mon',
+    tue: 'Tue',
+    wed: 'Wed',
+    thu: 'Thu',
+    fri: 'Fri',
+    sat: 'Sat',
+    sun: 'Sun',
+};
+
 const DAY_NAME: Record<DayOfWeek, string> = {
     mon: 'Monday',
     tue: 'Tuesday',
@@ -154,7 +164,7 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                                         className={styles.addsub}
                                         onClick={() => addSubtaskOn(day)}
                                     >
-                                        + add another
+                                        + add subtask on {DAY_SHORT[day]}
                                     </button>
                                 </div>
                             ))}
