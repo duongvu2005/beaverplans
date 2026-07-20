@@ -233,6 +233,24 @@ export function setSubtaskDescription(
 }
 
 /**
+ * Change the weight of a subtask.
+ *
+ * @param plan the current plan
+ * @param subtaskId the id of the subtask to change the weight
+ * @param subtaskWeight the new weight of the subtask; must be 1, 2, or 3
+ * @returns a new plan with the same weekStart. The subtask with id subtaskId has
+ *          its weight set to subtaskWeight; everything else in the plan is unchanged. If
+ *          no subtask has that id, the projects are unchanged.
+ */
+export function setSubtaskWeight(
+    plan: WeekPlan,
+    subtaskId: string,
+    subtaskWeight: number
+) : WeekPlan {
+    return updateSubtaskById(plan, subtaskId, (s) => ({ ...s, weight: subtaskWeight}));
+}
+
+/**
  * Toggle a subtask's completion.
  *
  * @param plan the current plan

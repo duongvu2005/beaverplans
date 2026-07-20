@@ -10,6 +10,7 @@ import {
     setTaskName,
     setTaskDescription,
     setSubtaskDescription,
+    setSubtaskWeight,
     toggleTask,
     toggleSubtask,
     isTaskDone,
@@ -814,6 +815,75 @@ describe('setSubtaskDescription', () => {
         expect(isValidPlan(result)).toBe(true);
 
         expect(plan.projects[0]?.tasks[0]?.subtasks[0]?.description).toBeUndefined();
+    });
+});
+
+describe('setSubtaskWeight', () => {
+    /*
+     * Testing strategy:
+     *      - partition on subtaskId: exists (among siblings) | not found
+     *      - partition on new weight: 1 | 2 | 3 (each a valid boundary value)
+     *      - partition on new vs current weight: same | different
+     *
+     *      properties checked when found:
+     *      - the target subtask's weight is set to the given value
+     *      - target subtask/task/project new objects; sibling subtasks, tasks, projects shared
+     *      - weekStart unchanged; input not mutated
+     */
+
+    it('covers found among siblings, 1 -> 3: sets weight, shares the rest', () => {
+        const s0 = makeSubtask('s0', 'mon'); // weight 1
+        const s1 = makeSubtask('s1', 'tue');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setSubtaskWeight(plan, 's0', 3);
+        expect(isValidPlan(result)).toBe(true);
+
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks[0]?.weight).toBe(3);
+        expect(task?.subtasks[1]).toBe(s1); // sibling subtask shared
+        expect(task?.subtasks[0]).not.toBe(s0);
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers found, 1 -> 2', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setSubtaskWeight(plan, 's0', 2);
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.weight).toBe(2);
+    });
+
+    it('covers found, set to same weight (1 -> 1): value unchanged, still valid', () => {
+        const s0 = makeSubtask('s0', 'mon'); // weight 1
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setSubtaskWeight(plan, 's0', 1);
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.weight).toBe(1);
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setSubtaskWeight(plan, 'nope', 3);
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
+    });
+
+    it('covers found: does not mutate the input plan', () => {
+        const s0 = makeSubtask('s0', 'mon'); // weight 1
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        setSubtaskWeight(plan, 's0', 3);
+        expect(s0.weight).toBe(1); // input subtask untouched
     });
 });
 
