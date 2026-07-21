@@ -310,6 +310,60 @@ export function toggleTask(plan: WeekPlan, taskId: string): WeekPlan {
     });
 }
 
+/**
+ * Reassign a subtask to a different weekday.
+ *
+ * @param plan the current plan
+ * @param subtaskId the id of the subtask to reassign
+ * @param toDay the weekday to reassign the subtask to. Requires toDay to be
+ *        strictly after every day in the subtask's missedDays, in weekday order
+ *        (mon < tue < ... < sun); when missedDays is empty, any toDay is allowed.
+ * @returns a new plan with the same weekStart in which the subtask with id
+ *          subtaskId has assignedDay set to toDay and everything else (including
+ *          missedDays) unchanged. If no subtask has that id, the projects are
+ *          unchanged.
+ */
+export function moveSubtask(plan: WeekPlan, subtaskId: string, toDay: DayOfWeek): WeekPlan {
+    return updateSubtaskById(plan, subtaskId, (s) => ({ ...s, assignedDay: toDay }));
+}
+
+/**
+ * Record a weekday as missed for a subtask.
+ *
+ * @param plan the current plan
+ * @param subtaskId the id of the subtask
+ * @param day the weekday to record as missed. Requires day to be strictly before
+ *        the subtask's assignedDay in weekday order (mon < tue < ... < sun).
+ * @returns a new plan with the same weekStart in which the subtask with id
+ *          subtaskId has day added to its missedDays. If day is already present,
+ *          the subtask is unchanged (no duplicate is added). Everything else is
+ *          unchanged. If no subtask has that id, the projects are unchanged.
+ */
+export function addMissedDay(plan: WeekPlan, subtaskId: string, day: DayOfWeek): WeekPlan {
+    return updateSubtaskById(plan, subtaskId, (s) => ({
+        ...s,
+        missedDays: s.missedDays.includes(day) ? s.missedDays : [...s.missedDays, day],
+    }));
+}
+
+/**
+ * Clear a recorded missed day from a subtask.
+ *
+ * @param plan the current plan
+ * @param subtaskId the id of the subtask
+ * @param day the weekday to remove from the subtask's missedDays
+ * @returns a new plan with the same weekStart in which the subtask with id
+ *          subtaskId no longer has day in its missedDays. If day was not present,
+ *          the subtask is unchanged. Everything else is unchanged. If no subtask
+ *          has that id, the projects are unchanged.
+ */
+export function removeMissedDay(plan: WeekPlan, subtaskId: string, day: DayOfWeek): WeekPlan {
+    return updateSubtaskById(plan, subtaskId, (s) => ({
+        ...s,
+        missedDays: s.missedDays.filter((missed) => missed !== day),
+    }));
+}
+
 // Accessors (observers)
 /**
  * Determine whether a task is done.
@@ -346,7 +400,7 @@ export function isValidSubtask(subtask: Subtask): boolean {
         return false;
     }
     const indexOfAssigned = WEEK.indexOf(subtask.assignedDay);
-    if (subtask.missedDays.some(missed => WEEK.indexOf(missed) >= indexOfAssigned)) {
+    if (subtask.missedDays.some((missed) => WEEK.indexOf(missed) >= indexOfAssigned)) {
         return false;
     }
     return true;

@@ -14,6 +14,9 @@ import {
     setSubtaskWeight,
     toggleTask,
     toggleSubtask,
+    moveSubtask,
+    addMissedDay,
+    removeMissedDay,
     isTaskDone,
     isValidProject,
     isValidSubtask,
@@ -1186,6 +1189,198 @@ describe('toggleTask', () => {
     });
 });
 
+describe('moveSubtask', () => {
+    /*
+     * Testing strategy (precondition: toDay is strictly after every missedDay):
+     *   - partition on subtaskId: found (among siblings) | not found
+     *   - partition on toDay vs assignedDay: different | same
+     *   - partition on missedDays: empty | non-empty (toDay after all of them)
+     *
+     *   properties when found:
+     *   - target subtask's assignedDay set to toDay; missedDays unchanged
+     *   - result valid; siblings shared; weekStart same; input not mutated
+     */
+
+    it('covers found, empty missedDays, different day: reassigns, shares siblings', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const s1 = makeSubtask('s1', 'tue');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = moveSubtask(plan, 's0', 'fri');
+        expect(isValidPlan(result)).toBe(true);
+        const task = result.projects[0]?.tasks[0];
+        expect(task?.subtasks[0]?.assignedDay).toBe('fri');
+        expect(task?.subtasks[0]?.missedDays).toEqual([]);
+        expect(task?.subtasks[1]).toBe(s1);
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers found, non-empty missedDays, toDay after all of them: reassigns, keeps missedDays', () => {
+        const s0 = { ...makeSubtask('s0', 'thu'), missedDays: ['tue'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = moveSubtask(plan, 's0', 'sat');
+        expect(isValidPlan(result)).toBe(true);
+        const moved = result.projects[0]?.tasks[0]?.subtasks[0];
+        expect(moved?.assignedDay).toBe('sat');
+        expect(moved?.missedDays).toEqual(['tue']);
+    });
+
+    it('covers found, toDay equals current assignedDay: value unchanged, still valid', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = moveSubtask(plan, 's0', 'mon');
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.assignedDay).toBe('mon');
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = moveSubtask(plan, 'nope', 'fri');
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
+    });
+
+    it('covers found: does not mutate the input', () => {
+        const s0 = makeSubtask('s0', 'mon');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        moveSubtask(plan, 's0', 'fri');
+        expect(s0.assignedDay).toBe('mon');
+    });
+});
+
+describe('addMissedDay', () => {
+    /*
+     * Testing strategy (precondition: day is strictly before assignedDay):
+     *   - partition on subtaskId: found | not found
+     *   - partition on day: absent (added) | already present (idempotent)
+     *   - partition on missedDays before: empty | non-empty
+     *
+     *   properties when found:
+     *   - day is in result's missedDays exactly once; assignedDay unchanged
+     *   - result valid; weekStart same; input not mutated
+     */
+
+    it('covers found, day absent, empty missedDays: records the miss', () => {
+        const s0 = makeSubtask('s0', 'fri');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = addMissedDay(plan, 's0', 'wed');
+        expect(isValidPlan(result)).toBe(true);
+        const s = result.projects[0]?.tasks[0]?.subtasks[0];
+        expect(s?.missedDays).toEqual(['wed']);
+        expect(s?.assignedDay).toBe('fri');
+    });
+
+    it('covers found, day absent, non-empty missedDays: appends', () => {
+        const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['mon'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = addMissedDay(plan, 's0', 'wed');
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['mon', 'wed']);
+    });
+
+    it('covers found, day already present: no duplicate added', () => {
+        const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = addMissedDay(plan, 's0', 'wed');
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['wed']);
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const s0 = makeSubtask('s0', 'fri');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = addMissedDay(plan, 'nope', 'wed');
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
+    });
+
+    it('covers found: does not mutate the input', () => {
+        const s0 = makeSubtask('s0', 'fri');
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        addMissedDay(plan, 's0', 'wed');
+        expect(s0.missedDays).toEqual([]);
+    });
+});
+
+describe('removeMissedDay', () => {
+    /*
+     * Testing strategy:
+     *   - partition on subtaskId: found | not found
+     *   - partition on day: present (removed) | absent (no-op)
+     *   - partition on result missedDays: becomes empty | still non-empty
+     *
+     *   properties when found:
+     *   - day absent from result's missedDays; remaining days kept in order
+     *   - assignedDay unchanged; result valid; weekStart same; input not mutated
+     */
+
+    it('covers found, day present, others remain: removes just that day', () => {
+        const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['mon', 'wed'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeMissedDay(plan, 's0', 'mon');
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['wed']);
+    });
+
+    it('covers found, day present, was the only one: missedDays becomes empty', () => {
+        const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeMissedDay(plan, 's0', 'wed');
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual([]);
+    });
+
+    it('covers found, day absent: missedDays unchanged, still valid', () => {
+        const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeMissedDay(plan, 's0', 'mon');
+        expect(isValidPlan(result)).toBe(true);
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['wed']);
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = removeMissedDay(plan, 'nope', 'wed');
+        expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
+    });
+
+    it('covers found: does not mutate the input', () => {
+        const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
+        const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
+        const a: Project = { id: 'a', name: 'a', tasks: [parent] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        removeMissedDay(plan, 's0', 'wed');
+        expect(s0.missedDays).toEqual(['wed']);
+    });
+});
+
 describe('isTaskDone', () => {
     /**
      * Testing strategy (precondition: a valid task):
@@ -1266,7 +1461,9 @@ describe('isValidSubtask', () => {
         expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: [] })).toBe(true);
     });
     it('missedDays all strictly before assignedDay is valid', () => {
-        expect(isValidSubtask({ ...makeSubtask('s', 'thu'), missedDays: ['mon', 'wed'] })).toBe(true);
+        expect(isValidSubtask({ ...makeSubtask('s', 'thu'), missedDays: ['mon', 'wed'] })).toBe(
+            true,
+        );
     });
     it('a missedDay after assignedDay is invalid', () => {
         expect(isValidSubtask({ ...makeSubtask('s', 'wed'), missedDays: ['thu'] })).toBe(false);
