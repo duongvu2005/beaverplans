@@ -46,8 +46,9 @@ export type Subtask = {
  *   - weekStart is a well-formed DateKey (local YYYY-MM-DD) AND is a Monday.
  *   - every id across all projects, tasks, and subtasks is globally unique.
  *   - every project is well-formed: isValidProject -> isValidTask ->
- *     isValidSubtask (e.g. a subtask's weight is 1..3 and its missedDays exclude
- *     its own assignedDay; a task carries isDone only when it is a leaf).
+ *     isValidSubtask (e.g. a subtask's weight is 1..3 and its missedDays all fall
+ *     strictly before its assignedDay in weekday order; a task carries isDone only
+ *     when it is a leaf).
  *   checkRep = isValidPlan (see projects.ts), which tests this whole invariant.
  *   It is asserted on producer outputs in tests, never called on production paths.
  *

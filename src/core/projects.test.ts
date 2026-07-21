@@ -1236,8 +1236,8 @@ describe('isValidSubtask', () => {
     /**
      * Testing strategy:
      *   - partition on weight: 1 | 2 | 3 | outside {below (0), above (4), non-integer (2.5)}
-     *   - partition on missedDays vs assignedDay: empty | non-empty valid
-     *       | contains a duplicate | contains assignedDay
+     *   - partition on missedDays vs assignedDay: empty | non-empty all before
+     *       assignedDay | contains a day at/after assignedDay | contains a duplicate
      *   Each axis is varied while the other is held valid.
      */
 
@@ -1265,10 +1265,11 @@ describe('isValidSubtask', () => {
     it('empty missedDays is valid', () => {
         expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: [] })).toBe(true);
     });
-    it('non-empty missedDays excluding assignedDay, no duplicates, is valid', () => {
-        expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'wed'] })).toBe(
-            true,
-        );
+    it('missedDays all strictly before assignedDay is valid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'thu'), missedDays: ['mon', 'wed'] })).toBe(true);
+    });
+    it('a missedDay after assignedDay is invalid', () => {
+        expect(isValidSubtask({ ...makeSubtask('s', 'wed'), missedDays: ['thu'] })).toBe(false);
     });
     it('duplicate day in missedDays is invalid', () => {
         expect(isValidSubtask({ ...makeSubtask('s', 'mon'), missedDays: ['tue', 'tue'] })).toBe(

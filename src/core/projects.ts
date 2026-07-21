@@ -9,6 +9,7 @@
 
 import { isValidWeekStart } from './dates';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from './types';
+import { WEEK } from './types';
 
 // Create (producers)
 
@@ -324,13 +325,16 @@ export function isTaskDone(task: Task): boolean {
         : task.subtasks.every((s) => s.isDone);
 }
 
-// Validators (observers)
 /**
  * Check whether a subtask is well-formed.
  *
  * @param subtask any subtask
- * @returns true iff the subtask satisfies both:
- *          - missedDays has no duplicate days and does not contain assignedDay
+ * @returns true iff the subtask satisfies all of:
+ *          - missedDays has no duplicate days
+ *          - every day in missedDays is strictly before assignedDay in weekday
+ *            order (mon < tue < ... < sun) — a subtask only slips forward, so its
+ *            live day stays ahead of every day it has missed. (This implies
+ *            assignedDay is not itself in missedDays.)
  *          - weight is 1, 2, or 3
  */
 export function isValidSubtask(subtask: Subtask): boolean {
@@ -341,7 +345,8 @@ export function isValidSubtask(subtask: Subtask): boolean {
     if (subtask.missedDays.length !== new Set(subtask.missedDays).size) {
         return false;
     }
-    if (subtask.missedDays.includes(subtask.assignedDay)) {
+    const indexOfAssigned = WEEK.indexOf(subtask.assignedDay);
+    if (subtask.missedDays.some(missed => WEEK.indexOf(missed) >= indexOfAssigned)) {
         return false;
     }
     return true;
