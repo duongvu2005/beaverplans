@@ -3,11 +3,14 @@ import type { Task } from '../core/types';
 import { Grip } from './Grip';
 import { EditIcon } from './EditIcon';
 import { CloseIcon } from './CloseIcon';
+import type { TreeDnd } from './useTreeDnd';
 import styles from './TaskRow.module.css';
 import check from './checkbox.module.css';
 
 type TaskRowProps = {
     task: Task;
+    projectId: string;
+    dnd: TreeDnd;
     onEditTask: (taskId: string) => void;
     onToggleTask: (taskId: string) => void;
     onRenameTask: (taskId: string, name: string) => void;
@@ -16,15 +19,42 @@ type TaskRowProps = {
 
 export function TaskRow({
     task,
+    projectId,
+    dnd,
     onEditTask,
     onToggleTask,
     onRenameTask,
     onRemoveTask,
 }: TaskRowProps) {
+    const { hint, draggingId } = dnd;
+    const isTaskHint = hint?.kind === 'task' && hint.id === task.id;
+    const rowClass = [
+        styles.row,
+        draggingId === task.id && styles.dragging,
+        isTaskHint && hint.pos === 'before' && styles.dropBefore,
+        isTaskHint && hint.pos === 'after' && styles.dropAfter,
+    ]
+        .filter(Boolean)
+        .join(' ');
     const undated = task.subtasks.length === 0;
+
     return (
-        <li className={styles.row}>
-            <Grip className={styles.grip} />
+        <li
+            className={rowClass}
+            data-drag-row
+            onDragOver={(e) => dnd.overTask(e, task.id)}
+            onDrop={(e) => dnd.dropTask(e, projectId, task.id)}
+        >
+            <span
+                className={styles.gripHandle}
+                draggable
+                onDragStart={(e) => dnd.startTask(e, task.id)}
+                onDragEnd={dnd.end}
+                title="Drag to reorder, or move to another project"
+                aria-label="Drag to reorder task"
+            >
+                <Grip className={styles.grip} />
+            </span>
             <input
                 type="checkbox"
                 className={check.box}

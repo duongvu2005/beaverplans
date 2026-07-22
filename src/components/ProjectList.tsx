@@ -1,9 +1,11 @@
 import type { Project } from '../core/types';
 import { ProjectCard } from './ProjectCard';
 import styles from './ProjectList.module.css';
+import type { TreeDnd } from './useTreeDnd';
 
 type ProjectListProps = {
     projects: ReadonlyArray<Project>;
+    dnd: TreeDnd;
     onEditTask: (taskId: string) => void;
     onToggleTask: (taskId: string) => void;
     onAddTask: (projectId: string) => void;
@@ -16,6 +18,7 @@ type ProjectListProps = {
 
 export function ProjectList({
     projects,
+    dnd,
     onEditTask,
     onToggleTask,
     onAddTask,
@@ -31,6 +34,7 @@ export function ProjectList({
                 <ProjectCard
                     key={project.id}
                     project={project}
+                    dnd={dnd}
                     onEditTask={onEditTask}
                     onToggleTask={onToggleTask}
                     onAddTask={onAddTask}

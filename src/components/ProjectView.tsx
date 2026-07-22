@@ -1,9 +1,11 @@
 import type { Project } from '../core/types';
 import { ProjectList } from './ProjectList';
 import styles from './ProjectView.module.css';
+import type { TreeDnd } from './useTreeDnd';
 
 type ProjectViewProps = {
     projects: ReadonlyArray<Project>;
+    dnd: TreeDnd;
     onEditTask: (taskId: string) => void;
     onToggleTask: (taskId: string) => void;
     onAddProject: () => void;

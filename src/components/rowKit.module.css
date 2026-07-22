@@ -49,3 +49,14 @@
 .grip:active {
     cursor: grabbing;
 }
+
+/* The element that actually carries draggable. <Grip> is an SVG, and draggable on
+   SVG is unreliable across browsers, so the handle is a span wrapped around it.
+   touch-action: none keeps a touch-drag started on the grip from scrolling the
+   page instead, which is what the touch polyfill needs to see the gesture. */
+.gripHandle {
+    flex: none;
+    display: flex;
+    align-items: center;
+    touch-action: none;
+}
