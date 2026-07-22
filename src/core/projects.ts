@@ -8,6 +8,7 @@
  */
 
 import { isValidWeekStart } from './dates';
+import { moveBefore } from './list';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from './types';
 import { WEEK } from './types';
 
@@ -362,6 +363,33 @@ export function removeMissedDay(plan: WeekPlan, subtaskId: string, day: DayOfWee
         ...s,
         missedDays: s.missedDays.filter((missed) => missed !== day),
     }));
+}
+
+/**
+ * Move a project to a different position among the plan's projects.
+ *
+ * @param plan  the current plan
+ * @param projectId  the id of the project to move
+ * @param beforeProjectId  the id of the project that the moved project should end
+ *        up immediately in front of, or null to move it to the end
+ * @returns  a new plan with the same weekStart, holding the same projects, each
+ *           unchanged, with the project whose id is projectId positioned
+ *           immediately before the project whose id is beforeProjectId (or last,
+ *           when beforeProjectId is null) and every other project in its original
+ *           relative order. If no project has id projectId, if beforeProjectId is
+ *           neither null nor the id of a project in the plan, or if
+ *           beforeProjectId equals projectId, the projects keep their original
+ *           order.
+ */
+export function reorderProject(
+    plan: WeekPlan,
+    projectId: string,
+    beforeProjectId: string | null,
+): WeekPlan {
+    return {
+        ...plan,
+        projects: moveBefore(plan.projects, projectId, beforeProjectId),
+    };
 }
 
 // Accessors (observers)
