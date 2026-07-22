@@ -1,47 +1,13 @@
 import { useRef, useState, type DragEvent } from 'react';
 import type { Project } from '../core/types';
+import { halfPos, setRowDragImage, toBeforeId, type Pos } from './dragPosition';
 
-type Pos = 'before' | 'after';
 type DragItem = { kind: 'project' | 'task'; id: string };
 
 export type DropHint =
     | { kind: 'project'; id: string; pos: Pos }
     | { kind: 'task'; id: string; pos: Pos }
     | { kind: 'taskEnd'; projectId: string };
-
-// Which half of the row the cursor is in, recomputed at drop time so a stale
-// hover hint can never place the item.
-function halfPos(e: DragEvent): Pos {
-    const rect = e.currentTarget.getBoundingClientRect();
-    return e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
-}
-
-// The id following targetId, or null when targetId is last or absent.
-function idAfter(ids: readonly string[], targetId: string): string | null {
-    const index = ids.indexOf(targetId);
-    if (index === -1 || index === ids.length - 1) {
-        return null;
-    }
-    return ids[index + 1] ?? null;
-}
-
-// A drop before or after targetId, expressed the way the core producers want it:
-// the id to land in front of, or null for the end of the list.
-function toBeforeId(ids: readonly string[], targetId: string, pos: Pos): string | null {
-    return pos === 'before' ? targetId : idAfter(ids, targetId);
-}
-
-// Drag the whole row, not the grip that started the drag.
-function setRowDragImage(e: DragEvent) {
-    const row = e.currentTarget.closest('[data-drag-row]');
-    if (row instanceof HTMLElement) {
-        try {
-            e.dataTransfer.setDragImage(row, 16, 16);
-        } catch {
-            // some browsers refuse; the default preview is acceptable
-        }
-    }
-}
 
 export function useTreeDnd(
     projects: ReadonlyArray<Project>,
