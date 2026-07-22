@@ -116,6 +116,17 @@
     box-sizing: border-box;
 }
 
+/* The touch drag-and-drop polyfill parks its drag image at left:-9999px on the
+   body and then moves it under the finger, so during a drag the document is
+   wider than the viewport. On mobile that makes the browser rescale to fit,
+   which reads as the page zooming mid-drag. Clipping the horizontal overflow
+   stops the document growing; clip rather than hidden so no scroll container is
+   created and position: sticky keeps working. */
+html,
+body {
+    overflow-x: clip;
+}
+
 body {
     margin: 0;
 }

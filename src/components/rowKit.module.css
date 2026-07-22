@@ -59,4 +59,20 @@
     display: flex;
     align-items: center;
     touch-action: none;
+    position: relative;
+}
+
+/* The grip is 16px, far under the ~44px a finger reliably hits. Missing it lands
+   the touch on the row, which has no touch-action, so the browser claims the
+   gesture as a scroll and the drag never starts — the handle just feels dead.
+   This pseudo-element enlarges the hit area without affecting layout: events on
+   it target the handle itself, so the polyfill still finds a draggable ancestor.
+   Coarse pointers only; a mouse hits 16px fine and a wider target there would
+   only steal clicks from the neighbouring control. */
+@media (hover: none) {
+    .gripHandle::after {
+        content: '';
+        position: absolute;
+        inset: -12px -6px;
+    }
 }
