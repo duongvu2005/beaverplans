@@ -11,6 +11,9 @@
     align-items: flex-end; /* dock to bottom -> sheet */
     justify-content: center;
     background: rgba(28, 26, 23, 0.34); /* translucent wash over --ink; no token for scrim */
+    /* a scroll that reaches the end of the sheet must not chain to the page
+       behind it; pairs with the body lock the component applies while open */
+    overscroll-behavior: contain;
 }
 
 .panel {
@@ -27,6 +30,16 @@
 
 .panel:focus {
     outline: none;
+}
+
+/* Applied to <body> while any dialog is open. position: fixed rather than a bare
+   overflow: hidden because iOS Safari ignores the latter and keeps rubber-banding
+   the page behind the sheet. The component restores the scroll position on close,
+   since fixing the body otherwise jumps it to the top. */
+:global(body.dialogOpen) {
+    position: fixed;
+    width: 100%;
+    overflow: hidden;
 }
 
 @media (min-width: 640px) {
