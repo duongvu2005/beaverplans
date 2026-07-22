@@ -18,6 +18,7 @@ import {
     addMissedDay,
     removeMissedDay,
     reorderProject,
+    reorderTask,
     isTaskDone,
     isValidProject,
     isValidSubtask,
@@ -44,6 +45,17 @@ function makeSubtask(id: string, day: DayOfWeek): Subtask {
 // The ids of a plan's projects, in order, so ordering is compared as one value.
 function projectIds(plan: WeekPlan): string {
     return plan.projects.map((project) => project.id).join('');
+}
+
+// A project holding the given tasks.
+function projectWith(id: string, tasks: Task[]): Project {
+    return { id, name: id, tasks };
+}
+
+// The ids of one project's tasks, in order, so ordering is compared as one value.
+function taskIdsOf(plan: WeekPlan, projectId: string): string {
+    const project = plan.projects.find((candidate) => candidate.id === projectId);
+    return (project?.tasks ?? []).map((task) => task.id).join('');
 }
 
 describe('addProject', () => {
@@ -1493,6 +1505,209 @@ describe('reorderProject', () => {
         reorderProject(plan, 'c', 'a');
 
         expect(projectIds(plan)).toBe('abc');
+    });
+});
+
+describe('reorderTask', () => {
+    /**
+     * Testing strategy:
+     *      - partition on destination project: same as the task's project | different
+     *      - partition on beforeTaskId: null | in destination | not in destination |
+     *        same as taskId
+     *      - partition on direction, same project and beforeTaskId in destination:
+     *        moves forward | moves backward | already in place
+     *      - partition on destination tasks, different project: empty | non-empty
+     *      - partition on taskId: found | not found
+     *      - partition on destProjectId: found | not found
+     *
+     *      "not in destination" includes a beforeTaskId that names a real task in
+     *      some other project, which is the case a caller is most likely to get wrong.
+     *
+     *      properties checked:
+     *      - the task appears exactly once, in the destination project
+     *      - the task is the same instance, subtasks and all
+     *      - untouched projects are the same instances; weekStart is unchanged
+     *      - the input plan is not mutated
+     */
+
+    it('covers same project, beforeTaskId in destination, moves backward', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
+        };
+        const result = reorderTask(plan, 'c', 'p', 'b');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p')).toBe('acb');
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers same project, beforeTaskId in destination, moves forward', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
+        };
+        const result = reorderTask(plan, 'a', 'p', 'c');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p')).toBe('bac');
+    });
+
+    it('covers same project, beforeTaskId null: moves to the end', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
+        };
+        const result = reorderTask(plan, 'a', 'p', null);
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p')).toBe('bca');
+    });
+
+    it('covers same project, already in place: order is restored', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
+        };
+        const result = reorderTask(plan, 'a', 'p', 'b');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p')).toBe('abc');
+    });
+
+    it('covers different project, beforeTaskId in destination', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [
+                projectWith('p1', [makeTask('a'), makeTask('b')]),
+                projectWith('p2', [makeTask('x'), makeTask('y')]),
+            ],
+        };
+        const result = reorderTask(plan, 'a', 'p2', 'y');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p1')).toBe('b');
+        expect(taskIdsOf(result, 'p2')).toBe('xay');
+    });
+
+    it('covers different project, beforeTaskId null: appends to the destination', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [
+                projectWith('p1', [makeTask('a'), makeTask('b')]),
+                projectWith('p2', [makeTask('x')]),
+            ],
+        };
+        const result = reorderTask(plan, 'a', 'p2', null);
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p1')).toBe('b');
+        expect(taskIdsOf(result, 'p2')).toBe('xa');
+    });
+
+    it('covers different project with no tasks: becomes its only task', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p1', [makeTask('a'), makeTask('b')]), makeProject('p2')],
+        };
+        const result = reorderTask(plan, 'a', 'p2', null);
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p1')).toBe('b');
+        expect(taskIdsOf(result, 'p2')).toBe('a');
+    });
+
+    it('covers a refiled task keeps its subtasks, by reference', () => {
+        const moved: Task = { id: 'a', name: 'a', subtasks: [makeSubtask('s', 'mon')] };
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p1', [moved]), makeProject('p2')],
+        };
+        const result = reorderTask(plan, 'a', 'p2', null);
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[1]?.tasks[0]).toBe(moved); // moved whole, not rebuilt
+    });
+
+    it('covers unrelated projects are the same instances', () => {
+        const other = projectWith('p3', [makeTask('z')]);
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p1', [makeTask('a')]), makeProject('p2'), other],
+        };
+        const result = reorderTask(plan, 'a', 'p2', null);
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[2]).toBe(other);
+    });
+
+    it('covers taskId not found: projects unchanged', () => {
+        const p = projectWith('p', [makeTask('a'), makeTask('b')]);
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [p] };
+        const result = reorderTask(plan, 'nope', 'p', 'a');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[0]).toBe(p);
+    });
+
+    it('covers destProjectId not found: projects unchanged', () => {
+        const p = projectWith('p', [makeTask('a'), makeTask('b')]);
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [p] };
+        const result = reorderTask(plan, 'a', 'nope', null);
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[0]).toBe(p);
+    });
+
+    it('covers beforeTaskId same as taskId: order unchanged', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
+        };
+        const result = reorderTask(plan, 'b', 'p', 'b');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p')).toBe('abc');
+    });
+
+    it('covers beforeTaskId naming a task in another project: order unchanged', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [
+                projectWith('p1', [makeTask('a'), makeTask('b')]),
+                projectWith('p2', [makeTask('x')]),
+            ],
+        };
+        const result = reorderTask(plan, 'a', 'p2', 'b');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p1')).toBe('ab');
+        expect(taskIdsOf(result, 'p2')).toBe('x');
+    });
+
+    it('covers beforeTaskId not in the plan at all: order unchanged', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [projectWith('p', [makeTask('a'), makeTask('b')])],
+        };
+        const result = reorderTask(plan, 'b', 'p', 'nope');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(taskIdsOf(result, 'p')).toBe('ab');
+    });
+
+    it('covers the input plan is not mutated', () => {
+        const plan: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [
+                projectWith('p1', [makeTask('a'), makeTask('b')]),
+                projectWith('p2', [makeTask('x')]),
+            ],
+        };
+        reorderTask(plan, 'a', 'p2', 'x');
+
+        expect(taskIdsOf(plan, 'p1')).toBe('ab');
+        expect(taskIdsOf(plan, 'p2')).toBe('x');
     });
 });
 

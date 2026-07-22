@@ -392,6 +392,66 @@ export function reorderProject(
     };
 }
 
+/**
+ * Move a task to a different position, within its own project or into another one.
+ *
+ * @param plan  the current plan
+ * @param taskId  the id of the task to move
+ * @param destProjectId  the id of the project the task should end up in; may be the
+ *        project that already holds it
+ * @param beforeTaskId  the id of a task in the project with id destProjectId that the
+ *        moved task should end up immediately in front of, or null to move it to the
+ *        end of that project's tasks
+ * @returns  a new plan with the same weekStart in which the task with id taskId,
+ *           itself unchanged and carrying all of its subtasks, appears exactly once:
+ *           in the project with id destProjectId, immediately before the task with id
+ *           beforeTaskId, or last among that project's tasks when beforeTaskId is
+ *           null. Every other task keeps its original relative order within its
+ *           project, and every project other than the source and the destination is
+ *           unchanged. The projects are unchanged if no task has id taskId, if no
+ *           project has id destProjectId, if beforeTaskId equals taskId, or if
+ *           beforeTaskId is neither null nor the id of a task in the destination
+ *           project.
+ */
+export function reorderTask(
+    plan: WeekPlan,
+    taskId: string,
+    destProjectId: string,
+    beforeTaskId: string | null,
+): WeekPlan {
+    const destProject = plan.projects.find((project) => project.id === destProjectId);
+    const movedTask = plan.projects
+        .flatMap((project) => project.tasks)
+        .find((task) => task.id === taskId);
+    if (destProject === undefined || movedTask === undefined || beforeTaskId === taskId) {
+        return plan;
+    }
+
+    const destinationMissing =
+        beforeTaskId !== null && !destProject.tasks.some((task) => task.id === beforeTaskId);
+    if (destinationMissing) {
+        return plan;
+    }
+
+    return {
+        ...plan,
+        projects: plan.projects.map((project) => {
+            const isSource = project.tasks.some((task) => task.id === taskId);
+            if (!isSource && project.id !== destProjectId) {
+                return project;
+            }
+            const withoutMoved = project.tasks.filter((task) => task.id !== taskId);
+            return {
+                ...project,
+                tasks:
+                    project.id === destProjectId
+                        ? moveBefore([...withoutMoved, movedTask], taskId, beforeTaskId)
+                        : withoutMoved,
+            };
+        }),
+    };
+}
+
 // Accessors (observers)
 /**
  * Determine whether a task is done.
