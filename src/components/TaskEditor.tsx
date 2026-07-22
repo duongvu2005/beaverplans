@@ -7,6 +7,7 @@ import type { Task, Subtask, DayOfWeek } from '../core/types';
 import { newId } from '../utils/newId';
 import styles from './TaskEditor.module.css';
 import { SubtaskRow } from './SubtaskRow';
+import shell from './dialogShell.module.css';
 
 type TaskEditorProps = {
     task: Task;
@@ -81,7 +82,9 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
     }
 
     function setSubtaskNote(id: string, note: string) {
-        setSubtasks((current) => current.map((s) => (s.id === id ? { ...s, description: note } : s)));
+        setSubtasks((current) =>
+            current.map((s) => (s.id === id ? { ...s, description: note } : s)),
+        );
     }
 
     function handleSave() {
@@ -93,15 +96,15 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
 
     return (
         <Dialog open onClose={onClose} labelledBy={titleId}>
-            <div className={styles.head}>
-                <div className={styles.eyebrow}>{projectName || 'Project'}</div>
-                <h3 id={titleId} className={styles.title}>
+            <div className={shell.head}>
+                <div className={shell.eyebrow}>{projectName || 'Project'}</div>
+                <h3 id={titleId} className={shell.title}>
                     {task.name || 'Task'}
                 </h3>
             </div>
-            <div className={styles.body}>
-                <div className={styles.field}>
-                    <label className={styles.label} htmlFor="task-deadline">
+            <div className={shell.body}>
+                <div className={shell.field}>
+                    <label className={shell.label} htmlFor="task-deadline">
                         Deadline
                     </label>
                     <div className={styles.deadrow}>
@@ -122,9 +125,13 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                     </div>
                 </div>
 
-                <div className={styles.field}>
-                    <label className={styles.label}>Days</label>
-                    <div className={styles.days} role="group" aria-label="Days to work on this task">
+                <div className={shell.field}>
+                    <label className={shell.label}>Days</label>
+                    <div
+                        className={styles.days}
+                        role="group"
+                        aria-label="Days to work on this task"
+                    >
                         {WEEK.map((day) => {
                             const on = activeDays.has(day);
                             return (
@@ -177,8 +184,8 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                     </p>
                 </div>
 
-                <div className={styles.field}>
-                    <label className={styles.label} htmlFor="task-note">
+                <div className={shell.field}>
+                    <label className={shell.label} htmlFor="task-note">
                         Note
                     </label>
                     <textarea
@@ -190,11 +197,15 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                     />
                 </div>
             </div>
-            <div className={styles.foot}>
-                <button type="button" className={`${styles.btn} ${styles.ghost}`} onClick={onClose}>
+            <div className={shell.foot}>
+                <button type="button" className={`${shell.btn} ${shell.ghost}`} onClick={onClose}>
                     Cancel
                 </button>
-                <button type="button" className={`${styles.btn} ${styles.primary}`} onClick={handleSave}>
+                <button
+                    type="button"
+                    className={`${shell.btn} ${shell.primary}`}
+                    onClick={handleSave}
+                >
                     Save
                 </button>
             </div>

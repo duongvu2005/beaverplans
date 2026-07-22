@@ -1,0 +1,94 @@
+/* Shared dialog shell: head / body / foot + the foot buttons.
+   Every Dialog consumer (TaskEditor, MovePopover, ConfirmDialog) uses these so
+   they read as one family — same header rule, same footer rule, same buttons.
+   The Dialog panel itself supplies the surface, radius, shadow and the iOS
+   safe-area inset, so nothing here repeats those. */
+
+.head {
+    padding: var(--sp-4) var(--sp-4) var(--sp-3);
+    border-bottom: 1px solid var(--line);
+}
+
+/* small mono kicker above the title — the context line (project, section) */
+.eyebrow {
+    font: var(--fs-label) / 1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+}
+
+.title {
+    margin: var(--sp-1) 0 0;
+    font: 600 var(--fs-title) / 1.25 var(--display);
+    color: var(--ink);
+}
+
+.body {
+    padding: var(--sp-4);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+}
+
+/* plain body copy (confirmations, hints) */
+.text {
+    margin: 0;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-soft);
+}
+
+/* a labelled block inside the body: mono label above its control or copy.
+   Every dialog names its action this way (Deadline / Days / Note / Move to). */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.label {
+    font: var(--fs-label) / 1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+}
+
+.foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    border-top: 1px solid var(--line);
+}
+
+.btn {
+    font: 500 var(--fs-body) var(--sans);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--r);
+    cursor: pointer;
+}
+
+.ghost {
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    color: var(--ink-soft);
+}
+
+.ghost:hover {
+    background: var(--hover-neutral);
+}
+
+.primary {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+}
+
+.primary:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
