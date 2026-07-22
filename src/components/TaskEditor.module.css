@@ -113,6 +113,51 @@
     border-top: 1px solid var(--line);
 }
 
+/* --- drag and drop between day groups ---
+   Every day always has a group in the DOM; the unused ones are merely hidden and
+   revealed while a drag is in progress. They must exist from the start rather
+   than being added at dragstart: inserting siblings ahead of the drag source
+   makes React move that node with insertBefore, which detaches it, and detaching
+   the drag source makes the browser cancel the drag. */
+
+/* a day not in use, outside a drag */
+.dayHidden {
+    display: none;
+}
+
+/* the first group that is actually visible: no separator above it. Needed
+   because .daygroup + .daygroup matches DOM order, which includes the hidden
+   groups, so the topmost visible group would otherwise draw a stray rule. */
+.daygroup.dayFirst {
+    border-top: none;
+}
+
+/* a legal target while a drag is in progress: hatched, so every day the subtask
+   MAY move to is visible at a glance rather than discovered by hovering. */
+.dayOpen {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 6px,
+        var(--accent-soft) 6px,
+        var(--accent-soft) 7px
+    );
+}
+
+/* the legal target currently under the cursor */
+.dayOver {
+    background: var(--accent-soft);
+}
+.dayOver .daylabel {
+    color: var(--accent);
+}
+
+/* a day the subtask cannot move to, because it has already missed that day or a
+   later one: a subtask only ever slips forward. Dimmed and inert. */
+.dayBlocked {
+    opacity: 0.4;
+}
+
 .daylabel {
     font: var(--fs-label) / 1.4 var(--mono);
     text-transform: uppercase;

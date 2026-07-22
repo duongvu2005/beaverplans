@@ -8,6 +8,8 @@ import { newId } from '../utils/newId';
 import styles from './TaskEditor.module.css';
 import { SubtaskRow } from './SubtaskRow';
 import shell from './dialogShell.module.css';
+import { moveBefore } from '../core/list';
+import { useSubtaskDnd } from './useSubtaskDnd';
 
 type TaskEditorProps = {
     task: Task;
@@ -92,7 +94,31 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
         onSave(buildTask(task, { description, subtasks, deadline }));
     }
 
+    // Retarget the day first, then position within the draft. Because each day
+    // group renders subtasks.filter(assignedDay === day), and filtering keeps
+    // relative order, placing the subtask in the flat array places it correctly
+    // inside its day group.
+    function moveSubtaskTo(subtaskId: string, day: DayOfWeek, beforeId: string | null) {
+        setSubtasks((current) =>
+            moveBefore(
+                current.map((s) => (s.id === subtaskId ? { ...s, assignedDay: day } : s)),
+                subtaskId,
+                beforeId,
+            ),
+        );
+    }
+
+    const dnd = useSubtaskDnd(subtasks, moveSubtaskTo);
+
+    const dragging = dnd.draggingId !== null;
+    const { hint } = dnd;
     const activeDaysInOrder = WEEK.filter((day) => activeDays.has(day));
+    // Every day is always rendered; unused ones are hidden and revealed while a
+    // drag is in progress, so a subtask can be moved to a day it does not yet
+    // occupy. They are hidden rather than omitted because adding groups at
+    // dragstart would reorder the DOM and cancel the drag.
+    const visibleDays = dragging ? WEEK : activeDaysInOrder;
+    const firstVisibleDay = visibleDays[0];
 
     return (
         <Dialog open onClose={onClose} labelledBy={titleId}>
@@ -149,23 +175,37 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                             );
                         })}
                     </div>
-
-                    {activeDaysInOrder.length > 0 && (
-                        <div className={styles.subs}>
-                            {activeDaysInOrder.map((day) => (
-                                <div key={day} className={styles.daygroup}>
+                    <div className={styles.subs} hidden={visibleDays.length === 0}>
+                        {WEEK.map((day) => {
+                            const daySubtasks = subtasks.filter((s) => s.assignedDay === day);
+                            const groupClass = [
+                                styles.daygroup,
+                                !dragging && daySubtasks.length === 0 && styles.dayHidden,
+                                day === firstVisibleDay && styles.dayFirst,
+                                dragging &&
+                                    (dnd.canDropOn(day) ? styles.dayOpen : styles.dayBlocked),
+                                hint?.kind === 'day' && hint.day === day && styles.dayOver,
+                            ]
+                                .filter(Boolean)
+                                .join(' ');
+                            return (
+                                <div
+                                    key={day}
+                                    className={groupClass}
+                                    onDragOver={(e) => dnd.overDay(e, day)}
+                                    onDrop={(e) => dnd.dropDay(e, day)}
+                                >
                                     <div className={styles.daylabel}>{DAY_NAME[day]}</div>
-                                    {subtasks
-                                        .filter((s) => s.assignedDay === day)
-                                        .map((s) => (
-                                            <SubtaskRow
-                                                key={s.id}
-                                                subtask={s}
-                                                onSetWeight={setSubtaskWeight}
-                                                onSetNote={setSubtaskNote}
-                                                onRemove={removeSubtask}
-                                            />
-                                        ))}
+                                    {daySubtasks.map((s) => (
+                                        <SubtaskRow
+                                            key={s.id}
+                                            subtask={s}
+                                            dnd={dnd}
+                                            onSetWeight={setSubtaskWeight}
+                                            onSetNote={setSubtaskNote}
+                                            onRemove={removeSubtask}
+                                        />
+                                    ))}
                                     <button
                                         type="button"
                                         className={styles.addsub}
@@ -174,9 +214,9 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                                         + add subtask on {DAY_SHORT[day]}
                                     </button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            );
+                        })}
+                    </div>
 
                     <p className={styles.note}>
                         Pick the days you&rsquo;ll work on this &mdash; each becomes a checkbox that

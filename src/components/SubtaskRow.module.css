@@ -41,6 +41,44 @@
     opacity: 0.9;
 }
 
+/* the span that carries draggable, wrapped around the grip svg. See rowKit for
+   why the handle is a span and not the svg itself. */
+.gripHandle {
+    composes: gripHandle from './rowKit.module.css';
+}
+
+/* --- drag and drop --- */
+
+/* the row being dragged: faded, so the insertion line reads as the live position */
+.dragging {
+    opacity: 0.4;
+}
+
+/* insertion indicator. The row has no padding of its own and sits in a gap-spaced
+   column, so a pseudo-element rule in the gap reads more clearly than an inset
+   shadow would, and nothing shifts. */
+.dropBefore,
+.dropAfter {
+    position: relative;
+}
+.dropBefore::before,
+.dropAfter::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+    pointer-events: none;
+}
+.dropBefore::before {
+    top: calc(-1 * var(--sp-1) - 1px);
+}
+.dropAfter::after {
+    bottom: calc(-1 * var(--sp-1) - 1px);
+}
+
 /* delete: shared icon-button chrome from rowKit + hover-reveal */
 .iconBtn {
     composes: iconBtn from './rowKit.module.css';
