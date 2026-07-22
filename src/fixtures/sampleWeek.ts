@@ -4,7 +4,7 @@ import type { WeekPlan } from '../core/types';
  *  Covers: project with/without deadline, a leaf task (isDone), subtasks across
  *  weekdays, done/undone mix, recorded misses, weights 1..3, descriptions. */
 export const sampleWeek: WeekPlan = {
-    weekStart: '2026-07-13', // a Monday
+    weekStart: '2026-07-20', // a Monday
     projects: [
         {
             id: 'p1',
