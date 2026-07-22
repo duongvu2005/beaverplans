@@ -83,7 +83,8 @@
 
 /* drag handle — the <Grip> component (Material "drag_indicator" SVG, fill via
    currentColor). Reserved gutter: always occupies its slot, transparent until
-   the header is hovered, so the header never shifts. Not wired for dragging yet. */
+   the header is hovered, so the header never shifts. The drag itself is carried by
+   .gripHandle, the span wrapped around this svg. */
 .grip {
     flex: none;
     width: var(--grip-size);

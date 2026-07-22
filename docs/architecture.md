@@ -37,12 +37,17 @@ App                              owns plan: WeekPlan, view, open-dialog ids
     ├── MovePopover              owns picked day + mark-missed
     └── ConfirmDialog            Dialog plus a standard foot
 
+Drag and drop
+    useTreeDnd                   projects and tasks; owned by App
+    useSubtaskDnd                subtasks in the editor; owned by TaskEditor
+    dragPosition                 shared geometry helpers, no state
+
 Kit          Grip, CloseIcon, EditIcon, MoveIcon, DeadlineIcon
 Shared CSS   checkbox, rowKit, dialogShell, moveUi
 ```
 
 Three components own state: `App`, `WeekView`, and `TaskEditor`. Everything else is a
-function of its props.
+function of its props, apart from the two drag hooks, which own theirs.
 
 ## State ownership
 
@@ -72,6 +77,21 @@ Note that both approaches to editing exist in the app on purpose. Name fields in
 `ProjectCard` and `TaskRow` are controlled inputs that run a producer per keystroke, with
 no draft, because there is nothing to cancel. A dialog that edits several fields at once
 needs a draft so Cancel can revert all of them together.
+
+**The drag hooks own a fourth kind of state:** what is being dragged and where it would
+land. `useTreeDnd` is held by `App` and drives the project tree; `useSubtaskDnd` is held
+by `TaskEditor` and drives its draft. Both split that state deliberately. What is being
+dragged lives in a **ref**, because `dragover` fires continuously and the handlers must
+read the current value without re-rendering on every event. The drop hint lives in
+**state**, because it has to repaint.
+
+`useSubtaskDnd` goes further and defers its `draggingId` state by one animation frame.
+Setting it synchronously makes React flush a re-render inside the `dragstart` handler,
+while the browser is still initiating the drag, and altering the source's surroundings
+at that moment makes the browser cancel: `dragstart` is followed straight by `dragend`
+with no `dragover`. `useTreeDnd` does not need this because nothing structural changes
+around the tree when a drag begins. The asymmetry is deliberate, and collapsing it would
+reintroduce the bug.
 
 ## Component tree
 
@@ -106,6 +126,13 @@ omission.
 ![Props flow with derivations](./diagrams/props-flow.svg)
 
 The same information follows in text, one block per component, in tree order.
+
+One thing threads through both branches and is left out of the blocks below to keep them
+readable: a single `dnd` object. `App` builds it with `useTreeDnd` and passes it down
+through `ProjectView`, `ProjectList` and `ProjectCard` to `TaskRow`; `TaskEditor` builds
+its own with `useSubtaskDnd` and passes it to `SubtaskRow`. Every component in those
+chains takes it, and the leaves are where it is finally used. The diagram above predates
+it and does not show it.
 
 ### App
 
@@ -336,6 +363,13 @@ Only the topmost dialog responds to Escape. That is what lets the weight sheet o
 the task editor and close by itself without dismissing the editor underneath. Clicking the
 scrim closes; clicks inside the panel stop propagating so they do not.
 
+That same stack doubles as the reference count for the background scroll lock: the page is
+locked when the stack goes from empty to one and unlocked only when it returns to empty, so
+a nested dialog closing cannot unlock the page while its parent is still open. The lock is
+`position: fixed` on the body rather than `overflow: hidden`, because iOS Safari ignores the
+latter and keeps rubber-banding; the scroll position is captured on lock and restored on
+unlock, since fixing the body would otherwise jump the page to the top.
+
 ### ConfirmDialog
 
 Pure composition: `Dialog` plus the standard head, body and Cancel/Confirm foot. Callers
@@ -393,7 +427,7 @@ div.projectView
 ```
 section.card
 ├── div.header
-│   ├── Grip.grip                           (not yet wired)
+│   ├── span.gripHandle > Grip              draggable, starts the drag
 │   ├── input.name                          -> onRenameProject, controlled
 │   └── div.actions
 │       ├── button.iconBtn > DeadlineIcon   (not yet wired)
@@ -407,7 +441,7 @@ section.card
 
 ```
 li.row
-├── Grip.grip                           (not yet wired)
+├── span.gripHandle > Grip              draggable, starts the drag
 ├── input[checkbox].box                 -> onToggleTask, checked = isTaskDone(task)
 ├── input.name                          -> onRenameTask, controlled
 ├── button.assignHint                   (if undated) "assign days"
@@ -505,7 +539,7 @@ Dialog
 
 ```
 div.row
-├── Grip.grip                           (not yet wired)
+├── span.gripHandle > Grip              draggable, starts the drag
 ├── input.subnote                       -> onSetNote
 ├── WeightChip                          -> onSetWeight
 └── button.iconBtn > CloseIcon          -> onRemove
@@ -535,12 +569,39 @@ Dialog
 └── div.foot        Cancel | Move (disabled until a day is picked)
 ```
 
+## Drag and drop
+
+Native HTML5 drag events throughout. Touch works through
+`@dragdroptouch/drag-drop-touch`, enabled once in `main.tsx`, which translates touch
+gestures into the same events and is a no-op for a mouse. Its `allowDragScroll` is
+turned off, because by default it scrolls the *window* when a drag nears a viewport
+edge, which panned the page sideways and scrolled the backdrop behind open dialogs.
+
+Only the grip is draggable; rows, cards and day groups are drop targets. The grip is a
+`span` wrapped around the `Grip` svg, because `draggable` on SVG elements is unreliable
+across browsers, and because the wrapper is somewhere to put `touch-action: none` and
+an enlarged hit area for touch.
+
+`dragPosition.ts` holds the geometry, shared by both hooks:
+
+- `halfPos` gives the half of a row the cursor is in, recomputed **at drop time** so a
+  stale hover hint can never misplace an item.
+- `idAfter` and `toBeforeId` convert "before or after this row" into the single
+  `beforeId | null` the core producers take. This is where the gesture meets the spec,
+  and it is why `moveBefore` defines `beforeId === id` as a no-op: dragging a row onto
+  its own predecessor's lower half resolves to the row itself.
+- `setRowDragImage` makes the drag preview the whole row rather than the grip, found via
+  a `data-drag-row` attribute. An attribute, not a class, because CSS Modules hashes
+  class names at build time.
+
+Cross-day drags in the editor are refused when the missed-day rule forbids them, so an
+illegal move cannot be expressed rather than being rejected after the fact. That mirrors
+the rule `MovePopover` applies to its day pills.
+
 ## Where things are not wired yet
 
 Kept current so the gaps are visible rather than surprising.
 
-- **Grips** render in `ProjectCard`, `TaskRow` and `SubtaskRow` but do not drag. `Grip`
-  reserves its slot so rows do not shift when it appears on hover.
 - **The deadline button** on a project card does nothing; task deadlines are editable in
   `TaskEditor`.
 - **Stats and archive** are placeholder panes.

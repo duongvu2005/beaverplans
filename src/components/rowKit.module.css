@@ -2,7 +2,7 @@
    the icon-button chrome that wraps <CloseIcon>/<EditIcon>/etc., and the drag-grip
    gutter for <Grip>. These are the always-visible BASE styles; a row that wants
    hover-reveal (TaskRow's dense tree) composes these and layers opacity on top of
-   its own class. Reordering/drag is not wired yet. */
+   its own class. .gripHandle is the span that wraps <Grip> and carries the drag. */
 
 .iconBtn {
     flex: none;
