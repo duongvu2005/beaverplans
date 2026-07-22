@@ -20,7 +20,7 @@
     /* accent + status */
     --accent: #b5482e; /* terracotta: active, focus, actions */
     --accent-soft: #e9d9d2; /* accent tint background */
-    --hover-accent: #f7ece8; /* pale terracotta wash: a moved/missed cell */
+    --hover-accent: #f7ece8; /* pale terracotta wash: the overdue cell (missed is now a quiet dashed tile) */
     --good: #4f7a4a; /* done / complete */
     --good-soft: #dde7da;
 

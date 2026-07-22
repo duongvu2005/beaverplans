@@ -1,0 +1,73 @@
+/* Move dialog internals only — the head/body/foot shell and its buttons come
+   from dialogShell.module.css.
+
+   The move flow is pick-then-confirm: tapping a day only selects it (accent
+   fill); nothing is applied until Move is pressed. Rescheduling a slipped task
+   deserves a beat, and it keeps one interaction shape across the dialogs. */
+
+.rail {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--sp-1);
+}
+
+/* one day box — mirrors TaskEditor's .day toggle */
+.pill {
+    display: grid;
+    place-content: center;
+    min-height: 40px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    color: var(--ink-faint);
+    font: var(--fs-body) / 1.1 var(--mono);
+    cursor: pointer;
+}
+
+.pill:hover:not(:disabled) {
+    background: var(--hover-neutral);
+    color: var(--ink);
+}
+
+/* where it sits today — a quiet accent outline, no label text */
+.cur {
+    border-color: var(--accent-soft);
+    color: var(--ink-faint);
+}
+
+/* the chosen target — solid accent, same weight as the primary button */
+.picked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+    font-weight: 600;
+}
+
+.picked:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--paper);
+}
+
+.pill:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* "mark missed" — on by default; moving off a past day usually did slip */
+.miss {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font: var(--fs-body) / 1.4 var(--sans);
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+/* Same shared checkbox shape + tick, but terracotta when checked: this records a
+   marker, not a completion, so it shouldn't read as "done" green. Class is
+   doubled to outrank checkbox.module.css's .box:checked regardless of the order
+   the two stylesheets land in. */
+.missBox.missBox:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}

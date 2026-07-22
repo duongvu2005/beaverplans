@@ -23,7 +23,7 @@
 }
 
 /* the text region opens the task editor on click (the checkbox, outside it,
-   still just toggles) */
+   still just toggles; the tag-row buttons stop propagation) */
 .text {
     flex: 1;
     min-width: 0;
@@ -78,17 +78,170 @@
     background: var(--accent);
 }
 
-.missTag {
-    display: inline-block;
+/* tagRow: an in-flow status label + control, below the title. Never absolute, so
+   it can't drift onto the eyebrow's weight dots. Holds overdue→move and
+   missed→clear. */
+.tagRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
     margin-top: 6px;
+}
+
+/* compact overdue tile: a soft terracotta wash (the way the missed tile used to
+   look) so the whole cell signals the state */
+.cell.compact.overdue {
+    background: var(--hover-accent);
+    border-color: var(--accent-soft);
+}
+
+/* compact chips: each state's label gets a small chip matching its tile —
+   overdue a loud filled accent badge on its wash, missed a quiet dashed muted
+   outline echoing the dashed tile (the item's already been handled) */
+.cell.compact .cellTag {
+    border-radius: 5px;
+    padding: 1px 5px;
+}
+
+.cell.compact.overdue .cellTag {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.cell.compact.missed .cellTag {
+    border: 1px dashed var(--line-strong);
+}
+
+.cellTag {
     font-family: var(--mono);
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* focus (roomy) list: the status label reads as normal sentence text sitting
+   inline with its action button, rather than a mono uppercase tag */
+.cell:not(.compact) .cellTag {
+    font-family: var(--sans);
+    font-size: 12.5px;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* missed: a passive historical record -> muted */
+.missTag {
+    color: var(--ink-faint);
+}
+
+/* overdue: a call to action -> accent */
+.overdueTag {
     color: var(--accent);
+}
+
+/* compact icon buttons (grid tile) */
+.moveBtn,
+.clearBtn {
+    flex: none;
+    appearance: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+/* transparent at rest — a painted square read as an odd chip on the cell/wash;
+   the glyph alone carries it, with a tint only on hover */
+.moveBtn {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--r-chip);
+    background: transparent;
+    color: var(--accent);
+}
+
+.moveBtn:hover {
     background: var(--accent-soft);
-    border-radius: 5px;
-    padding: 1px 6px;
+}
+
+.clearBtn {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-faint);
+}
+
+/* The compact grid is desktop-only (phones get the focus list), so hover is
+   always available here — keep the quiet "clear" out of the way until the cell
+   is hovered. The overdue Move stays visible: it's the call to action. */
+.cell.compact .clearBtn {
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+
+.cell.compact:hover .clearBtn,
+.cell.compact .clearBtn:focus-visible {
+    opacity: 1;
+}
+
+.clearBtn:hover {
+    background: var(--hover-accent);
+    color: var(--accent);
+}
+
+/* roomy pills (focus list) */
+.movePill,
+.clearPill {
+    flex: none;
+    appearance: none;
+    cursor: pointer;
+    background: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.movePill {
+    border: 1px solid var(--accent-soft);
+    color: var(--accent);
+}
+
+.movePill:hover {
+    background: var(--accent-soft);
+}
+
+.clearPill {
+    border: 1px solid var(--line);
+    color: var(--ink-faint);
+}
+
+.clearPill:hover {
+    background: var(--hover-accent);
+    color: var(--accent);
+    border-color: var(--accent-soft);
+}
+
+.moveBtn svg,
+.clearBtn svg,
+.movePill svg,
+.clearPill svg {
+    width: 12px;
+    height: 12px;
+    display: block;
+}
+
+.clearBtn svg,
+.clearPill svg {
+    width: 11px;
+    height: 11px;
 }
 
 /* done: strike + fade the title only; the check stays crisp */
@@ -98,14 +251,13 @@
     text-decoration-color: var(--line-strong);
 }
 
-/* missed: a day the subtask was moved OFF — struck title, dashed faded check, a
-   small "missed" marker. The terracotta wash is left to the boxed compact tile
-   (see .cell.compact.missed); the borderless roomy focus row would render it as
-   a hard-edged rectangle, so it relies on the strike + tag instead. */
+/* missed: a day the subtask was moved OFF — struck title, dashed faded check.
+   The compact tile adds a dashed border + neutral chip; the borderless roomy row
+   relies on the strike + tag instead. */
 .cell.missed .task {
     color: var(--ink-soft);
     text-decoration: line-through;
-    text-decoration-color: var(--accent-soft);
+    text-decoration-color: var(--line-strong);
 }
 
 .missedCheck {
@@ -121,11 +273,11 @@
     border-radius: var(--r-chip);
 }
 
-/* the terracotta wash lives here, on the boxed tile only: rounded corners and a
-   border contain it, unlike the borderless roomy row. */
+/* missed tile: a dashed (rather than solid) border is the only signal — muted,
+   no colour, but clearly distinct from a plain done tile */
 .cell.compact.missed {
-    background: var(--hover-accent);
-    border-color: var(--accent-soft);
+    border-color: var(--line-strong);
+    border-style: dashed;
 }
 
 .cell.compact .task {
@@ -142,8 +294,4 @@
 /* the 7-up is too tight for a description; it shows in the roomy focus list */
 .cell.compact .desc {
     display: none;
-}
-
-.cell.compact .missTag {
-    margin-top: 4px;
 }

@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { ProjectView } from './components/ProjectView';
 import { WeekView } from './components/WeekView';
+import { MovePopover } from './components/MovePopover';
 import { sampleWeek } from './fixtures/sampleWeek';
 import { newId } from './utils/newId';
+import { todayKey } from './core/dates';
 import './App.css';
-import type { Task, WeekPlan } from './core/types';
+import type { DayOfWeek, Task, WeekPlan } from './core/types';
 import {
+    addMissedDay,
     addProject,
     addTask,
+    moveSubtask,
+    removeMissedDay,
     removeProject,
     removeTask,
     replaceTask,
@@ -17,23 +22,57 @@ import {
     toggleTask,
 } from './core/projects';
 import { TaskEditor } from './components/TaskEditor';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import shell from './components/dialogShell.module.css';
 
 type View = 'plan' | 'stats' | 'archive';
+type Clearing = {
+    subtaskId: string;
+    day: DayOfWeek;
+    taskName: string;
+    projectName: string;
+};
+
+const SHORT: Record<DayOfWeek, string> = {
+    mon: 'Mon',
+    tue: 'Tue',
+    wed: 'Wed',
+    thu: 'Thu',
+    fri: 'Fri',
+    sat: 'Sat',
+    sun: 'Sun',
+};
+
+// Locate a subtask by id, returning it with its parent task's name for labels.
+function findSubtask(plan: WeekPlan, subtaskId: string) {
+    for (const project of plan.projects) {
+        for (const task of project.tasks) {
+            const subtask = task.subtasks.find((s) => s.id === subtaskId);
+            if (subtask) return { subtask, taskName: task.name, projectName: project.name };
+        }
+    }
+    return undefined;
+}
 
 export default function App() {
     const [view, setView] = useState<View>('plan');
     const [plan, setPlan] = useState<WeekPlan>(sampleWeek);
     const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+    const [movingSubtaskId, setMovingSubtaskId] = useState<string | null>(null);
+    const [clearing, setClearing] = useState<Clearing | null>(null);
+
+    const today = todayKey();
 
     const editingProject = editingTaskId
         ? plan.projects.find((p) => p.tasks.some((t) => t.id === editingTaskId))
         : undefined;
     const editingTask = editingProject?.tasks.find((t) => t.id === editingTaskId);
 
+    const moving = movingSubtaskId ? findSubtask(plan, movingSubtaskId) : undefined;
+
     function handleEditTask(taskId: string) {
         setEditingTaskId(taskId);
     }
-
     function handleCloseEditor() {
         setEditingTaskId(null);
     }
@@ -58,29 +97,58 @@ export default function App() {
         setPlan((current) => toggleSubtask(current, subtaskId));
     }
 
+    function handleRequestMove(subtaskId: string) {
+        setMovingSubtaskId(subtaskId);
+    }
+
+    function handleMove(toDay: DayOfWeek, markMissed: boolean) {
+        const id = movingSubtaskId;
+        if (!id) return;
+        setPlan((current) => {
+            const found = findSubtask(current, id);
+            if (!found) return current;
+            const fromDay = found.subtask.assignedDay;
+            const moved = moveSubtask(current, id, toDay);
+            return markMissed ? addMissedDay(moved, id, fromDay) : moved;
+        });
+        setMovingSubtaskId(null);
+    }
+
+    function handleRequestClear(subtaskId: string, day: DayOfWeek) {
+        const found = findSubtask(plan, subtaskId);
+        setClearing({
+            subtaskId,
+            day,
+            taskName: found?.taskName ?? '',
+            projectName: found?.projectName ?? '',
+        });
+    }
+
+    function handleConfirmClear() {
+        if (!clearing) return;
+        setPlan((current) => removeMissedDay(current, clearing.subtaskId, clearing.day));
+        setClearing(null);
+    }
+
     function handleAddProject() {
         setPlan((current) => addProject(current, newId()));
     }
-
     function handleAddTask(projectId: string) {
         setPlan((current) => addTask(current, projectId, newId()));
     }
-
     function handleRenameTask(taskId: string, name: string) {
         setPlan((current) => setTaskName(current, taskId, name));
     }
-
     function handleRenameProject(projectId: string, name: string) {
         setPlan((current) => setProjectName(current, projectId, name));
     }
-
     function handleRemoveProject(projectId: string) {
         setPlan((current) => removeProject(current, projectId));
     }
-
     function handleRemoveTask(taskId: string) {
         setPlan((current) => removeTask(current, taskId));
     }
+
     return (
         <>
             <nav className="tabs">
@@ -120,8 +188,11 @@ export default function App() {
                         <WeekView
                             projects={plan.projects}
                             weekStart={plan.weekStart}
+                            today={today}
                             onToggleSubtask={handleToggleSubtask}
                             onEditSubtask={handleEditSubtask}
+                            onRequestMove={handleRequestMove}
+                            onClearMissed={handleRequestClear}
                         />
                     </div>
                 )}
@@ -135,6 +206,32 @@ export default function App() {
                     onClose={handleCloseEditor}
                     onSave={handleSaveTask}
                 />
+            )}
+            {moving && (
+                <MovePopover
+                    subtask={moving.subtask}
+                    taskName={moving.taskName}
+                    projectName={moving.projectName}
+                    weekStart={plan.weekStart}
+                    today={today}
+                    onMove={handleMove}
+                    onClose={() => setMovingSubtaskId(null)}
+                />
+            )}
+            {clearing && (
+                <ConfirmDialog
+                    eyebrow={clearing.projectName || 'Project'}
+                    title={clearing.taskName || 'Task'}
+                    label="Clear missed"
+                    confirmLabel="Clear"
+                    onConfirm={handleConfirmClear}
+                    onClose={() => setClearing(null)}
+                >
+                    <p className={shell.text}>
+                        {SHORT[clearing.day]} will no longer count as a missed day for this subtask.
+                        The subtask itself is unaffected.
+                    </p>
+                </ConfirmDialog>
             )}
         </>
     );

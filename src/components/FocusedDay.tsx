@@ -1,5 +1,5 @@
 import type { DayEntry } from '../core/daySchedule';
-import type { DayOfWeek } from '../core/types';
+import type { DateKey, DayOfWeek } from '../core/types';
 import { DayCell } from './DayCell';
 import styles from './FocusedDay.module.css';
 
@@ -17,16 +17,24 @@ type FocusedDayProps = {
     day: DayOfWeek;
     items: ReadonlyArray<DayEntry>;
     isToday: boolean;
+    weekStart: DateKey;
+    today: DateKey;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;
+    onRequestMove: (subtaskId: string) => void;
+    onClearMissed: (subtaskId: string, day: DayOfWeek) => void;
 };
 
 export function FocusedDay({
     day,
     items,
     isToday,
+    weekStart,
+    today,
     onToggleSubtask,
     onEditSubtask,
+    onRequestMove,
+    onClearMissed,
 }: FocusedDayProps) {
     const assigned = items.filter((entry) => entry.subtask.assignedDay === day);
     const doneCount = assigned.filter((entry) => entry.subtask.isDone).length;
@@ -49,9 +57,14 @@ export function FocusedDay({
                         <DayCell
                             key={entry.subtask.id}
                             entry={entry}
+                            day={day}
                             isMissed={entry.subtask.assignedDay !== day}
+                            weekStart={weekStart}
+                            today={today}
                             onToggleSubtask={onToggleSubtask}
                             onEditSubtask={onEditSubtask}
+                            onRequestMove={onRequestMove}
+                            onClearMissed={onClearMissed}
                         />
                     ))}
                 </ul>

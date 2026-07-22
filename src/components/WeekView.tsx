@@ -23,11 +23,22 @@ const SHORT: Record<DayOfWeek, string> = {
 type WeekViewProps = {
     projects: ReadonlyArray<Project>;
     weekStart: string;
+    today: string;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;
+    onRequestMove: (subtaskId: string) => void;
+    onClearMissed: (subtaskId: string, day: DayOfWeek) => void;
 };
 
-export function WeekView({ projects, weekStart, onToggleSubtask, onEditSubtask }: WeekViewProps) {
+export function WeekView({
+    projects,
+    weekStart,
+    today,
+    onToggleSubtask,
+    onEditSubtask,
+    onRequestMove,
+    onClearMissed,
+}: WeekViewProps) {
     const schedule = scheduleByDay(projects);
     const byDay = progressByDay(projects);
     const todayDay = todayInWeek(weekStart);
@@ -78,9 +89,13 @@ export function WeekView({ projects, weekStart, onToggleSubtask, onEditSubtask }
             <div className="weekGridPane">
                 <WeekGrid
                     schedule={schedule}
+                    weekStart={weekStart}
+                    today={today}
                     onFocusDay={focusDay}
                     onToggleSubtask={onToggleSubtask}
                     onEditSubtask={onEditSubtask}
+                    onRequestMove={onRequestMove}
+                    onClearMissed={onClearMissed}
                 />
             </div>
             <div className="focusPane">
@@ -95,8 +110,12 @@ export function WeekView({ projects, weekStart, onToggleSubtask, onEditSubtask }
                     day={selectedDay}
                     items={focused ? focused.items : []}
                     isToday={selectedDay === todayDay}
+                    weekStart={weekStart}
+                    today={today}
                     onToggleSubtask={onToggleSubtask}
                     onEditSubtask={onEditSubtask}
+                    onRequestMove={onRequestMove}
+                    onClearMissed={onClearMissed}
                 />
             </div>
         </div>
