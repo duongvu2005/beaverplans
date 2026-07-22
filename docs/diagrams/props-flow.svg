@@ -1,0 +1,153 @@
+<svg viewBox="0 0 1100 800" width="1100" height="800" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif">
+  <title>beaverplans props flow with derivations</title>
+  <desc>App owns the WeekPlan and calls pure producers. It passes projects and callbacks into the ProjectView branch, and projects plus weekStart and today into WeekView, which derives the schedule and per-day progress before handing them to WeekGrid, DayRail and FocusedDay. Overlays receive a single selected node from App. Each box lists what it computes.</desc>
+
+  <rect x="0" y="0" width="1100" height="800" fill="#fbf8f3"/>
+
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9" fill="none" stroke="#6f6c65" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <g stroke="#ddd8ce" stroke-width="1.3" fill="#ffffff">
+    <rect x="40" y="30" width="210" height="100" rx="9"/>
+    <rect x="280" y="30" width="520" height="100" rx="9"/>
+    <rect x="40" y="175" width="300" height="105" rx="9"/>
+    <rect x="380" y="175" width="320" height="105" rx="9"/>
+    <rect x="40" y="330" width="300" height="76" rx="9"/>
+    <rect x="380" y="330" width="100" height="76" rx="9"/>
+    <rect x="490" y="330" width="100" height="76" rx="9"/>
+    <rect x="600" y="330" width="100" height="76" rx="9"/>
+    <rect x="40" y="456" width="300" height="76" rx="9"/>
+    <rect x="380" y="456" width="150" height="76" rx="9"/>
+    <rect x="40" y="582" width="300" height="76" rx="9"/>
+    <rect x="380" y="582" width="320" height="76" rx="9"/>
+    <rect x="740" y="330" width="300" height="76" rx="9"/>
+    <rect x="740" y="456" width="300" height="76" rx="9"/>
+    <rect x="740" y="582" width="300" height="76" rx="9"/>
+    <rect x="740" y="682" width="300" height="70" rx="9"/>
+  </g>
+  <rect x="740" y="175" width="300" height="105" rx="9" fill="#ffffff" stroke="#b5482e" stroke-width="1.3" stroke-dasharray="5 4"/>
+
+  <g font-size="14" font-weight="600" fill="#26241f">
+    <text x="60" y="56">core/projects.ts</text>
+    <text x="300" y="56">App</text>
+    <text x="60" y="201">ProjectView</text>
+    <text x="400" y="201">WeekView</text>
+    <text x="60" y="356">ProjectList</text>
+    <text x="400" y="356" font-size="12">WeekGrid</text>
+    <text x="510" y="356" font-size="12">DayRail</text>
+    <text x="613" y="356" font-size="11.5">FocusedDay</text>
+    <text x="60" y="482">ProjectCard</text>
+    <text x="400" y="482">DayColumn</text>
+    <text x="60" y="608">TaskRow</text>
+    <text x="400" y="608">DayCell</text>
+    <text x="760" y="201" fill="#b5482e">TaskEditor</text>
+    <text x="760" y="356">SubtaskRow</text>
+    <text x="760" y="482">WeightChip</text>
+    <text x="760" y="608">MovePopover</text>
+    <text x="760" y="708">ConfirmDialog</text>
+  </g>
+
+  <g font-size="11" fill="#6f6c65">
+    <text x="60" y="80">pure producers</text>
+    <text x="60" y="100">(plan, ...args) =&gt; plan</text>
+    <text x="60" y="120" fill="#918e86">no React, no DOM</text>
+
+    <text x="300" y="80">owns  plan: WeekPlan · view · three dialog ids</text>
+    <text x="300" y="100">computes  today · editingTask · editingProject</text>
+    <text x="300" y="120">· moving (subtask + parent names)</text>
+
+    <text x="60" y="225">computes nothing</text>
+    <text x="60" y="245" fill="#918e86">adds the heading, spreads every</text>
+    <text x="60" y="263" fill="#918e86">prop straight through</text>
+
+    <text x="400" y="225">owns  selectedDay · mode</text>
+    <text x="400" y="245">computes  schedule = scheduleByDay(projects)</text>
+    <text x="400" y="263">byDay = progressByDay(projects) · todayDay · focused</text>
+
+    <text x="60" y="380">computes nothing</text>
+    <text x="60" y="398" fill="#918e86">owns the add-project button</text>
+
+    <text x="392" y="378" font-size="10">7 columns</text>
+    <text x="502" y="378" font-size="10">pct per day</text>
+    <text x="612" y="378" font-size="10">assigned,</text>
+    <text x="612" y="392" font-size="10">doneCount</text>
+
+    <text x="60" y="506">computes nothing</text>
+    <text x="60" y="524" fill="#918e86">owns rename, delete, add-task</text>
+
+    <text x="400" y="506">computes  isMissed</text>
+    <text x="400" y="524" fill="#918e86">day !== assignedDay</text>
+
+    <text x="60" y="632">computes  isTaskDone(task) · undated</text>
+    <text x="60" y="650" fill="#918e86">leaf stores isDone, parent derives it</text>
+
+    <text x="400" y="632">computes  isOverdue</text>
+    <text x="400" y="650" fill="#918e86">live · unfinished · past day · current week only</text>
+
+    <text x="760" y="225">owns  date · time · description · subtasks draft</text>
+    <text x="760" y="245">computes  activeDays · activeDaysInOrder</text>
+    <text x="760" y="263" fill="#b5482e">no projects.ts producer runs here</text>
+
+    <text x="760" y="380">computes nothing</text>
+    <text x="760" y="398" fill="#918e86">note field, weight, remove</text>
+
+    <text x="760" y="506">owns  open (the sheet)</text>
+    <text x="760" y="524" fill="#918e86">wraps WeightDots for fine pointers</text>
+
+    <text x="760" y="632">owns  picked · markMissed</text>
+    <text x="760" y="650" fill="#918e86">computes which days are legal targets</text>
+
+    <text x="760" y="732" fill="#918e86">Dialog plus a standard foot</text>
+  </g>
+
+  <g fill="none" stroke="#6f6c65" stroke-width="1.4" marker-end="url(#a)">
+    <path d="M280,66 H256"/>
+    <path d="M400,130 V152 H190 V169"/>
+    <path d="M540,130 V169"/>
+    <path d="M190,280 V324"/>
+    <path d="M190,406 V450"/>
+    <path d="M190,532 V576"/>
+    <path d="M430,280 V324"/>
+    <path d="M540,280 V324"/>
+    <path d="M650,280 V324"/>
+    <path d="M430,406 V450"/>
+    <path d="M430,532 V576"/>
+    <path d="M650,406 V576"/>
+    <path d="M700,80 H720 V200 H734"/>
+    <path d="M890,280 V324"/>
+    <path d="M890,406 V450"/>
+    <path d="M800,100 H1070 V617 H1046"/>
+    <path d="M1070,700 H1046"/>
+    <path d="M256,96 H274"/>
+  </g>
+
+  <g font-size="10.5" fill="#918e86">
+    <text x="222" y="60" text-anchor="end">calls</text>
+    <text x="222" y="112" text-anchor="end">new plan</text>
+    <text x="200" y="146">projects + 8 callbacks</text>
+    <text x="550" y="146">projects, weekStart, today</text>
+    <text x="200" y="311">everything, unchanged</text>
+    <text x="200" y="437">one project</text>
+    <text x="200" y="563">one task</text>
+    <text x="424" y="305" text-anchor="end">schedule</text>
+    <text x="534" y="305" text-anchor="end">byDay</text>
+    <text x="644" y="305" text-anchor="end">focused.items</text>
+    <text x="440" y="437">one daySchedule</text>
+    <text x="440" y="563">entry, isMissed, compact</text>
+    <text x="644" y="500" text-anchor="end">entry, isMissed</text>
+    <text x="728" y="152">one task</text>
+    <text x="900" y="311">one draft subtask</text>
+    <text x="900" y="437">weight</text>
+    <text x="1035" y="570" text-anchor="end">subtask + parent names</text>
+    <text x="1035" y="672" text-anchor="end">clearing</text>
+  </g>
+
+  <g font-size="10.5" fill="#918e86">
+    <line x1="40" y1="778" x2="72" y2="778" stroke="#b5482e" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="82" y="782">holds a detached draft, the one place the core layer is bypassed</text>
+    <text x="600" y="782">DayCell is reached from both DayColumn and FocusedDay</text>
+  </g>
+</svg>
