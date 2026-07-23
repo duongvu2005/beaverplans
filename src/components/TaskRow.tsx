@@ -1,16 +1,16 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { isTaskDone } from '../core/projects';
 import type { Task } from '../core/types';
 import { Grip } from './Grip';
 import { EditIcon } from './EditIcon';
 import { CloseIcon } from './CloseIcon';
-import type { TreeDnd } from './useTreeDnd';
 import styles from './TaskRow.module.css';
 import check from './checkbox.module.css';
 
 type TaskRowProps = {
     task: Task;
     projectId: string;
-    dnd: TreeDnd;
     onEditTask: (taskId: string) => void;
     onToggleTask: (taskId: string) => void;
     onRenameTask: (taskId: string, name: string) => void;
@@ -20,38 +20,37 @@ type TaskRowProps = {
 export function TaskRow({
     task,
     projectId,
-    dnd,
     onEditTask,
     onToggleTask,
     onRenameTask,
     onRemoveTask,
 }: TaskRowProps) {
-    const { hint, draggingId } = dnd;
-    const isTaskHint = hint?.kind === 'task' && hint.id === task.id;
-    const rowClass = [
-        styles.row,
-        draggingId === task.id && styles.dragging,
-        isTaskHint && hint.pos === 'before' && styles.dropBefore,
-        isTaskHint && hint.pos === 'after' && styles.dropAfter,
-    ]
-        .filter(Boolean)
-        .join(' ');
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        setActivatorNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: task.id, data: { type: 'task', projectId } });
+
+    const style = { transform: CSS.Transform.toString(transform), transition };
     const undated = task.subtasks.length === 0;
 
     return (
         <li
-            className={rowClass}
-            data-drag-row
-            onDragOver={(e) => dnd.overTask(e, task.id)}
-            onDrop={(e) => dnd.dropTask(e, projectId, task.id)}
+            ref={setNodeRef}
+            style={style}
+            className={isDragging ? `${styles.row} ${styles.dragging}` : styles.row}
         >
             <span
+                ref={setActivatorNodeRef}
                 className={styles.gripHandle}
-                draggable
-                onDragStart={(e) => dnd.startTask(e, task.id)}
-                onDragEnd={dnd.end}
                 title="Drag to reorder, or move to another project"
                 aria-label="Drag to reorder task"
+                {...attributes}
+                {...listeners}
             >
                 <Grip className={styles.grip} />
             </span>

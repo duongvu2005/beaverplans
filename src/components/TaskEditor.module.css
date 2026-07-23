@@ -174,3 +174,11 @@
     cursor: pointer;
     padding: var(--sp-1) 0;
 }
+
+/* lifts the cloned subtask row that floats under the cursor while dragging */
+.dragOverlay {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    border-radius: var(--r);
+    background: var(--paper);
+    cursor: grabbing;
+}

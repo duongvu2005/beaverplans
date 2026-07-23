@@ -24,7 +24,6 @@ import {
 import { TaskEditor } from './components/TaskEditor';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import shell from './components/dialogShell.module.css';
-import { useTreeDnd } from './components/useTreeDnd';
 import { reorderProject, reorderTask } from './core/projects';
 
 type View = 'plan' | 'stats' | 'archive';
@@ -64,7 +63,6 @@ export default function App() {
     const [clearing, setClearing] = useState<Clearing | null>(null);
 
     const today = todayKey();
-    const dnd = useTreeDnd(plan.projects, handleReorderProject, handleReorderTask);
 
     const editingProject = editingTaskId
         ? plan.projects.find((p) => p.tasks.some((t) => t.id === editingTaskId))
@@ -155,11 +153,7 @@ export default function App() {
     function handleReorderProject(projectId: string, beforeProjectId: string | null) {
         setPlan((current) => reorderProject(current, projectId, beforeProjectId));
     }
-    function handleReorderTask(
-        taskId: string,
-        destProjectId: string,
-        beforeTaskId: string | null,
-    ) {
+    function handleReorderTask(taskId: string, destProjectId: string, beforeTaskId: string | null) {
         setPlan((current) => reorderTask(current, taskId, destProjectId, beforeTaskId));
     }
 
@@ -190,7 +184,8 @@ export default function App() {
                     <div className="plan-layout">
                         <ProjectView
                             projects={plan.projects}
-                            dnd={dnd}
+                            onReorderProject={handleReorderProject}
+                            onReorderTask={handleReorderTask}
                             onEditTask={handleEditTask}
                             onToggleTask={handleToggleTask}
                             onAddProject={handleAddProject}
