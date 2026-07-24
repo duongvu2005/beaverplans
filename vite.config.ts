@@ -10,7 +10,7 @@ export default defineConfig({
         },
         coverage: {
             provider: 'v8',
-            include: ['src/core/**', 'src/storage/**'],
+            include: ['src/core/**', 'src/storage/**', 'src/components/dndReorder.ts'],
             exclude: ['src/core/types.ts'],
         },
     },

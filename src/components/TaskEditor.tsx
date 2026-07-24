@@ -78,6 +78,11 @@ const DAY_NAME: Record<DayOfWeek, string> = {
     sun: 'Sunday',
 };
 
+// The data attached to each day/subtask droppable, so a drop can tell what it
+// hit. Named once here (mirrors ProjectList's TreeDragData) so the two casts
+// below and the useDroppable call can't silently drift apart.
+type DayDropData = { type: 'day'; day: DayOfWeek } | { type: 'subtask'; day: DayOfWeek };
+
 // Keep the dragged clone under the cursor. Revealing the empty day groups at
 // drag start shifts the measured rect downward, which would otherwise leave the
 // clone below the pointer. Horizontal never shifts, so the grip stays exactly
@@ -129,7 +134,10 @@ function DayGroup({
     onSetNote,
     onRemove,
 }: DayGroupProps) {
-    const { setNodeRef } = useDroppable({ id: `day:${day}`, data: { type: 'day', day } });
+    const { setNodeRef } = useDroppable({
+        id: `day:${day}`,
+        data: { type: 'day', day } satisfies DayDropData,
+    });
     const groupClass = [
         styles.daygroup,
         hidden && styles.dayHidden,
@@ -229,8 +237,7 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
         if (over === null) {
             return;
         }
-        const overData = over.data.current as
-            { type: 'subtask' | 'day'; day: DayOfWeek } | undefined;
+        const overData = over.data.current as DayDropData | undefined;
         if (overData === undefined) {
             return;
         }
@@ -276,8 +283,7 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
         if (id === null || over === null) {
             return;
         }
-        const overData = over.data.current as
-            { type: 'subtask' | 'day'; day: DayOfWeek } | undefined;
+        const overData = over.data.current as DayDropData | undefined;
         if (overData === undefined) {
             return;
         }
