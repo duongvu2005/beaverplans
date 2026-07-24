@@ -2,9 +2,9 @@ type GripProps = {
     className?: string;
 };
 
-// Material "drag_indicator" icon. Presentational only: the surrounding span is what
-// carries `draggable` and starts the drag. It reserves its slot so the row doesn't
-// shift when it appears on hover.
+// Material "drag_indicator" icon. Presentational only: the surrounding span is
+// dnd-kit's activator (ref + pointer listeners) and starts the drag. It reserves
+// its slot so the row doesn't shift when it appears on hover.
 export function Grip({ className }: GripProps) {
     return (
         <svg

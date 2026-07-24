@@ -104,7 +104,7 @@
     cursor: grabbing;
 }
 
-/* the span that carries draggable, wrapped around the grip svg. See rowKit for
+/* the span that is the drag handle, wrapped around the grip svg. See rowKit for
    why the handle is a span and not the svg itself. */
 .gripHandle {
     composes: gripHandle from './rowKit.module.css';
@@ -118,27 +118,10 @@
 
 /* --- drag and drop --- */
 
-/* the card being dragged: faded, so the insertion line reads as the live position */
+/* the card being dragged: faded, so it doesn't read as a duplicate sitting next
+   to the floating DragOverlay clone. */
 .dragging {
     opacity: 0.4;
-}
-
-/* insertion indicator: a rule on the edge the card would land against. Inset so
-   the card never changes size mid-drag and the layout stays still. */
-.dropBefore {
-    box-shadow: inset 0 3px 0 -1px var(--accent);
-}
-.dropAfter {
-    box-shadow: inset 0 -3px 0 -1px var(--accent);
-}
-
-/* a dragged TASK is over this card but not over any particular row: it will be
-   appended after the last one, so the whole list is tinted and underlined rather
-   than a single row being marked. */
-.dropEnd {
-    box-shadow: inset 0 -3px 0 -1px var(--accent);
-    background: var(--hover-neutral);
-    border-radius: var(--r);
 }
 
 /* quiet "+ add task" row (old-app .addsub). Reproduces a row's columns — a
