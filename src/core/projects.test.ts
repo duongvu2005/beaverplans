@@ -1292,7 +1292,12 @@ describe('canMoveSubtaskTo', () => {
             day: 'tue',
             want: false,
         },
-        { covers: 'one missed day, target before it', missedDays: ['fri'], day: 'tue', want: false },
+        {
+            covers: 'one missed day, target before it',
+            missedDays: ['fri'],
+            day: 'tue',
+            want: false,
+        },
         {
             covers: 'multiple missed days, target after all of them',
             missedDays: ['mon', 'wed'],
