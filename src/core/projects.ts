@@ -468,6 +468,23 @@ export function isTaskDone(task: Task): boolean {
 }
 
 /**
+ * Determine whether a subtask may be reassigned to a given day.
+ *
+ * This is moveSubtask's precondition on toDay, made checkable: a subtask only
+ * ever slips forward, so a legal target must stay ahead of every day the
+ * subtask has already missed.
+ *
+ * @param subtask any subtask
+ * @param day the candidate day to move subtask to
+ * @returns true iff day is strictly after every day in subtask.missedDays, in
+ *          weekday order (mon < tue < ... < sun). True when missedDays is empty.
+ */
+export function canMoveSubtaskTo(subtask: Subtask, day: DayOfWeek): boolean {
+    const target = WEEK.indexOf(day);
+    return subtask.missedDays.every((missed) => WEEK.indexOf(missed) < target);
+}
+
+/**
  * Check whether a subtask is well-formed.
  *
  * @param subtask any subtask

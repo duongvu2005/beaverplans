@@ -15,6 +15,7 @@ import {
     toggleTask,
     toggleSubtask,
     moveSubtask,
+    canMoveSubtaskTo,
     addMissedDay,
     removeMissedDay,
     reorderProject,
@@ -1272,6 +1273,41 @@ describe('moveSubtask', () => {
         const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
         moveSubtask(plan, 's0', 'fri');
         expect(s0.assignedDay).toBe('mon');
+    });
+});
+
+describe('canMoveSubtaskTo', () => {
+    /*
+     * Testing strategy
+     *     partition on missedDays: empty | one day | more than one day
+     *     partition on day, relative to missedDays: after all of them | equal to
+     *         the latest | before the latest (but possibly after an earlier one)
+     */
+    it.each([
+        { covers: 'empty missedDays: any day is legal', missedDays: [], day: 'mon', want: true },
+        { covers: 'one missed day, target after it', missedDays: ['tue'], day: 'fri', want: true },
+        {
+            covers: 'one missed day, target equal to it',
+            missedDays: ['tue'],
+            day: 'tue',
+            want: false,
+        },
+        { covers: 'one missed day, target before it', missedDays: ['fri'], day: 'tue', want: false },
+        {
+            covers: 'multiple missed days, target after all of them',
+            missedDays: ['mon', 'wed'],
+            day: 'fri',
+            want: true,
+        },
+        {
+            covers: 'multiple missed days, target after the earliest but before the latest',
+            missedDays: ['mon', 'thu'],
+            day: 'wed',
+            want: false,
+        },
+    ])('covers $covers', ({ missedDays, day, want }) => {
+        const subtask = { ...makeSubtask('s0', 'sun'), missedDays: missedDays as DayOfWeek[] };
+        expect(canMoveSubtaskTo(subtask, day as DayOfWeek)).toBe(want);
     });
 });
 
