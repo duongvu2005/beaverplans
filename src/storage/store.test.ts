@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Store } from './store';
+import { Store, type BackendName } from './store';
 import { LocalBackend, type KeyValueStore } from './localBackend';
 import type { Backend } from './backend';
 import type { WeekPlan, Archive } from '../core/types';
@@ -71,11 +71,13 @@ const newPlan: WeekPlan = {
     projects: [{ id: 'new-p', name: 'New', tasks: [] }],
 };
 const cloudArchive: Archive = [];
+const localArchive: Archive = [{ weekStart: '2026-06-29', projects: [] }];
 
 // A store wired with a real, seeded LocalBackend and an observable spy cloud.
 function makeStore(): { store: Store; local: LocalBackend; cloud: SpyBackend } {
     const local = new LocalBackend(new FakeStorage());
     local.setWeekPlan(localPlan); // seed so local is distinguishable from cloud
+    local.setArchive(localArchive); // seed so local is distinguishable from cloud
     const cloud = new SpyBackend(cloudPlan, cloudArchive);
     const store = new Store(local, cloud);
     return { store, local, cloud };
@@ -86,6 +88,7 @@ describe('Store', () => {
      * Testing strategy
      *   partition on active backend: local (default) | cloud (after switch) | local again (after switch back)
      *   partition on method: getter | setter (also check the argument passes through) | load (async, check propagation)
+     *     | reset (delegates) | useBackend (valid name | invalid name, throws)
      * Routing is observed by making the two backends return / record distinguishable values.
      */
 
@@ -113,6 +116,46 @@ describe('Store', () => {
         store.setWeekPlan(newPlan);
         expect(cloud.setPlanCalls).toEqual([newPlan]); // landed on cloud, same plan
         expect(local.getWeekPlan()).toEqual(localPlan); // local untouched
+    });
+
+    it('covers default active is local: getArchive routes to local', () => {
+        const { store } = makeStore();
+        expect(store.getArchive()).toEqual(localArchive);
+    });
+
+    it('covers default active is local: setArchive lands on local with the given archive', () => {
+        const { store, local, cloud } = makeStore();
+        const newArchive: Archive = [{ weekStart: '2026-07-06', projects: [] }];
+        store.setArchive(newArchive);
+        expect(local.getArchive()).toEqual(newArchive);
+        expect(cloud.setArchiveCalls).toEqual([]);
+    });
+
+    it('covers switch to cloud: getArchive routes to cloud', () => {
+        const { store } = makeStore();
+        store.useBackend('cloud');
+        expect(store.getArchive()).toEqual(cloudArchive);
+    });
+
+    it('covers switch to cloud: setArchive lands on cloud with the given archive', () => {
+        const { store, local, cloud } = makeStore();
+        store.useBackend('cloud');
+        const newArchive: Archive = [{ weekStart: '2026-07-06', projects: [] }];
+        store.setArchive(newArchive);
+        expect(cloud.setArchiveCalls).toEqual([newArchive]);
+        expect(local.getArchive()).toEqual(localArchive);
+    });
+
+    it('covers reset: delegates to the active backend', () => {
+        const { store, cloud } = makeStore();
+        store.useBackend('cloud');
+        store.reset();
+        expect(cloud.resetCalls).toBe(1);
+    });
+
+    it('covers useBackend with an invalid name: throws', () => {
+        const { store } = makeStore();
+        expect(() => store.useBackend('bogus' as BackendName)).toThrow('unknown backend: bogus');
     });
 
     it('covers switch back to local: getWeekPlan routes to local again', () => {

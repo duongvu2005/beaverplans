@@ -384,6 +384,10 @@ describe('isValidWeekStart', () => {
         expect(isValidWeekStart('2026-7-6')).toBe(false);
     });
 
+    it('covers a year below 1000 (still 4 digits)', () => {
+        expect(isValidWeekStart('0500-01-06')).toBe(false);
+    });
+
     it('covers an empty string', () => {
         expect(isValidWeekStart('')).toBe(false);
     });

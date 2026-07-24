@@ -38,7 +38,8 @@ const sampleArchive: Archive = [{ weekStart: '2026-07-06', projects: [] }];
 describe('LocalBackend', () => {
     /*
      * Testing strategy
-     *   partition on store contents at load: empty | corrupt | good
+     *   partition on store contents at load: empty | corrupt (bad JSON) |
+     *     invalid shape (valid JSON, invalid plan or archive) | good
      *   partition on operation: load | getters | setWeekPlan | setArchive | reset
      *   partition on effect checked: through memory (same backend) | through the store (fresh reload)
      *   partition on write outcome: succeeds | throws (quota)
@@ -75,6 +76,35 @@ describe('LocalBackend', () => {
         storage.setItem(STORAGE_KEY, 'not valid json{{');
         const backend = new LocalBackend(storage);
         await expect(backend.load()).resolves.toBeUndefined();
+        expect(backend.getWeekPlan().projects).toEqual([]);
+        expect(backend.getArchive()).toEqual([]);
+    });
+
+    it('covers load with an invalid plan (valid JSON): getters return empty defaults', async () => {
+        const storage = new FakeStorage();
+        const badPlan = { weekStart: 'not-a-date', projects: [] };
+        storage.setItem(STORAGE_KEY, JSON.stringify({ plan: badPlan, archive: sampleArchive }));
+        const backend = new LocalBackend(storage);
+        await backend.load();
+        expect(backend.getWeekPlan().projects).toEqual([]);
+        expect(backend.getArchive()).toEqual([]);
+    });
+
+    it('covers load with a valid plan but archive is not an array: getters return empty defaults', async () => {
+        const storage = new FakeStorage();
+        storage.setItem(STORAGE_KEY, JSON.stringify({ plan: samplePlan, archive: 'not-an-array' }));
+        const backend = new LocalBackend(storage);
+        await backend.load();
+        expect(backend.getWeekPlan().projects).toEqual([]);
+        expect(backend.getArchive()).toEqual([]);
+    });
+
+    it('covers load with a valid plan but an invalid entry in the archive: getters return empty defaults', async () => {
+        const storage = new FakeStorage();
+        const badArchive = [{ weekStart: 'not-a-date', projects: [] }];
+        storage.setItem(STORAGE_KEY, JSON.stringify({ plan: samplePlan, archive: badArchive }));
+        const backend = new LocalBackend(storage);
+        await backend.load();
         expect(backend.getWeekPlan().projects).toEqual([]);
         expect(backend.getArchive()).toEqual([]);
     });
