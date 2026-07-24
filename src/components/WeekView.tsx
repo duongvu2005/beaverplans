@@ -39,11 +39,12 @@ export function WeekView({
     onRequestMove,
     onClearMissed,
 }: WeekViewProps) {
-    const schedule = scheduleByDay(projects);
-    const byDay = progressByDay(projects);
     const todayDay = todayInWeek(weekStart);
     const [selectedDay, setSelectedDay] = useState<DayOfWeek>(todayDay ?? 'mon');
     const [mode, setMode] = useState<WeekMode>('grid');
+
+    const schedule = scheduleByDay(projects);
+    const byDay = progressByDay(projects);
     const focused = schedule.find((d) => d.day === selectedDay);
 
     function focusDay(day: DayOfWeek) {

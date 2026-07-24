@@ -178,19 +178,12 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
     // dragover so the day groups open a gap; committed to the draft on drop.
     const [preview, setPreviewState] = useState<readonly Subtask[] | null>(null);
     const previewRef = useRef<readonly Subtask[] | null>(null);
-    const titleId = 'task-editor-title';
-
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
     );
 
-    function setPreview(next: readonly Subtask[] | null) {
-        previewRef.current = next;
-        setPreviewState(next);
-    }
-
-    const activeDays = new Set(subtasks.map((s) => s.assignedDay));
+    const titleId = 'task-editor-title';
 
     function toggleDay(day: DayOfWeek) {
         setSubtasks((current) =>
@@ -216,9 +209,9 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
         setSubtasks((current) => setNoteInDraft(current, id, note));
     }
 
-    function handleSave() {
-        const deadline = date ? (time ? `${date}T${time}` : date) : undefined;
-        onSave(buildTask(task, { description, subtasks, deadline }));
+    function setPreview(next: readonly Subtask[] | null) {
+        previewRef.current = next;
+        setPreviewState(next);
     }
 
     function handleDragStart(event: DragStartEvent) {
@@ -299,9 +292,15 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
         );
     }
 
+    function handleSave() {
+        const deadline = date ? (time ? `${date}T${time}` : date) : undefined;
+        onSave(buildTask(task, { description, subtasks, deadline }));
+    }
+
     const display = preview ?? subtasks;
     const activeSubtask = subtasks.find((s) => s.id === activeId) ?? null;
     const dragging = activeId !== null;
+    const activeDays = new Set(subtasks.map((s) => s.assignedDay));
     const activeDaysInOrder = WEEK.filter((day) => activeDays.has(day));
     const visibleDays = dragging ? WEEK : activeDaysInOrder;
     const firstVisibleDay = visibleDays[0];

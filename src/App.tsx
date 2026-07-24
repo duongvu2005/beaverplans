@@ -1,11 +1,4 @@
 import { useState } from 'react';
-import { ProjectView } from './components/ProjectView';
-import { WeekView } from './components/WeekView';
-import { MovePopover } from './components/MovePopover';
-import { sampleWeek } from './fixtures/sampleWeek';
-import { newId } from './utils/newId';
-import { todayKey } from './core/dates';
-import './App.css';
 import type { DayOfWeek, Task, WeekPlan } from './core/types';
 import {
     addMissedDay,
@@ -16,15 +9,23 @@ import {
     removeProject,
     removeTask,
     replaceTask,
+    reorderProject,
+    reorderTask,
     setProjectName,
     setTaskName,
     toggleSubtask,
     toggleTask,
 } from './core/projects';
+import { todayKey } from './core/dates';
+import { newId } from './utils/newId';
+import { sampleWeek } from './fixtures/sampleWeek';
+import { ProjectView } from './components/ProjectView';
+import { WeekView } from './components/WeekView';
 import { TaskEditor } from './components/TaskEditor';
+import { MovePopover } from './components/MovePopover';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import shell from './components/dialogShell.module.css';
-import { reorderProject, reorderTask } from './core/projects';
+import './App.css';
 
 type View = 'plan' | 'stats' | 'archive';
 type Clearing = {
@@ -74,15 +75,16 @@ export default function App() {
     function handleEditTask(taskId: string) {
         setEditingTaskId(taskId);
     }
-    function handleCloseEditor() {
-        setEditingTaskId(null);
-    }
 
     function handleEditSubtask(subtaskId: string) {
         const task = plan.projects
             .flatMap((p) => p.tasks)
             .find((t) => t.subtasks.some((s) => s.id === subtaskId));
         if (task) setEditingTaskId(task.id);
+    }
+
+    function handleCloseEditor() {
+        setEditingTaskId(null);
     }
 
     function handleSaveTask(nextTask: Task) {
@@ -134,18 +136,23 @@ export default function App() {
     function handleAddProject() {
         setPlan((current) => addProject(current, newId()));
     }
+
     function handleAddTask(projectId: string) {
         setPlan((current) => addTask(current, projectId, newId()));
     }
+
     function handleRenameTask(taskId: string, name: string) {
         setPlan((current) => setTaskName(current, taskId, name));
     }
+
     function handleRenameProject(projectId: string, name: string) {
         setPlan((current) => setProjectName(current, projectId, name));
     }
+
     function handleRemoveProject(projectId: string) {
         setPlan((current) => removeProject(current, projectId));
     }
+
     function handleRemoveTask(taskId: string) {
         setPlan((current) => removeTask(current, taskId));
     }
@@ -153,6 +160,7 @@ export default function App() {
     function handleReorderProject(projectId: string, beforeProjectId: string | null) {
         setPlan((current) => reorderProject(current, projectId, beforeProjectId));
     }
+
     function handleReorderTask(taskId: string, destProjectId: string, beforeTaskId: string | null) {
         setPlan((current) => reorderTask(current, taskId, destProjectId, beforeTaskId));
     }
