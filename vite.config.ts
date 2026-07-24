@@ -8,5 +8,10 @@ export default defineConfig({
         env: {
             TZ: 'America/New_York',
         },
+        coverage: {
+            provider: 'v8',
+            include: ['src/core/**', 'src/storage/**'],
+            exclude: ['src/core/types.ts'],
+        },
     },
 });
