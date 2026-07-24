@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Dialog } from './Dialog';
 import { dayStatusOf } from '../core/dates';
+import { canMoveSubtaskTo } from '../core/projects';
 import { WEEK } from '../core/types';
 import type { DateKey, DayOfWeek, Subtask } from '../core/types';
 import check from './checkbox.module.css';
@@ -42,10 +43,6 @@ export function MovePopover({
     const titleId = 'move-title';
 
     const assignedIndex = WEEK.indexOf(subtask.assignedDay);
-    const latestMissedIndex = subtask.missedDays.reduce(
-        (max, d) => Math.max(max, WEEK.indexOf(d)),
-        -1,
-    );
     const fromPast = dayStatusOf(subtask.assignedDay, weekStart, today) === 'past';
 
     function confirm() {
@@ -69,13 +66,12 @@ export function MovePopover({
                     <div className={shell.label}>Move to</div>
                     <div className={styles.rail} role="group" aria-label="Move to which day">
                         {WEEK.map((day) => {
-                            const idx = WEEK.indexOf(day);
                             const isCurrent = day === subtask.assignedDay;
                             // forward-only: not the current day, not on/before any missed
                             // day, and (in the live week) never into the past
                             const disabled =
                                 isCurrent ||
-                                idx <= latestMissedIndex ||
+                                !canMoveSubtaskTo(subtask, day) ||
                                 dayStatusOf(day, weekStart, today) === 'past';
                             const cls = [
                                 styles.pill,

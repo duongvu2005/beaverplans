@@ -21,6 +21,7 @@ import {
 import { getEventCoordinates } from '@dnd-kit/utilities';
 import { Dialog } from './Dialog';
 import { buildTask } from '../core/buildTask';
+import { canMoveSubtaskTo } from '../core/projects';
 import { parseDeadline } from '../core/deadline';
 import { WEEK } from '../core/types';
 import type { Task, Subtask, DayOfWeek } from '../core/types';
@@ -30,7 +31,14 @@ import subStyles from './SubtaskRow.module.css';
 import { SubtaskRow } from './SubtaskRow';
 import { Grip } from './Grip';
 import shell from './dialogShell.module.css';
-import { moveBefore } from '../core/list';
+import {
+    addSubtaskOn as addSubtaskToDraft,
+    moveSubtaskInDraft,
+    removeSubtask as removeSubtaskFromDraft,
+    removeSubtasksOnDay,
+    setSubtaskNote as setNoteInDraft,
+    setSubtaskWeight as setWeightInDraft,
+} from '../core/subtaskDraft';
 import { beforeIdForDrop } from './dndReorder';
 
 type TaskEditorProps = {
@@ -69,35 +77,6 @@ const DAY_NAME: Record<DayOfWeek, string> = {
     sat: 'Saturday',
     sun: 'Sunday',
 };
-
-function makeSubtask(day: DayOfWeek): Subtask {
-    return { id: newId(), isDone: false, assignedDay: day, missedDays: [], weight: 1 };
-}
-
-// A subtask can only move to a day at or after all the days it has already
-// missed: a miss is a slip that stays parked on the earlier day. This mirrors
-// moveSubtask's precondition and isValidSubtask, kept here so an illegal drop
-// is refused rather than silently corrected.
-function canDropOnDay(subtask: Subtask, day: DayOfWeek): boolean {
-    const target = WEEK.indexOf(day);
-    return subtask.missedDays.every((missed) => WEEK.indexOf(missed) < target);
-}
-
-// Retarget one subtask's day, then position it in the flat draft. Each day group
-// renders subtasks.filter(assignedDay === day), and filtering keeps relative
-// order, so placing the subtask in the flat array places it inside its group.
-function movedSubtasks(
-    list: readonly Subtask[],
-    subtaskId: string,
-    day: DayOfWeek,
-    beforeId: string | null,
-): readonly Subtask[] {
-    return moveBefore(
-        list.map((s) => (s.id === subtaskId ? { ...s, assignedDay: day } : s)),
-        subtaskId,
-        beforeId,
-    );
-}
 
 // Keep the dragged clone under the cursor. Revealing the empty day groups at
 // drag start shifts the measured rect downward, which would otherwise leave the
@@ -216,27 +195,25 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
     function toggleDay(day: DayOfWeek) {
         setSubtasks((current) =>
             current.some((s) => s.assignedDay === day)
-                ? current.filter((s) => s.assignedDay !== day)
-                : [...current, makeSubtask(day)],
+                ? removeSubtasksOnDay(current, day)
+                : addSubtaskToDraft(current, day, newId()),
         );
     }
 
     function addSubtaskOn(day: DayOfWeek) {
-        setSubtasks((current) => [...current, makeSubtask(day)]);
+        setSubtasks((current) => addSubtaskToDraft(current, day, newId()));
     }
 
     function removeSubtask(id: string) {
-        setSubtasks((current) => current.filter((s) => s.id !== id));
+        setSubtasks((current) => removeSubtaskFromDraft(current, id));
     }
 
     function setSubtaskWeight(id: string, weight: number) {
-        setSubtasks((current) => current.map((s) => (s.id === id ? { ...s, weight } : s)));
+        setSubtasks((current) => setWeightInDraft(current, id, weight));
     }
 
     function setSubtaskNote(id: string, note: string) {
-        setSubtasks((current) =>
-            current.map((s) => (s.id === id ? { ...s, description: note } : s)),
-        );
+        setSubtasks((current) => setNoteInDraft(current, id, note));
     }
 
     function handleSave() {
@@ -270,7 +247,7 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
         if (dragged === undefined) {
             return;
         }
-        if (!canDropOnDay(dragged, overData.day)) {
+        if (!canMoveSubtaskTo(dragged, overData.day)) {
             setOverDay(null); // an illegal day never highlights
             return;
         }
@@ -281,7 +258,12 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
         const destIds = base.filter((s) => s.assignedDay === overData.day).map((s) => s.id);
         const overId = overData.type === 'subtask' ? String(over.id) : null;
         setPreview(
-            movedSubtasks(base, activeId, overData.day, beforeIdForDrop(destIds, activeId, overId)),
+            moveSubtaskInDraft(
+                base,
+                activeId,
+                overData.day,
+                beforeIdForDrop(destIds, activeId, overId),
+            ),
         );
     }
 
@@ -307,12 +289,14 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
             return;
         }
         const dragged = base.find((s) => s.id === id);
-        if (dragged === undefined || !canDropOnDay(dragged, overData.day)) {
+        if (dragged === undefined || !canMoveSubtaskTo(dragged, overData.day)) {
             return;
         }
         const destIds = base.filter((s) => s.assignedDay === overData.day).map((s) => s.id);
         const overId = overData.type === 'subtask' ? String(over.id) : null;
-        setSubtasks(movedSubtasks(base, id, overData.day, beforeIdForDrop(destIds, id, overId)));
+        setSubtasks(
+            moveSubtaskInDraft(base, id, overData.day, beforeIdForDrop(destIds, id, overId)),
+        );
     }
 
     const display = preview ?? subtasks;
@@ -403,7 +387,7 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
                                         dragging={dragging}
                                         droppable={
                                             activeSubtask === null ||
-                                            canDropOnDay(activeSubtask, day)
+                                            canMoveSubtaskTo(activeSubtask, day)
                                         }
                                         over={overDay === day}
                                         onAddSubtask={addSubtaskOn}
