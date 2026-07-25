@@ -266,6 +266,27 @@ export function ProjectList({
                                 readOnly
                             />
                         </div>
+                        <ul className={cardStyles.list}>
+                            {overlayProject.tasks.map((task) => (
+                                <li key={task.id} className={taskStyles.row}>
+                                    <span className={taskStyles.gripHandle}>
+                                        <Grip className={taskStyles.grip} />
+                                    </span>
+                                    <input
+                                        type="checkbox"
+                                        className={check.box}
+                                        checked={isTaskDone(task)}
+                                        readOnly
+                                    />
+                                    <input
+                                        className={taskStyles.name}
+                                        value={task.name}
+                                        placeholder="Task…"
+                                        readOnly
+                                    />
+                                </li>
+                            ))}
+                        </ul>
                     </section>
                 )}
             </DragOverlay>
