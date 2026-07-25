@@ -8,6 +8,7 @@
  */
 
 import { isValidWeekStart } from './dates';
+import { parseDeadline } from './deadline';
 import { moveBefore } from './list';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek } from './types';
 import { WEEK } from './types';
@@ -195,6 +196,34 @@ export function setProjectName(plan: WeekPlan, projectId: string, projectName: s
         projects: plan.projects.map((project) =>
             project.id === projectId ? { ...project, name: projectName } : project,
         ),
+    };
+}
+
+/**
+ * Set a project's deadline.
+ *
+ * @param plan the current plan
+ * @param projectId the id of the project to change the deadline
+ * @param deadline the new deadline, or undefined to clear it
+ * @returns a new plan with the same weekStart. The project with id projectId has its
+ *          deadline set to deadline when parseDeadline accepts it, else has no deadline
+ *          (an undefined or unparseable deadline clears any previous value); everything
+ *          else in the plan is unchanged. If no project has that id, the projects are
+ *          unchanged.
+ */
+export function setProjectDeadline(
+    plan: WeekPlan,
+    projectId: string,
+    deadline: string | undefined,
+): WeekPlan {
+    const deadlineIsValid = deadline !== undefined && parseDeadline(deadline).ok;
+    return {
+        ...plan,
+        projects: plan.projects.map((project) => {
+            if (project.id !== projectId) return project;
+            const { deadline: _current, ...rest } = project;
+            return { ...rest, ...(deadlineIsValid ? { deadline } : {}) };
+        }),
     };
 }
 

@@ -8,6 +8,7 @@ import {
     removeSubtask,
     replaceTask,
     setProjectName,
+    setProjectDeadline,
     setTaskName,
     setTaskDescription,
     setSubtaskDescription,
@@ -756,6 +757,79 @@ describe('setProjectName', () => {
         expect(isValidPlan(result)).toBe(true);
 
         expect(plan.projects[0]?.name).toBe('a');
+    });
+});
+
+describe('setProjectDeadline', () => {
+    /**
+     * Testing strategy:
+     *      - partition on projectId: exists (among other projects) | not found (miss)
+     *      - partition on deadline: valid date-only | valid date-time | invalid format |
+     *        undefined (clear)
+     *
+     *      properties checked when found:
+     *      - a valid deadline is stored as given
+     *      - an invalid or undefined deadline clears any previous deadline (key absent)
+     *      - the target project is a new object; all other projects are same instances
+     *      - weekStart is unchanged; input not mutated
+     */
+
+    it('covers found, valid date-only: deadline set, other projects shared', () => {
+        const a = makeProject('a');
+        const b = makeProject('b');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const result = setProjectDeadline(plan, 'a', '2026-08-01');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[0]?.deadline).toBe('2026-08-01');
+        expect(result.projects[0]).not.toBe(a);
+        expect(result.projects[1]).toBe(b); // sibling shared
+        expect(result.weekStart).toBe('2026-07-06');
+    });
+
+    it('covers found, valid date-time: stored as given, including the time', () => {
+        const a = makeProject('a');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setProjectDeadline(plan, 'a', '2026-08-01T14:30');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[0]?.deadline).toBe('2026-08-01T14:30');
+    });
+
+    it('covers found, invalid format: no deadline stored', () => {
+        const a = makeProject('a');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setProjectDeadline(plan, 'a', 'not-a-date');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[0]?.deadline).toBeUndefined();
+    });
+
+    it('covers found, undefined: clears an existing deadline', () => {
+        const a = { ...makeProject('a'), deadline: '2026-08-01' };
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setProjectDeadline(plan, 'a', undefined);
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[0]?.deadline).toBeUndefined();
+    });
+
+    it('covers not found: projects unchanged (same instances)', () => {
+        const a = makeProject('a');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setProjectDeadline(plan, 'nope', '2026-08-01');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(result.projects[0]).toBe(a);
+    });
+
+    it('covers found: does not mutate the input plan', () => {
+        const a = makeProject('a');
+        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const result = setProjectDeadline(plan, 'a', '2026-08-01');
+        expect(isValidPlan(result)).toBe(true);
+
+        expect(plan.projects[0]?.deadline).toBeUndefined();
     });
 });
 
