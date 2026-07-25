@@ -94,7 +94,10 @@
 }
 
 /* undated task (no subtasks): the ◳ lights up as a terracotta "assign days"
-   call-to-action (old-app .assign-cta). */
+   call-to-action (old-app .assign-cta). Hidden until row hover/focus/touch,
+   same as the plain edit/delete icons (via composed .iconBtn opacity).
+   rowKit's shared color/hover defaults live in :where(), so this plain class
+   overrides them without any specificity trick. */
 .assignCta {
     border: 1.5px solid var(--accent);
     color: var(--accent);

@@ -7,8 +7,6 @@
 .iconBtn {
     flex: none;
     appearance: none;
-    border: none;
-    background: none;
     cursor: pointer;
     padding: 0; /* iOS Safari default button padding would shift the icon */
     width: 26px;
@@ -16,7 +14,6 @@
     border-radius: 7px;
     display: grid;
     place-items: center;
-    color: var(--ink-faint);
     transition:
         background-color 0.13s,
         color 0.13s;
@@ -28,7 +25,17 @@
     height: var(--icon-size);
 }
 
-.iconBtn:hover {
+/* Resting/hover border, background and color all live in :where() — zero
+   specificity — so a consumer that wants a different look (e.g. TaskRow's
+   .assignCta) always wins with a plain class, no source-order guessing or
+   specificity tricks required on their end. */
+:where(.iconBtn) {
+    border: none;
+    background: none;
+    color: var(--ink-faint);
+}
+
+:where(.iconBtn:hover) {
     background: var(--line);
     color: var(--ink);
 }
