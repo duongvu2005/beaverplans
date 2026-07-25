@@ -7,6 +7,7 @@ type ProjectViewProps = {
     onReorderProject: (projectId: string, beforeProjectId: string | null) => void;
     onReorderTask: (taskId: string, destProjectId: string, beforeTaskId: string | null) => void;
     onEditTask: (taskId: string) => void;
+    onEditDeadline: (projectId: string) => void;
     onToggleTask: (taskId: string) => void;
     onAddProject: () => void;
     onAddTask: (projectId: string) => void;

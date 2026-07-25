@@ -11,6 +11,7 @@ import {
     replaceTask,
     reorderProject,
     reorderTask,
+    setProjectDeadline,
     setProjectName,
     setTaskName,
     toggleSubtask,
@@ -22,6 +23,7 @@ import { sampleWeek } from './fixtures/sampleWeek';
 import { ProjectView } from './components/ProjectView';
 import { WeekView } from './components/WeekView';
 import { TaskEditor } from './components/TaskEditor';
+import { ProjectEditor } from './components/ProjectEditor';
 import { MovePopover } from './components/MovePopover';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import shell from './components/dialogShell.module.css';
@@ -60,6 +62,7 @@ export default function App() {
     const [view, setView] = useState<View>('plan');
     const [plan, setPlan] = useState<WeekPlan>(sampleWeek);
     const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+    const [editingDeadlineId, setEditingDeadlineId] = useState<string | null>(null);
     const [movingSubtaskId, setMovingSubtaskId] = useState<string | null>(null);
     const [clearing, setClearing] = useState<Clearing | null>(null);
 
@@ -69,6 +72,10 @@ export default function App() {
         ? plan.projects.find((p) => p.tasks.some((t) => t.id === editingTaskId))
         : undefined;
     const editingTask = editingProject?.tasks.find((t) => t.id === editingTaskId);
+
+    const deadlineProject = editingDeadlineId
+        ? plan.projects.find((p) => p.id === editingDeadlineId)
+        : undefined;
 
     const moving = movingSubtaskId ? findSubtask(plan, movingSubtaskId) : undefined;
 
@@ -90,6 +97,21 @@ export default function App() {
     function handleSaveTask(nextTask: Task) {
         setPlan((current) => replaceTask(current, nextTask.id, nextTask));
         setEditingTaskId(null);
+    }
+
+    function handleEditDeadline(projectId: string) {
+        setEditingDeadlineId(projectId);
+    }
+
+    function handleCloseDeadlineEditor() {
+        setEditingDeadlineId(null);
+    }
+
+    function handleSaveDeadline(deadline: string | undefined) {
+        const projectId = editingDeadlineId;
+        if (!projectId) return;
+        setPlan((current) => setProjectDeadline(current, projectId, deadline));
+        setEditingDeadlineId(null);
     }
 
     function handleToggleTask(taskId: string) {
@@ -195,6 +217,7 @@ export default function App() {
                             onReorderProject={handleReorderProject}
                             onReorderTask={handleReorderTask}
                             onEditTask={handleEditTask}
+                            onEditDeadline={handleEditDeadline}
                             onToggleTask={handleToggleTask}
                             onAddProject={handleAddProject}
                             onAddTask={handleAddTask}
@@ -223,6 +246,13 @@ export default function App() {
                     projectName={editingProject.name}
                     onClose={handleCloseEditor}
                     onSave={handleSaveTask}
+                />
+            )}
+            {deadlineProject && (
+                <ProjectEditor
+                    project={deadlineProject}
+                    onClose={handleCloseDeadlineEditor}
+                    onSave={handleSaveDeadline}
                 />
             )}
             {moving && (

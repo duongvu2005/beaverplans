@@ -11,6 +11,7 @@ import styles from './ProjectCard.module.css';
 type ProjectCardProps = {
     project: Project;
     onEditTask: (taskId: string) => void;
+    onEditDeadline: (projectId: string) => void;
     onToggleTask: (taskId: string) => void;
     onAddTask: (projectId: string) => void;
     onRenameProject: (projectId: string, name: string) => void;
@@ -22,6 +23,7 @@ type ProjectCardProps = {
 export function ProjectCard({
     project,
     onEditTask,
+    onEditDeadline,
     onToggleTask,
     onAddTask,
     onRenameProject,
@@ -77,6 +79,7 @@ export function ProjectCard({
                         className={styles.iconBtn}
                         aria-label="Set deadline"
                         title="Set deadline"
+                        onClick={() => onEditDeadline(project.id)}
                     >
                         <DeadlineIcon />
                     </button>

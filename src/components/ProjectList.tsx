@@ -61,6 +61,7 @@ type ProjectListProps = {
     onReorderProject: (projectId: string, beforeProjectId: string | null) => void;
     onReorderTask: (taskId: string, destProjectId: string, beforeTaskId: string | null) => void;
     onEditTask: (taskId: string) => void;
+    onEditDeadline: (projectId: string) => void;
     onToggleTask: (taskId: string) => void;
     onAddTask: (projectId: string) => void;
     onAddProject: () => void;
@@ -75,6 +76,7 @@ export function ProjectList({
     onReorderProject,
     onReorderTask,
     onEditTask,
+    onEditDeadline,
     onToggleTask,
     onAddTask,
     onAddProject,
@@ -215,6 +217,7 @@ export function ProjectList({
                             key={project.id}
                             project={project}
                             onEditTask={onEditTask}
+                            onEditDeadline={onEditDeadline}
                             onToggleTask={onToggleTask}
                             onAddTask={onAddTask}
                             onRenameProject={onRenameProject}

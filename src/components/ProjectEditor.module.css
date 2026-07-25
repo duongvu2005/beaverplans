@@ -1,0 +1,37 @@
+/* Project editor internals only. The head / body / foot shell and the .field /
+   .label block come from dialogShell.module.css. Same deadline row as
+   TaskEditor.module.css's .deadrow/.date/.time — kept as its own copy since
+   each component owns its CSS rather than reaching into another's module. */
+
+.deadrow {
+    display: flex;
+    gap: var(--sp-2);
+}
+
+.deadrow input {
+    font: var(--fs-body) var(--sans);
+    color: var(--ink);
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    background: var(--paper);
+}
+
+.deadrow input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.date {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.time {
+    flex: 0 0 120px;
+}
+
+.time:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
