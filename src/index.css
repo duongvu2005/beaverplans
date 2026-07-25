@@ -1,8 +1,8 @@
 /* Global base: design tokens, reset, element defaults.
    A warm paper-and-ink palette with a terracotta accent and a muted green for
    "done"; theming is a change of token values, not a rewrite.
-   Fonts (Be Vietnam Pro / JetBrains Mono) are loaded via the <link> in index.html;
-   Hanken Grotesk stays loaded too so the display face can be toggled.
+   Fonts (Be Vietnam Pro / JetBrains Mono) are self-hosted via Fontsource,
+   imported in main.tsx.
    The light theme is the default regardless of OS; the dark palette applies only
    under [data-theme="dark"], so a manual theme toggle can layer on later. */
 
@@ -30,11 +30,10 @@
      JetBrains Mono (chrome) = uppercase labels, counts, day names, buttons.
      Each display face reads best at its own weight, so the family and the two
      weight tokens below travel together — swap all three to change the display
-     face. Hanken Grotesk is kept loaded for a one-block toggle (see alt line). */
+     face. */
     --display: 'Be Vietnam Pro', system-ui, sans-serif;
     --w-title: 600; /* project card names, section headings */
     --w-row: 400; /* task / subtask row titles */
-    /* toggle back to Hanken: --display:'Hanken Grotesk',…; --w-title:600; --w-row:500; */
     --sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
     --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
