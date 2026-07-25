@@ -5,7 +5,6 @@ import shell from './dialogShell.module.css';
 type ConfirmDialogProps = {
     title: string;
     eyebrow?: string;
-    label?: string;
     confirmLabel?: string;
     onConfirm: () => void;
     onClose: () => void;
@@ -15,7 +14,6 @@ type ConfirmDialogProps = {
 export function ConfirmDialog({
     title,
     eyebrow,
-    label,
     confirmLabel = 'Confirm',
     onConfirm,
     onClose,
@@ -31,10 +29,7 @@ export function ConfirmDialog({
                 </h3>
             </div>
             <div className={shell.body}>
-                <div className={shell.field}>
-                    {label && <div className={shell.label}>{label}</div>}
-                    {children}
-                </div>
+                <div className={shell.field}>{children}</div>
             </div>
             <div className={shell.foot}>
                 <button type="button" className={`${shell.btn} ${shell.ghost}`} onClick={onClose}>

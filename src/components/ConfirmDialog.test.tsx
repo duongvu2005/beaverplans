@@ -6,7 +6,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 describe('ConfirmDialog', () => {
     /*
      * Testing strategy
-     *     partition on optional props: eyebrow/label present | absent
+     *     partition on optional props: eyebrow present | absent
      *     partition on confirmLabel: given | defaulted
      *     partition on interaction: Cancel click | confirm click | Escape key
      *
@@ -14,12 +14,11 @@ describe('ConfirmDialog', () => {
      * the portal + Escape-key stack in Dialog.tsx work under jsdom.
      */
 
-    it('covers eyebrow and label present: renders title, eyebrow, label, and children', () => {
+    it('covers eyebrow present: renders title, eyebrow, and children', () => {
         render(
             <ConfirmDialog
                 title="Clear missed"
                 eyebrow="Draft essay"
-                label="Heads up"
                 onConfirm={() => {}}
                 onClose={() => {}}
             >
@@ -29,11 +28,10 @@ describe('ConfirmDialog', () => {
 
         expect(screen.getByRole('heading', { name: 'Clear missed' })).toBeInTheDocument();
         expect(screen.getByText('Draft essay')).toBeInTheDocument();
-        expect(screen.getByText('Heads up')).toBeInTheDocument();
         expect(screen.getByText('Are you sure?')).toBeInTheDocument();
     });
 
-    it('covers eyebrow and label absent: still renders title and children', () => {
+    it('covers eyebrow absent: still renders title and children', () => {
         render(
             <ConfirmDialog title="Clear missed" onConfirm={() => {}} onClose={() => {}}>
                 <p>Are you sure?</p>

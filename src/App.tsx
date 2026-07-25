@@ -33,7 +33,6 @@ type View = 'plan' | 'stats' | 'archive';
 type Clearing = {
     subtaskId: string;
     day: DayOfWeek;
-    taskName: string;
     projectName: string;
 };
 type Removing =
@@ -148,7 +147,6 @@ export default function App() {
         setClearing({
             subtaskId,
             day,
-            taskName: found?.taskName ?? '',
             projectName: found?.projectName ?? '',
         });
     }
@@ -307,22 +305,21 @@ export default function App() {
             {clearing && (
                 <ConfirmDialog
                     eyebrow={clearing.projectName || 'Project'}
-                    title={clearing.taskName || 'Task'}
-                    label="Clear missed"
+                    title="Clear this missed day?"
                     confirmLabel="Clear"
                     onConfirm={handleConfirmClear}
                     onClose={() => setClearing(null)}
                 >
                     <p className={shell.text}>
                         {SHORT[clearing.day]} will no longer count as a missed day for this subtask.
-                        The subtask itself is unaffected.
+                        Everything else remains unchanged.
                     </p>
                 </ConfirmDialog>
             )}
             {removing && (
                 <ConfirmDialog
                     eyebrow={removing.kind === 'task' ? removing.projectName || 'Project' : 'Project'}
-                    title={removing.name || (removing.kind === 'project' ? 'Project' : 'Task')}
+                    title={`Delete ${removing.kind} "${removing.name || 'Untitled'}"?`}
                     confirmLabel="Delete"
                     onConfirm={handleConfirmRemove}
                     onClose={() => setRemoving(null)}
