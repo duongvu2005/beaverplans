@@ -36,6 +36,9 @@ type Clearing = {
     taskName: string;
     projectName: string;
 };
+type Removing =
+    | { kind: 'project'; id: string; name: string; taskCount: number }
+    | { kind: 'task'; id: string; name: string; projectName: string; subtaskCount: number };
 
 const SHORT: Record<DayOfWeek, string> = {
     mon: 'Mon',
@@ -65,6 +68,7 @@ export default function App() {
     const [editingDeadlineId, setEditingDeadlineId] = useState<string | null>(null);
     const [movingSubtaskId, setMovingSubtaskId] = useState<string | null>(null);
     const [clearing, setClearing] = useState<Clearing | null>(null);
+    const [removing, setRemoving] = useState<Removing | null>(null);
 
     const today = todayKey();
 
@@ -172,11 +176,45 @@ export default function App() {
     }
 
     function handleRemoveProject(projectId: string) {
-        setPlan((current) => removeProject(current, projectId));
+        const project = plan.projects.find((p) => p.id === projectId);
+        if (!project) return;
+        if (project.tasks.length === 0) {
+            setPlan((current) => removeProject(current, projectId));
+            return;
+        }
+        setRemoving({
+            kind: 'project',
+            id: projectId,
+            name: project.name,
+            taskCount: project.tasks.length,
+        });
     }
 
     function handleRemoveTask(taskId: string) {
-        setPlan((current) => removeTask(current, taskId));
+        const project = plan.projects.find((p) => p.tasks.some((t) => t.id === taskId));
+        const task = project?.tasks.find((t) => t.id === taskId);
+        if (!project || !task) return;
+        if (task.subtasks.length === 0) {
+            setPlan((current) => removeTask(current, taskId));
+            return;
+        }
+        setRemoving({
+            kind: 'task',
+            id: taskId,
+            name: task.name,
+            projectName: project.name,
+            subtaskCount: task.subtasks.length,
+        });
+    }
+
+    function handleConfirmRemove() {
+        if (!removing) return;
+        if (removing.kind === 'project') {
+            setPlan((current) => removeProject(current, removing.id));
+        } else {
+            setPlan((current) => removeTask(current, removing.id));
+        }
+        setRemoving(null);
     }
 
     function handleReorderProject(projectId: string, beforeProjectId: string | null) {
@@ -278,6 +316,21 @@ export default function App() {
                     <p className={shell.text}>
                         {SHORT[clearing.day]} will no longer count as a missed day for this subtask.
                         The subtask itself is unaffected.
+                    </p>
+                </ConfirmDialog>
+            )}
+            {removing && (
+                <ConfirmDialog
+                    eyebrow={removing.kind === 'task' ? removing.projectName || 'Project' : 'Project'}
+                    title={removing.name || (removing.kind === 'project' ? 'Project' : 'Task')}
+                    confirmLabel="Delete"
+                    onConfirm={handleConfirmRemove}
+                    onClose={() => setRemoving(null)}
+                >
+                    <p className={shell.text}>
+                        {removing.kind === 'project'
+                            ? `This will permanently delete the project and its ${removing.taskCount} task${removing.taskCount === 1 ? '' : 's'}.`
+                            : `This will permanently delete the task and its ${removing.subtaskCount} subtask${removing.subtaskCount === 1 ? '' : 's'}.`}
                     </p>
                 </ConfirmDialog>
             )}
