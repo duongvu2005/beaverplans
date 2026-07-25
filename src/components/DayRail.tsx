@@ -1,7 +1,7 @@
 import type { DayOfWeek } from '../core/types';
 import type { DayProgress } from '../core/progress';
-import { percentOf } from '../core/math';
 import styles from './DayRail.module.css';
+import { ProgressBar } from './ProgressBar';
 
 const LETTER: Record<DayOfWeek, string> = {
     mon: 'M',
@@ -25,7 +25,6 @@ export function DayRail({ byDay, selectedDay, todayDay, onSelectDay, onBackToGri
     return (
         <div className={styles.rail}>
             {byDay.map(({ day, assigned, done }) => {
-                const pct = percentOf(done, assigned);
                 const classes = [
                     styles.pill,
                     day === todayDay && styles.today,
@@ -42,9 +41,7 @@ export function DayRail({ byDay, selectedDay, todayDay, onSelectDay, onBackToGri
                         onClick={() => (day === selectedDay ? onBackToGrid() : onSelectDay(day))}
                     >
                         <span className={styles.letter}>{LETTER[day]}</span>
-                        <span className={styles.bar}>
-                            <span className={styles.fill} style={{ width: `${pct}%` }} />
-                        </span>
+                        <ProgressBar done={done} total={assigned} className={styles.bar} />
                     </button>
                 );
             })}

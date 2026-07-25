@@ -1,10 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { isTaskDone } from '../core/projects';
+import { taskProgress } from '../core/progress';
 import type { Task } from '../core/types';
 import { Grip } from './Grip';
 import { EditIcon } from './EditIcon';
 import { CloseIcon } from './CloseIcon';
+import { PointsStat } from './PointsStat';
 import styles from './TaskRow.module.css';
 import check from './checkbox.module.css';
 
@@ -66,7 +68,7 @@ export function TaskRow({
                 placeholder="Task…"
                 onChange={(e) => onRenameTask(task.id, e.target.value)}
             />
-            {undated && (
+            {undated ? (
                 <button
                     type="button"
                     className={styles.assignHint}
@@ -77,6 +79,8 @@ export function TaskRow({
                         →
                     </span>
                 </button>
+            ) : (
+                <PointsStat {...taskProgress(task)} />
             )}
             <div className={styles.actions}>
                 <button

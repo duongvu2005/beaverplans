@@ -1,10 +1,13 @@
 import type { DateKey, DayOfWeek } from '../core/types';
 import type { DaySchedule } from '../core/daySchedule';
+import type { DayProgress } from '../core/progress';
 import { DayCell } from './DayCell';
+import { PointsStat } from './PointsStat';
 import styles from './DayColumn.module.css';
 
 type DayColumnProps = {
     daySchedule: DaySchedule;
+    progress: DayProgress | undefined;
     weekStart: DateKey;
     today: DateKey;
     onFocusDay: (day: DayOfWeek) => void;
@@ -16,6 +19,7 @@ type DayColumnProps = {
 
 export function DayColumn({
     daySchedule,
+    progress,
     weekStart,
     today,
     onFocusDay,
@@ -32,7 +36,8 @@ export function DayColumn({
                 onClick={() => onFocusDay(daySchedule.day)}
                 title="Focus this day"
             >
-                {daySchedule.day}
+                <span className={styles.dayName}>{daySchedule.day}</span>
+                <PointsStat done={progress?.done ?? 0} total={progress?.assigned ?? 0} showPoint={true} />
             </button>
             <ul className={styles.list}>
                 {daySchedule.items.map((entry) => (

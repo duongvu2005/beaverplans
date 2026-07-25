@@ -1,0 +1,17 @@
+/* Weighted-points stat, shared by DayColumn's day header, ProjectCard's header,
+   and TaskRow — same pill everywhere it appears, so it reads as one consistent
+   stat language regardless of which level it's summarizing. A contained pill
+   (old-app .splitbadge) reads as one discrete chip instead of bare text
+   competing with the row's other elements, which is what made it feel crowded.
+   "pts" labels the unit explicitly so a fraction like 6/10 can't be mistaken
+   for an item count of whatever's visibly listed underneath it. */
+.stat {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--good);
+    background: var(--good-soft);
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+}

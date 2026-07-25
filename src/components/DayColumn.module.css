@@ -9,27 +9,36 @@
 }
 
 /* the day name doubles as a button: click to focus that day. Reset the native
-   button and keep the mono label; no hover wash by request. */
+   button and keep the mono label; no hover wash by request. A flex row so the
+   day name and its weighted-points stat sit side by side, same row — there's
+   room for it here (unlike DayRail's cramped phone pills, which use a bar
+   instead), and it matches the old app's day-head layout (name left, stat
+   right), just with a weighted "x/y pts" stat instead of an item count. */
 .day {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-2);
     width: 100%;
     margin: 0 0 var(--sp-2);
-    padding: 3px 0;
+    padding: 3px 2px;
     appearance: none;
     border: none;
     background: none;
     cursor: pointer;
     font-family: var(--mono);
+    border-radius: var(--r-chip);
+    transition:
+        background-color 0.12s,
+        color 0.12s;
+}
+
+.dayName {
     font-size: var(--fs-label);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--ink-faint);
-    text-align: center;
-    border-radius: var(--r-chip);
-    transition:
-        background-color 0.12s,
-        color 0.12s;
 }
 
 .day:focus-visible {

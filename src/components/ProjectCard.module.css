@@ -164,6 +164,10 @@
     line-height: 1;
 }
 
+.bar {
+    width: 40px;
+}
+
 /* touch devices (no hover) OR narrow phone widths — reveal the grip + action
    buttons so they're reachable without a pointer. */
 @media (hover: none), (max-width: 640px) {

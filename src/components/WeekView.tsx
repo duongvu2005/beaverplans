@@ -90,6 +90,7 @@ export function WeekView({
             <div className="weekGridPane">
                 <WeekGrid
                     schedule={schedule}
+                    byDay={byDay}
                     weekStart={weekStart}
                     today={today}
                     onFocusDay={focusDay}

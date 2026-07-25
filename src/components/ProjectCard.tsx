@@ -2,11 +2,13 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Project } from '../core/types';
+import { projectProgress } from '../core/progress';
 import { TaskRow } from './TaskRow';
 import { Grip } from './Grip';
 import { DeadlineIcon } from './DeadlineIcon';
 import { CloseIcon } from './CloseIcon';
 import styles from './ProjectCard.module.css';
+import { ProgressBar } from './ProgressBar';
 
 type ProjectCardProps = {
     project: Project;
@@ -73,6 +75,7 @@ export function ProjectCard({
                     placeholder="Project name…"
                     onChange={(e) => onRenameProject(project.id, e.target.value)}
                 />
+                <ProgressBar {...projectProgress(project)} className={styles.bar} />
                 <div className={styles.actions}>
                     <button
                         type="button"
