@@ -34,9 +34,23 @@ export function ProjectEditor({ project, onClose, onSave }: ProjectEditorProps) 
             </div>
             <div className={shell.body}>
                 <div className={shell.field}>
-                    <label className={shell.label} htmlFor="project-deadline">
-                        Deadline
-                    </label>
+                    <div className={styles.deadlineHead}>
+                        <label className={shell.label} htmlFor="project-deadline">
+                            Deadline
+                        </label>
+                        {date && (
+                            <button
+                                type="button"
+                                className={styles.clearDeadline}
+                                onClick={() => {
+                                    setDate('');
+                                    setTime('');
+                                }}
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
                     <div className={styles.deadrow}>
                         <input
                             id="project-deadline"

@@ -321,9 +321,23 @@ export function TaskEditor({ task, projectName, onClose, onSave }: TaskEditorPro
             </div>
             <div className={shell.body}>
                 <div className={shell.field}>
-                    <label className={shell.label} htmlFor="task-deadline">
-                        Deadline
-                    </label>
+                    <div className={styles.deadlineHead}>
+                        <label className={shell.label} htmlFor="task-deadline">
+                            Deadline
+                        </label>
+                        {date && (
+                            <button
+                                type="button"
+                                className={styles.clearDeadline}
+                                onClick={() => {
+                                    setDate('');
+                                    setTime('');
+                                }}
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
                     <div className={styles.deadrow}>
                         <input
                             id="task-deadline"
