@@ -67,6 +67,13 @@
     align-items: center;
     touch-action: none;
     position: relative;
+    /* Mobile browsers paint a solid highlight over a touched element's hit
+       area during a press; the enlarged touch target below (::after) makes
+       that highlight show as a visible dark rectangle during the long-press
+       right before dnd-kit's drag threshold engages and the DragOverlay
+       takes over. Not our :hover/:active CSS — this is the UA stylesheet's
+       default tap feedback. */
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* The grip is 16px, far under the ~44px a finger reliably hits. Missing it lands
