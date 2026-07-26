@@ -12,7 +12,7 @@ export function WeekProgressRow({ progress, onEndWeek }: WeekProgressRowProps) {
     const pct = Math.round(percentOf(progress.done, progress.total));
     return (
         <div className={styles.row}>
-            <ProgressBar {...progress} className={styles.progress} />
+            <ProgressBar {...progress} className={styles.progress} alwaysShow />
             <span className={styles.pct}>
                 {progress.done}/{progress.total} · {pct}%
             </span>
