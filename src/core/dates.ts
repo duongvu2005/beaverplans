@@ -124,6 +124,19 @@ export function nextWeekStart(weekStart: DateKey): DateKey {
 }
 
 /**
+ * Resolves a weekday slot within a given week to its real calendar date.
+ *
+ * @param weekStart a DateKey that is a Monday (week-start)
+ * @param day the weekday slot within weekStart's week
+ * @returns the DateKey of the calendar date day falls on, within weekStart's week
+ */
+export function dateKeyForDay(weekStart: DateKey, day: DayOfWeek): DateKey {
+    const date = parseKey(weekStart);
+    date.setDate(date.getDate() + WEEK.indexOf(day));
+    return toDateKey(date);
+}
+
+/**
  * Classifies a weekday slot as past, today, or future by resolving it
  * to a calendar date within weekStart's week and comparing to today.
  *
@@ -133,9 +146,7 @@ export function nextWeekStart(weekStart: DateKey): DateKey {
  * @returns 'past' | 'today' | 'future' for the date that day maps to
  */
 export function dayStatusOf(day: DayOfWeek, weekStart: DateKey, today: DateKey): DayStatus {
-    const daySlotDate = parseKey(weekStart);
-    daySlotDate.setDate(daySlotDate.getDate() + WEEK.indexOf(day));
-    const daySlotKey = toDateKey(daySlotDate);
+    const daySlotKey = dateKeyForDay(weekStart, day);
     if (daySlotKey > today) {
         return 'future';
     } else if (daySlotKey < today) {

@@ -16,6 +16,7 @@ import {
     weeksBetween,
     isWeekPast,
     nextWeekStart,
+    dateKeyForDay,
     dayStatusOf,
     weekStatusOf,
     isValidWeekStart,
@@ -262,6 +263,47 @@ describe('nextWeekStart', () => {
     it('covers crossing a DST week', () => {
         // Mon Mar 02 2026 -> Mon Mar 09 2026 (crosses DST Sun Mar 08)
         expect(nextWeekStart('2026-03-02')).toBe('2026-03-09');
+    });
+});
+
+describe('dateKeyForDay', () => {
+    /**
+     * Testing strategy:
+     *      - partition on day's offset within the week: first (mon) | mid (wed) | last (sun)
+     *      - partition on calendar boundary the resolved date crosses: none | month | year
+     *        | leap-Feb | DST week
+     */
+
+    it('covers first day of the week (mon), no boundary', () => {
+        expect(dateKeyForDay('2026-07-06', 'mon')).toBe('2026-07-06');
+    });
+
+    it('covers a mid-week day (wed), no boundary', () => {
+        expect(dateKeyForDay('2026-07-06', 'wed')).toBe('2026-07-08');
+    });
+
+    it('covers the last day of the week (sun), no boundary', () => {
+        expect(dateKeyForDay('2026-07-06', 'sun')).toBe('2026-07-12');
+    });
+
+    it('covers a week crossing a month boundary', () => {
+        // Mon Aug 31 2026 -> tue Sep 01 2026
+        expect(dateKeyForDay('2026-08-31', 'tue')).toBe('2026-09-01');
+    });
+
+    it('covers a week crossing a year boundary', () => {
+        // Mon Dec 28 2026 -> fri Jan 01 2027
+        expect(dateKeyForDay('2026-12-28', 'fri')).toBe('2027-01-01');
+    });
+
+    it('covers a week crossing leap-Feb', () => {
+        // Mon Feb 26 2024 -> thu Feb 29 2024 (the leap day itself)
+        expect(dateKeyForDay('2024-02-26', 'thu')).toBe('2024-02-29');
+    });
+
+    it('covers a DST week, slot on the transition day', () => {
+        // Mon Mar 02 2026 -> sun Mar 08 2026 (DST spring-forward Sunday)
+        expect(dateKeyForDay('2026-03-02', 'sun')).toBe('2026-03-08');
     });
 });
 
