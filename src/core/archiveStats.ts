@@ -1,4 +1,6 @@
 import { dateKeyForDay } from "./dates";
+import { overallProgress } from "./progress";
+import type { Progress } from "./progress";
 import type { Archive, DateKey } from "./types";
 
 /**
@@ -30,4 +32,24 @@ export function dailyCompletions(archives: Archive): Map<DateKey, number> {
         }
     }
     return totals;
+}
+
+export type WeekProgress = {
+    readonly weekStart: DateKey;
+    readonly progress: Progress;
+};
+
+/**
+ * The overall progress of every archived week, one entry per week.
+ *
+ * @param archives any Archive
+ * @returns a list with one entry per entry in archives, each pairing that
+ *          entry's weekStart with overallProgress(projects) computed fresh
+ *          on its snapshot, sorted chronologically by weekStart (ascending,
+ *          oldest first)
+ */
+export function weekHistory(archives: Archive): ReadonlyArray<WeekProgress> {
+    return archives
+        .map(({ weekStart, projects }) => ({ weekStart, progress: overallProgress(projects) }))
+        .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
 }

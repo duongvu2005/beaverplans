@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dailyCompletions } from './archiveStats';
+import { dailyCompletions, weekHistory } from './archiveStats';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek, Archive } from './types';
 
 function leafTask(id: string, isDone: boolean): Task {
@@ -119,5 +119,56 @@ describe('dailyCompletions', () => {
                 ['2026-07-13', 2],
             ]),
         );
+    });
+});
+
+describe('weekHistory', () => {
+    /**
+     * Testing strategy:
+     *      - partition on archives: empty | one entry | multiple entries
+     *      - partition on stored order vs chronological order: same | reversed
+     *        (sort must not just trust input order)
+     *      - partition on a week's progress: no projects (0/0) | partially done |
+     *        fully done
+     */
+
+    it('covers an empty archive', () => {
+        expect(weekHistory([])).toEqual([]);
+    });
+
+    it('covers one entry with no projects', () => {
+        const archive: Archive = [plan('2026-07-06', [])];
+        expect(weekHistory(archive)).toEqual([
+            { weekStart: '2026-07-06', progress: { done: 0, total: 0 } },
+        ]);
+    });
+
+    it('covers one entry, partially done', () => {
+        const archive: Archive = [
+            plan('2026-07-06', [
+                project('p1', [
+                    taskWithSubtasks('t1', [
+                        subtask('s1', 'mon', true, 2),
+                        subtask('s2', 'tue', false, 1),
+                    ]),
+                ]),
+            ]),
+        ];
+        expect(weekHistory(archive)).toEqual([
+            { weekStart: '2026-07-06', progress: { done: 2, total: 3 } },
+        ]);
+    });
+
+    it('covers multiple entries stored out of chronological order', () => {
+        const later = plan('2026-07-13', [
+            project('p1', [taskWithSubtasks('t1', [subtask('s1', 'mon', true)])]),
+        ]);
+        const earlier = plan('2026-07-06', [project('p1', [leafTask('t1', true)])]);
+        const archive: Archive = [later, earlier];
+
+        expect(weekHistory(archive)).toEqual([
+            { weekStart: '2026-07-06', progress: { done: 1, total: 1 } },
+            { weekStart: '2026-07-13', progress: { done: 1, total: 1 } },
+        ]);
     });
 });
