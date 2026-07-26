@@ -2,24 +2,28 @@ import type { ReactNode } from 'react';
 import { Dialog } from './Dialog';
 import shell from './dialogShell.module.css';
 
+type DialogAction = {
+    label: string;
+    onAction: () => void;
+    tone?: 'primary' | 'ghost';
+};
+
 type ConfirmDialogProps = {
     title: string;
     eyebrow?: string;
-    confirmLabel?: string;
-    onConfirm: () => void;
     onClose: () => void;
     children: ReactNode;
-};
+} & (
+    | { actions: ReadonlyArray<DialogAction>; confirmLabel?: undefined; onConfirm?: undefined }
+    | { actions?: undefined; confirmLabel?: string; onConfirm: () => void }
+);
 
-export function ConfirmDialog({
-    title,
-    eyebrow,
-    confirmLabel = 'Confirm',
-    onConfirm,
-    onClose,
-    children,
-}: ConfirmDialogProps) {
+export function ConfirmDialog(props: ConfirmDialogProps) {
+    const { title, eyebrow, onClose, children } = props;
     const titleId = 'confirm-title';
+    const actions: ReadonlyArray<DialogAction> =
+        props.actions ?? [{ label: props.confirmLabel ?? 'Confirm', onAction: props.onConfirm }];
+
     return (
         <Dialog open onClose={onClose} labelledBy={titleId}>
             <div className={shell.head}>
@@ -35,13 +39,16 @@ export function ConfirmDialog({
                 <button type="button" className={`${shell.btn} ${shell.ghost}`} onClick={onClose}>
                     Cancel
                 </button>
-                <button
-                    type="button"
-                    className={`${shell.btn} ${shell.primary}`}
-                    onClick={onConfirm}
-                >
-                    {confirmLabel}
-                </button>
+                {actions.map((action) => (
+                    <button
+                        key={action.label}
+                        type="button"
+                        className={`${shell.btn} ${action.tone === 'ghost' ? shell.ghost : shell.primary}`}
+                        onClick={action.onAction}
+                    >
+                        {action.label}
+                    </button>
+                ))}
             </div>
         </Dialog>
     );
