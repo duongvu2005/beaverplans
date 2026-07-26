@@ -11,4 +11,5 @@
     display: block;
     height: 100%;
     background: var(--good);
+    transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
