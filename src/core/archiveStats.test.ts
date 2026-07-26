@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { dailyCompletions, weekHistory } from './archiveStats';
+import { dailyCompletions, weekHistory, weekdayHistory } from './archiveStats';
+import { WEEK } from './types';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek, Archive } from './types';
 
 function leafTask(id: string, isDone: boolean): Task {
@@ -170,5 +171,52 @@ describe('weekHistory', () => {
             { weekStart: '2026-07-06', progress: { done: 1, total: 1 } },
             { weekStart: '2026-07-13', progress: { done: 1, total: 1 } },
         ]);
+    });
+});
+
+function zeroWeek() {
+    return WEEK.map((day) => ({ day, assigned: 0, done: 0 }));
+}
+
+describe('weekdayHistory', () => {
+    /**
+     * Testing strategy:
+     *      - partition on archives: empty | one entry | multiple entries
+     *      - partition on same weekday across entries: only one entry has it |
+     *        more than one entry has it (sums across entries, not just within one)
+     *      - partition on a recorded miss: present (adds to assigned, not done,
+     *        same as progressByDay) | absent
+     */
+
+    it('covers an empty archive: all-zero, mon-sun order', () => {
+        expect(weekdayHistory([])).toEqual(zeroWeek());
+    });
+
+    it('covers one entry with a recorded miss', () => {
+        const archive: Archive = [
+            plan('2026-07-06', [
+                project('p1', [
+                    taskWithSubtasks('t1', [subtask('s1', 'thu', false, 2, ['wed'])]),
+                ]),
+            ]),
+        ];
+        const expected = zeroWeek();
+        expected[2] = { day: 'wed', assigned: 2, done: 0 }; // missed wed
+        expected[3] = { day: 'thu', assigned: 2, done: 0 }; // still assigned thu
+        expect(weekdayHistory(archive)).toEqual(expected);
+    });
+
+    it('covers multiple entries summing the SAME weekday', () => {
+        const archive: Archive = [
+            plan('2026-07-06', [
+                project('p1', [taskWithSubtasks('t1', [subtask('s1', 'mon', true, 1)])]),
+            ]),
+            plan('2026-07-13', [
+                project('p1', [taskWithSubtasks('t1', [subtask('s1', 'mon', true, 3)])]),
+            ]),
+        ];
+        const expected = zeroWeek();
+        expected[0] = { day: 'mon', assigned: 4, done: 4 };
+        expect(weekdayHistory(archive)).toEqual(expected);
     });
 });

@@ -1,7 +1,8 @@
 import { dateKeyForDay } from "./dates";
-import { overallProgress } from "./progress";
-import type { Progress } from "./progress";
-import type { Archive, DateKey } from "./types";
+import { overallProgress, progressByDay } from "./progress";
+import type { Progress, DayProgress } from "./progress";
+import type { Archive, DateKey, DayOfWeek } from "./types";
+import { WEEK } from "./types";
 
 /**
  * Completed weighted effort per calendar day, across every archived week.
@@ -52,4 +53,36 @@ export function weekHistory(archives: Archive): ReadonlyArray<WeekProgress> {
     return archives
         .map(({ weekStart, projects }) => ({ weekStart, progress: overallProgress(projects) }))
         .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+}
+
+/**
+ * The progress of each weekday slot (mon-sun), summed across every
+ * archived week. Distinct from progress.ts's progressByDay, which is
+ * per-day within a single week; this aggregates that same slot (e.g.
+ * every archived Wednesday) across all of archives.
+ *
+ * @param archives any Archive
+ * @returns a list of DayProgress, one per weekday, ordered Monday first
+ *          through Sunday last (length 7). For each, assigned and done
+ *          are the sum of that weekday's assigned/done (per
+ *          progress.ts's progressByDay, computed fresh per entry) across
+ *          every entry in archives.
+ */
+export function weekdayHistory(archives: Archive): ReadonlyArray<DayProgress> {
+    const totals: Record<DayOfWeek, { assigned: number; done: number }> = {
+        mon: { assigned: 0, done: 0 },
+        tue: { assigned: 0, done: 0 },
+        wed: { assigned: 0, done: 0 },
+        thu: { assigned: 0, done: 0 },
+        fri: { assigned: 0, done: 0 },
+        sat: { assigned: 0, done: 0 },
+        sun: { assigned: 0, done: 0 },
+    };
+    for (const { projects } of archives) {
+        for (const dayProgress of progressByDay(projects)) {
+            totals[dayProgress.day].assigned += dayProgress.assigned;
+            totals[dayProgress.day].done += dayProgress.done;
+        }
+    }
+    return WEEK.map((day) => ({ day, ...totals[day] }));
 }
