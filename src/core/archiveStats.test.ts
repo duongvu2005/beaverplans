@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { dailyCompletions, weekHistory, weekdayHistory } from './archiveStats';
+import {
+    dailyCompletions,
+    weekHistory,
+    weekdayHistory,
+    bestWeek,
+    currentStreak,
+    longestStreak,
+} from './archiveStats';
+import type { WeekProgress } from './archiveStats';
 import { WEEK } from './types';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek, Archive } from './types';
+
+function wp(weekStart: string, done: number, total: number): WeekProgress {
+    return { weekStart, progress: { done, total } };
+}
 
 function leafTask(id: string, isDone: boolean): Task {
     return { id, name: id, subtasks: [], isDone };
@@ -218,5 +230,118 @@ describe('weekdayHistory', () => {
         const expected = zeroWeek();
         expected[0] = { day: 'mon', assigned: 4, done: 4 };
         expect(weekdayHistory(archive)).toEqual(expected);
+    });
+});
+
+describe('bestWeek', () => {
+    /**
+     * Testing strategy:
+     *      - partition on history: empty | one entry | multiple, no tie |
+     *        multiple, tied for best
+     *      - partition on a 0/0 week (percent 0) mixed in with real progress
+     */
+
+    it('covers an empty history', () => {
+        expect(bestWeek([])).toBeUndefined();
+    });
+
+    it('covers a single entry', () => {
+        const only = wp('2026-07-06', 1, 2);
+        expect(bestWeek([only])).toEqual(only);
+    });
+
+    it('covers multiple entries with a clear winner', () => {
+        const low = wp('2026-07-06', 1, 4); // 25%
+        const high = wp('2026-07-13', 3, 4); // 75%
+        expect(bestWeek([low, high])).toEqual(high);
+        expect(bestWeek([high, low])).toEqual(high);
+    });
+
+    it('covers a tie: the later week wins', () => {
+        const earlier = wp('2026-07-06', 1, 2); // 50%
+        const later = wp('2026-07-13', 2, 4); // 50%
+        expect(bestWeek([earlier, later])).toEqual(later);
+    });
+
+    it('covers a 0/0 week not beating a week with real progress', () => {
+        const empty = wp('2026-07-06', 0, 0); // percentOf treats this as 0%
+        const some = wp('2026-07-13', 1, 4); // 25%
+        expect(bestWeek([empty, some])).toEqual(some);
+    });
+});
+
+describe('currentStreak', () => {
+    /**
+     * Testing strategy:
+     *      - partition on history: empty | non-empty
+     *      - partition on the most recent week vs threshold: below (streak 0) |
+     *        at exactly threshold (counts) | above
+     *      - partition on how far the streak reaches back: whole history |
+     *        stops partway (an earlier week breaks it)
+     */
+
+    it('covers an empty history', () => {
+        expect(currentStreak([], 50)).toBe(0);
+    });
+
+    it('covers the most recent week below threshold', () => {
+        const history = [wp('2026-07-06', 3, 4), wp('2026-07-13', 1, 4)];
+        expect(currentStreak(history, 50)).toBe(0);
+    });
+
+    it('covers the most recent week at exactly threshold', () => {
+        const history = [wp('2026-07-06', 2, 4)]; // exactly 50%
+        expect(currentStreak(history, 50)).toBe(1);
+    });
+
+    it('covers a streak broken partway back', () => {
+        const history = [
+            wp('2026-06-22', 3, 4), // 75%, above threshold but streak stops before here
+            wp('2026-06-29', 1, 4), // 25%, breaks the streak
+            wp('2026-07-06', 3, 4), // 75%
+            wp('2026-07-13', 4, 4), // 100%
+        ];
+        expect(currentStreak(history, 50)).toBe(2);
+    });
+
+    it('covers the whole history meeting threshold', () => {
+        const history = [wp('2026-07-06', 4, 4), wp('2026-07-13', 3, 4)];
+        expect(currentStreak(history, 50)).toBe(2);
+    });
+});
+
+describe('longestStreak', () => {
+    /**
+     * Testing strategy:
+     *      - partition on history: empty | none meet threshold | whole
+     *        history meets threshold
+     *      - partition on streak location: the longest run is NOT the
+     *        trailing run (distinguishes this from currentStreak)
+     */
+
+    it('covers an empty history', () => {
+        expect(longestStreak([], 50)).toBe(0);
+    });
+
+    it('covers no week meeting threshold', () => {
+        const history = [wp('2026-07-06', 1, 4), wp('2026-07-13', 0, 4)];
+        expect(longestStreak(history, 50)).toBe(0);
+    });
+
+    it('covers the whole history meeting threshold', () => {
+        const history = [wp('2026-07-06', 4, 4), wp('2026-07-13', 3, 4)];
+        expect(longestStreak(history, 50)).toBe(2);
+    });
+
+    it('covers the longest run sitting earlier than a shorter trailing run', () => {
+        const history = [
+            wp('2026-06-15', 3, 4), // run of 3 starts
+            wp('2026-06-22', 3, 4),
+            wp('2026-06-29', 3, 4), // longest run = 3
+            wp('2026-07-06', 0, 4), // breaks it
+            wp('2026-07-13', 3, 4), // trailing run of 1 (this is currentStreak's answer)
+        ];
+        expect(longestStreak(history, 50)).toBe(3);
+        expect(currentStreak(history, 50)).toBe(1);
     });
 });

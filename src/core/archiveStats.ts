@@ -1,4 +1,5 @@
 import { dateKeyForDay } from "./dates";
+import { percentOf } from "./math";
 import { overallProgress, progressByDay } from "./progress";
 import type { Progress, DayProgress } from "./progress";
 import type { Archive, DateKey, DayOfWeek } from "./types";
@@ -85,4 +86,74 @@ export function weekdayHistory(archives: Archive): ReadonlyArray<DayProgress> {
         }
     }
     return WEEK.map((day) => ({ day, ...totals[day] }));
+}
+
+/**
+ * The best-performing archived week, by completion percentage.
+ *
+ * @param history a chronological per-week progress history (see weekHistory)
+ * @returns the entry in history with the highest percentOf(done, total); on
+ *          a tie, the entry with the latest weekStart (a tie reads as a new
+ *          record, not a repeat of the old one). undefined if history is
+ *          empty.
+ */
+export function bestWeek(history: ReadonlyArray<WeekProgress>): WeekProgress | undefined {
+    return history.reduce<WeekProgress | undefined>((best, entry) => {
+        if (best === undefined) {
+            return entry;
+        }
+        const entryPct = percentOf(entry.progress.done, entry.progress.total);
+        const bestPct = percentOf(best.progress.done, best.progress.total);
+        // >= (not >): history is chronological, so a tie keeps the later entry.
+        return entryPct >= bestPct ? entry : best;
+    }, undefined);
+}
+
+/**
+ * The length of the current run of archived weeks meeting a completion
+ * threshold, counted backward from the most recent week.
+ *
+ * @param history a chronological per-week progress history (see weekHistory)
+ * @param threshold the minimum completion percentage (0-100) for a week to
+ *        count toward the streak
+ * @returns the number of weeks, counting backward from the end of history,
+ *          that each have percentOf(done, total) >= threshold, stopping at
+ *          the first (most recent) week that doesn't. 0 if history is empty
+ *          or its last week doesn't meet threshold.
+ */
+export function currentStreak(history: ReadonlyArray<WeekProgress>, threshold: number): number {
+    let streak = 0;
+    for (const entry of [...history].reverse()) {
+        if (percentOf(entry.progress.done, entry.progress.total) < threshold) {
+            break;
+        }
+        streak++;
+    }
+    return streak;
+}
+
+/**
+ * The longest run, anywhere in history, of consecutive archived weeks each
+ * meeting a completion threshold.
+ *
+ * @param history a chronological per-week progress history (see weekHistory)
+ * @param threshold the minimum completion percentage (0-100) for a week to
+ *        count toward a streak
+ * @returns the length of the longest run of consecutive entries (in
+ *          chronological order) each with percentOf(done, total) >=
+ *          threshold, anywhere in history. 0 if history is empty or no week
+ *          meets threshold.
+ */
+export function longestStreak(history: ReadonlyArray<WeekProgress>, threshold: number): number {
+    let longest = 0;
+    let current = 0;
+    for (const entry of history) {
+        if (percentOf(entry.progress.done, entry.progress.total) >= threshold) {
+            current++;
+            longest = Math.max(longest, current);
+        } else {
+            current = 0;
+        }
+    }
+    return longest;
 }
