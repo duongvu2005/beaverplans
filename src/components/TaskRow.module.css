@@ -35,6 +35,14 @@
     color: var(--ink-faint);
 }
 
+/* done: strike + fade the name only; the checkbox stays crisp. Same language as
+   a done chip in the day grid (DayCell's .cell.done .task). */
+.name.done {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-strong);
+}
+
 /* assign-days CTA (old-app .assignhint): shown for a task with no subtasks — a
    terracotta prompt whose → arrow appears on row hover. Opens the editor. */
 .assignHint {

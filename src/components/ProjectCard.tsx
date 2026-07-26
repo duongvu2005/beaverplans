@@ -3,6 +3,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import type { Project } from '../core/types';
 import { projectProgress } from '../core/progress';
+import { isProjectDone } from '../core/projects';
 import { TaskRow } from './TaskRow';
 import { Grip } from './Grip';
 import { DeadlineIcon } from './DeadlineIcon';
@@ -51,6 +52,7 @@ export function ProjectCard({
 
     const style = { transform: CSS.Transform.toString(transform), transition };
     const taskIds = project.tasks.map((task) => task.id);
+    const done = isProjectDone(project);
 
     return (
         <section
@@ -70,7 +72,7 @@ export function ProjectCard({
                     <Grip className={styles.grip} />
                 </span>
                 <input
-                    className={styles.name}
+                    className={done ? `${styles.name} ${styles.done}` : styles.name}
                     value={project.name}
                     placeholder="Project name…"
                     onChange={(e) => onRenameProject(project.id, e.target.value)}

@@ -36,6 +36,14 @@
     color: var(--ink-faint);
 }
 
+/* done (every task in the project complete): strike + fade the title, matching a
+   done task row and a done chip in the day grid. */
+.name.done {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-strong);
+}
+
 /* trailing action group: the ◷ set-deadline button + the × delete, hover-revealed. */
 .actions {
     flex: none;

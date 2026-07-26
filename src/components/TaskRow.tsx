@@ -39,6 +39,7 @@ export function TaskRow({
 
     const style = { transform: CSS.Transform.toString(transform), transition };
     const undated = task.subtasks.length === 0;
+    const done = isTaskDone(task);
 
     return (
         <li
@@ -59,11 +60,11 @@ export function TaskRow({
             <input
                 type="checkbox"
                 className={check.box}
-                checked={isTaskDone(task)}
+                checked={done}
                 onChange={() => onToggleTask(task.id)}
             />
             <input
-                className={styles.name}
+                className={done ? `${styles.name} ${styles.done}` : styles.name}
                 value={task.name}
                 placeholder="Task…"
                 onChange={(e) => onRenameTask(task.id, e.target.value)}
