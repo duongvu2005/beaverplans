@@ -1,4 +1,5 @@
-import type { Archive, WeekPlan } from "./types";
+import { isTaskDone } from "./projects";
+import type { Archive, WeekPlan, DateKey } from "./types";
 
 /**
  * Records plan as a newly-archived week.
@@ -11,4 +12,39 @@ import type { Archive, WeekPlan } from "./types";
  */
 export function archiveWeek(archive: Archive, plan: WeekPlan): Archive {
     return [...archive, plan];
+}
+
+/**
+ * Carries a plan's unfinished work forward into a new week, dropping
+ * everything that was finished.
+ *
+ * @param plan the plan being ended, in its full, unstripped form — any
+ *        recording of finished work (e.g. via archiveWeek) is expected to
+ *        have already happened before this is called
+ * @param newWeekStart the week-start the carried-forward plan is anchored to
+ * @returns a new plan, weekStart set to newWeekStart, keeping only the
+ *          undone tasks of each project (a task-with-subtasks keeps just
+ *          its undone subtasks, missedDays reset to []) and only the
+ *          projects that still have a task left. Ids are preserved.
+ */
+export function carryUnfinished(plan: WeekPlan, newWeekStart: DateKey): WeekPlan {
+    return {
+        weekStart: newWeekStart,
+        projects: plan.projects
+            .map(project => ({
+                ...project,
+                tasks: project.tasks
+                    .filter(task => !isTaskDone(task))
+                    .map(task => ({
+                        ...task,
+                        subtasks: task.subtasks
+                            .filter(s => !s.isDone)
+                            .map(s => ({
+                                ...s,
+                                missedDays: []
+                            }))
+                    }))
+            }))
+            .filter(project => project.tasks.length !== 0)
+    };
 }
