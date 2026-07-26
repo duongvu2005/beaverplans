@@ -1,0 +1,72 @@
+/* WeekProgressRow: the Plan tab's header row — overall progress + the End
+   Week action, on one line (same layout as the old app's sticky head bar).
+   Plan-only chrome — App.tsx conditions this on view === 'plan'. */
+
+/* A plain block inside .pane (App.tsx), same as .plan-layout below it —
+   .pane's own padding supplies the horizontal inset for both, so neither
+   needs its own. margin-bottom is the ONLY gap between this row and
+   .plan-layout, so the two don't stack (pane's padding + this row's own
+   padding, which used to double up to 36px of dead space).
+
+   background + its own padding-block are here even though they're a no-op
+   today: this row is a sticky-header candidate (pin to the top of .pane on
+   scroll, later). An opaque background stops scrolled content from showing
+   through once it's pinned over that content; its own vertical padding
+   keeps breathing room once it's resting flush against .pane's scroll edge
+   instead of getting all its spacing from .pane's one-time top padding. */
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding-block: var(--sp-2);
+    margin-bottom: var(--sp-5);
+    background: var(--bg);
+}
+
+/* Matches .plan-layout's own cap (App.css) so the row's content lines up
+   with the tree/grid below it instead of stretching wider on large screens. */
+@media (min-width: 1000px) {
+    .row {
+        max-width: 1440px;
+        margin-inline: auto;
+    }
+}
+
+.progress {
+    flex: 1 1 auto;
+    width: auto;
+    height: 6px;
+    border-radius: 3px; /* radius = height/2, same pill ratio as ProgressBar's own 2px/4px */
+}
+
+.pct {
+    flex: none;
+    font: var(--fs-body) / 1.4 var(--mono);
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+/* Style 2 from plan/mocks/end-week-button.html: flat outline. Keeps the
+   dialog buttons' squarish var(--r) radius, but stays out of the way of the
+   green progress fill next to it — the accent only shows up in the icon. */
+.endWeek {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 500 var(--fs-body) var(--sans);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--r);
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+.endWeek:hover {
+    background: var(--hover-neutral);
+}
+
+.endWeekIcon {
+    color: var(--accent);
+}

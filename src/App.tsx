@@ -18,6 +18,7 @@ import {
     toggleTask,
 } from './core/projects';
 import { todayKey } from './core/dates';
+import { overallProgress } from './core/progress';
 import { newId } from './utils/newId';
 import { sampleWeek } from './fixtures/sampleWeek';
 import { ProjectView } from './components/ProjectView';
@@ -26,6 +27,7 @@ import { TaskEditor } from './components/TaskEditor';
 import { ProjectEditor } from './components/ProjectEditor';
 import { MovePopover } from './components/MovePopover';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { WeekProgressRow } from './components/WeekProgressRow';
 import shell from './components/dialogShell.module.css';
 import './App.css';
 
@@ -70,6 +72,7 @@ export default function App() {
     const [removing, setRemoving] = useState<Removing | null>(null);
 
     const today = todayKey();
+    const overall = overallProgress(plan.projects);
 
     const editingProject = editingTaskId
         ? plan.projects.find((p) => p.tasks.some((t) => t.id === editingTaskId))
@@ -156,6 +159,8 @@ export default function App() {
         setPlan((current) => removeMissedDay(current, clearing.subtaskId, clearing.day));
         setClearing(null);
     }
+
+    function handleEndWeek() {}
 
     function handleAddProject() {
         setPlan((current) => addProject(current, newId()));
@@ -247,31 +252,34 @@ export default function App() {
             </nav>
             <main className="pane">
                 {view === 'plan' && (
-                    <div className="plan-layout">
-                        <ProjectView
-                            projects={plan.projects}
-                            onReorderProject={handleReorderProject}
-                            onReorderTask={handleReorderTask}
-                            onEditTask={handleEditTask}
-                            onEditDeadline={handleEditDeadline}
-                            onToggleTask={handleToggleTask}
-                            onAddProject={handleAddProject}
-                            onAddTask={handleAddTask}
-                            onRenameProject={handleRenameProject}
-                            onRenameTask={handleRenameTask}
-                            onRemoveProject={handleRemoveProject}
-                            onRemoveTask={handleRemoveTask}
-                        />
-                        <WeekView
-                            projects={plan.projects}
-                            weekStart={plan.weekStart}
-                            today={today}
-                            onToggleSubtask={handleToggleSubtask}
-                            onEditSubtask={handleEditSubtask}
-                            onRequestMove={handleRequestMove}
-                            onClearMissed={handleRequestClear}
-                        />
-                    </div>
+                    <>
+                        <WeekProgressRow progress={overall} onEndWeek={handleEndWeek} />
+                        <div className="plan-layout">
+                            <ProjectView
+                                projects={plan.projects}
+                                onReorderProject={handleReorderProject}
+                                onReorderTask={handleReorderTask}
+                                onEditTask={handleEditTask}
+                                onEditDeadline={handleEditDeadline}
+                                onToggleTask={handleToggleTask}
+                                onAddProject={handleAddProject}
+                                onAddTask={handleAddTask}
+                                onRenameProject={handleRenameProject}
+                                onRenameTask={handleRenameTask}
+                                onRemoveProject={handleRemoveProject}
+                                onRemoveTask={handleRemoveTask}
+                            />
+                            <WeekView
+                                projects={plan.projects}
+                                weekStart={plan.weekStart}
+                                today={today}
+                                onToggleSubtask={handleToggleSubtask}
+                                onEditSubtask={handleEditSubtask}
+                                onRequestMove={handleRequestMove}
+                                onClearMissed={handleRequestClear}
+                            />
+                        </div>
+                    </>
                 )}
                 {view === 'stats' && <div>stats pane</div>}
                 {view === 'archive' && <div>archive pane</div>}
