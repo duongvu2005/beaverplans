@@ -18,7 +18,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import type { Project } from '../core/types';
-import { isTaskDone, reorderTask } from '../core/projects';
+import { isProjectDone, isTaskDone, reorderTask } from '../core/projects';
 import { ProjectCard } from './ProjectCard';
 import { Grip } from './Grip';
 import { beforeIdForDrop } from './dndReorder';
@@ -231,6 +231,10 @@ export function ProjectList({
                     </button>
                 </div>
             </SortableContext>
+            {/* The floating clone of whatever is being dragged. It reproduces TaskRow's and
+                ProjectCard's markup rather than rendering those components (no drag hooks, no
+                callbacks, everything readOnly), so any change to how a row LOOKS — e.g. the
+                done strike-through — has to be mirrored here too. */}
             <DragOverlay dropAnimation={null}>
                 {overlayTask !== undefined && (
                     <ul className={styles.overlayList}>
@@ -245,7 +249,11 @@ export function ProjectList({
                                 readOnly
                             />
                             <input
-                                className={taskStyles.name}
+                                className={
+                                    isTaskDone(overlayTask)
+                                        ? `${taskStyles.name} ${taskStyles.done}`
+                                        : taskStyles.name
+                                }
                                 value={overlayTask.name}
                                 placeholder="Task…"
                                 readOnly
@@ -260,32 +268,43 @@ export function ProjectList({
                                 <Grip className={cardStyles.grip} />
                             </span>
                             <input
-                                className={cardStyles.name}
+                                className={
+                                    isProjectDone(overlayProject)
+                                        ? `${cardStyles.name} ${cardStyles.done}`
+                                        : cardStyles.name
+                                }
                                 value={overlayProject.name}
                                 placeholder="Project name…"
                                 readOnly
                             />
                         </div>
                         <ul className={cardStyles.list}>
-                            {overlayProject.tasks.map((task) => (
-                                <li key={task.id} className={taskStyles.row}>
-                                    <span className={taskStyles.gripHandle}>
-                                        <Grip className={taskStyles.grip} />
-                                    </span>
-                                    <input
-                                        type="checkbox"
-                                        className={check.box}
-                                        checked={isTaskDone(task)}
-                                        readOnly
-                                    />
-                                    <input
-                                        className={taskStyles.name}
-                                        value={task.name}
-                                        placeholder="Task…"
-                                        readOnly
-                                    />
-                                </li>
-                            ))}
+                            {overlayProject.tasks.map((task) => {
+                                const done = isTaskDone(task);
+                                return (
+                                    <li key={task.id} className={taskStyles.row}>
+                                        <span className={taskStyles.gripHandle}>
+                                            <Grip className={taskStyles.grip} />
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            className={check.box}
+                                            checked={done}
+                                            readOnly
+                                        />
+                                        <input
+                                            className={
+                                                done
+                                                    ? `${taskStyles.name} ${taskStyles.done}`
+                                                    : taskStyles.name
+                                            }
+                                            value={task.name}
+                                            placeholder="Task…"
+                                            readOnly
+                                        />
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </section>
                 )}
