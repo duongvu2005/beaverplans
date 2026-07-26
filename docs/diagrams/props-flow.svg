@@ -1,8 +1,8 @@
-<svg viewBox="0 0 1100 800" width="1100" height="800" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif">
+<svg viewBox="0 0 1450 830" width="1450" height="830" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif">
   <title>beaverplans props flow with derivations</title>
-  <desc>App owns the WeekPlan and calls pure producers. It passes projects and callbacks into the ProjectView branch, and projects plus weekStart and today into WeekView, which derives the schedule and per-day progress before handing them to WeekGrid, DayRail and FocusedDay. Overlays receive a single selected node from App. Each box lists what it computes.</desc>
+  <desc>App owns the WeekPlan and calls pure producers. It passes projects and callbacks into the ProjectView branch, and projects plus weekStart and today into WeekView, which derives the schedule and per-day progress before handing them to WeekGrid, DayRail and FocusedDay. TaskEditor and ProjectEditor each hold a small local draft. MovePopover and ConfirmDialog are leaf overlays fed directly by App; ConfirmDialog is reused for both a missed-day clear and a delete confirmation. Each box lists what it computes.</desc>
 
-  <rect x="0" y="0" width="1100" height="800" fill="#fbf8f3"/>
+  <rect x="0" y="0" width="1450" height="830" fill="#fbf8f3"/>
 
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -25,8 +25,9 @@
     <rect x="380" y="582" width="320" height="76" rx="9"/>
     <rect x="740" y="330" width="300" height="76" rx="9"/>
     <rect x="740" y="456" width="300" height="76" rx="9"/>
-    <rect x="740" y="582" width="300" height="76" rx="9"/>
-    <rect x="740" y="682" width="300" height="70" rx="9"/>
+    <rect x="1100" y="175" width="300" height="105" rx="9"/>
+    <rect x="1100" y="330" width="300" height="76" rx="9"/>
+    <rect x="1100" y="456" width="300" height="76" rx="9"/>
   </g>
   <rect x="740" y="175" width="300" height="105" rx="9" fill="#ffffff" stroke="#b5482e" stroke-width="1.3" stroke-dasharray="5 4"/>
 
@@ -46,8 +47,9 @@
     <text x="760" y="201" fill="#b5482e">TaskEditor</text>
     <text x="760" y="356">SubtaskRow</text>
     <text x="760" y="482">WeightChip</text>
-    <text x="760" y="608">MovePopover</text>
-    <text x="760" y="708">ConfirmDialog</text>
+    <text x="1120" y="201">ProjectEditor</text>
+    <text x="1120" y="356">MovePopover</text>
+    <text x="1120" y="482">ConfirmDialog</text>
   </g>
 
   <g font-size="11" fill="#6f6c65">
@@ -55,9 +57,9 @@
     <text x="60" y="100">(plan, ...args) =&gt; plan</text>
     <text x="60" y="120" fill="#918e86">no React, no DOM</text>
 
-    <text x="300" y="80">owns  plan: WeekPlan · view · three dialog ids</text>
+    <text x="300" y="80">owns  plan: WeekPlan · view · five overlay ids</text>
     <text x="300" y="100">computes  today · editingTask · editingProject</text>
-    <text x="300" y="120">· moving (subtask + parent names)</text>
+    <text x="300" y="120">· deadlineProject · moving (subtask + parent names)</text>
 
     <text x="60" y="225">computes nothing</text>
     <text x="60" y="245" fill="#918e86">adds the heading, spreads every</text>
@@ -75,14 +77,14 @@
     <text x="612" y="378" font-size="10">assigned,</text>
     <text x="612" y="392" font-size="10">doneCount</text>
 
-    <text x="60" y="506">computes nothing</text>
-    <text x="60" y="524" fill="#918e86">owns rename, delete, add-task</text>
+    <text x="60" y="506">computes  projectProgress -&gt; ProgressBar</text>
+    <text x="60" y="524" fill="#918e86">owns rename, delete, add-task, deadline</text>
 
     <text x="400" y="506">computes  isMissed</text>
     <text x="400" y="524" fill="#918e86">day !== assignedDay</text>
 
     <text x="60" y="632">computes  isTaskDone(task) · undated</text>
-    <text x="60" y="650" fill="#918e86">leaf stores isDone, parent derives it</text>
+    <text x="60" y="650" fill="#918e86">+ taskProgress -&gt; PointsStat, if dated</text>
 
     <text x="400" y="632">computes  isOverdue</text>
     <text x="400" y="650" fill="#918e86">live · unfinished · past day · current week only</text>
@@ -97,10 +99,15 @@
     <text x="760" y="506">owns  open (the sheet)</text>
     <text x="760" y="524" fill="#918e86">wraps WeightDots for fine pointers</text>
 
-    <text x="760" y="632">owns  picked · markMissed</text>
-    <text x="760" y="650" fill="#918e86">computes which days are legal targets</text>
+    <text x="1120" y="225">owns  date · time (a small draft)</text>
+    <text x="1120" y="245">computes  seed from project.deadline</text>
+    <text x="1120" y="263" fill="#918e86">on save -&gt; setProjectDeadline</text>
 
-    <text x="760" y="732" fill="#918e86">Dialog plus a standard foot</text>
+    <text x="1120" y="380">owns  picked · markMissed</text>
+    <text x="1120" y="398" fill="#918e86">computes which days are legal targets</text>
+
+    <text x="1120" y="506" fill="#918e86">Dialog + standard foot; reused for a</text>
+    <text x="1120" y="524" fill="#918e86">missed-day clear and a delete confirm</text>
   </g>
 
   <g fill="none" stroke="#6f6c65" stroke-width="1.4" marker-end="url(#a)">
@@ -119,15 +126,16 @@
     <path d="M700,80 H720 V200 H734"/>
     <path d="M890,280 V324"/>
     <path d="M890,406 V450"/>
-    <path d="M800,100 H1070 V617 H1046"/>
-    <path d="M1070,700 H1046"/>
+    <path d="M800,90 H1250 V169"/>
+    <path d="M820,100 H1430 V368 H1406"/>
+    <path d="M1430,494 H1406"/>
     <path d="M256,96 H274"/>
   </g>
 
   <g font-size="10.5" fill="#918e86">
     <text x="222" y="60" text-anchor="end">calls</text>
     <text x="222" y="112" text-anchor="end">new plan</text>
-    <text x="200" y="146">projects + 8 callbacks</text>
+    <text x="200" y="146">projects + 11 callbacks</text>
     <text x="550" y="146">projects, weekStart, today</text>
     <text x="200" y="311">everything, unchanged</text>
     <text x="200" y="437">one project</text>
@@ -141,13 +149,16 @@
     <text x="728" y="152">one task</text>
     <text x="900" y="311">one draft subtask</text>
     <text x="900" y="437">weight</text>
-    <text x="1035" y="570" text-anchor="end">subtask + parent names</text>
-    <text x="1035" y="672" text-anchor="end">clearing</text>
+    <text x="1210" y="140">one project</text>
+    <text x="1394" y="364" text-anchor="end">subtask + parent names</text>
+    <text x="1394" y="490" text-anchor="end">clearing · removing</text>
   </g>
 
   <g font-size="10.5" fill="#918e86">
     <line x1="40" y1="778" x2="72" y2="778" stroke="#b5482e" stroke-width="1.4" stroke-dasharray="5 4"/>
     <text x="82" y="782">holds a detached draft, the one place the core layer is bypassed</text>
     <text x="600" y="782">DayCell is reached from both DayColumn and FocusedDay</text>
+    <text x="40" y="802">ProjectList and TaskEditor additionally own dnd-kit drag state (active id, cross-container preview) — not props, omitted above</text>
+    <text x="40" y="818">ProjectCard, DayColumn and TaskRow additionally render ProgressBar/PointsStat (presentation only) — see the component tree in architecture.md</text>
   </g>
 </svg>

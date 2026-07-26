@@ -9,23 +9,27 @@ project choices.
 ```
 src/
   core/          pure domain logic. NO React, NO storage, NO DOM imports. ever.
-    math.ts      + math.test.ts
-    types.ts     (domain types; no functions)
-  storage/       persistence layer. Depends on core/, never the reverse.
-    backend.ts       the Backend interface: load, get/set the week plan and
-                     archive, reset. Implementation-independent specs.
-    localBackend.ts  LocalBackend implements Backend over an injected
-                     KeyValueStore (a narrow slice of the Web Storage API),
-                     so the real localStorage or a fake can be supplied.
-                     + localBackend.test.ts
+                 one small, spec'd module per domain concern — e.g. dates.ts,
+                 deadline.ts, projects.ts (the project/task/subtask tree),
+                 progress.ts (progress math), types.ts (domain types, no
+                 functions) — each with a colocated test file.
+  storage/       persistence layer. Depends on core/, never the reverse. One
+                 `Backend` interface (see Storage, below) with one or more
+                 implementations behind it, plus a facade that picks which is
+                 active.
+  components/    the React layer. Depends on core/ and storage/, never the
+                 reverse. See architecture.md for the current component tree,
+                 state ownership, and props flow — kept there rather than
+                 here because it is a living diagram, not a fixed convention.
 ```
 
-Tests are **colocated**: `x.ts` sits next to `x.test.ts`.
+Tests are **colocated**: `x.ts` sits next to `x.test.ts` (`x.tsx` next to `x.test.tsx`
+in `components/`).
 
 One-way dependency rule: `core/` depends on nothing else in `src/`. It is pure and
-independently testable, so it may not import from any layer added later. Later layers may
-depend on `core/`, never the reverse. (Other directories will be documented here when they
-exist.)
+independently testable, so it may not import from any layer added later. `storage/`
+depends on `core/` only. `components/` may depend on both. Each layer may depend on
+layers before it in this list, never after.
 
 ## Specifications — 6.102 readings 04–05
 
@@ -50,6 +54,34 @@ Two project-wide defaults that specs assume silently — annotate a function onl
 - Functions do not mutate their arguments. Note it only when one does.
 - Functions are deterministic. Note it only when one is not (uses randomness, reads the
   clock, or returns any-valid-result rather than a pinned-down value).
+
+## Abstract Data Types — 6.102 readings 06–07
+
+An ADT (a type whose invariant is stronger than its structural shape — for example,
+"every id in this tree is globally unique") carries three things as a comment directly
+above the type:
+
+```ts
+// Abstraction function:
+//   AF(rep) = plain-language description of what a value of this rep represents
+// Rep invariant:
+//   the properties every value of this type must satisfy
+//   checkRep = <validator function>, which tests this whole invariant.
+// Safety from rep exposure:
+//   why a client holding a reference to this value's fields cannot break the RI
+```
+
+`checkRep` is a plain function (there are no classes in `core/`), named `isValid<Type>`
+and returning a boolean rather than throwing, so it doubles as a test oracle: assert it
+on a producer's output inside tests. It is never called on a production code path —
+constructing an invalid value directly (bypassing the producers) is a bug the type
+system does not catch, and `checkRep` is how tests catch it instead.
+
+Immutability is what keeps "safety from rep exposure" a short argument: every field is
+`readonly`, every array is a `ReadonlyArray`, and producers never mutate their input —
+they return a new value, sharing unchanged substructure by reference. For an ADT built
+this way, the safety argument is usually one sentence: readonly fields, readonly
+children, producers return new values.
 
 ## Testing — 6.102 reading 02
 
@@ -87,6 +119,24 @@ describe("clamp", () => {
 - No `!` non-null assertion without an adjacent comment justifying why it is safe.
 - Immutable by default: domain data is `readonly`; state updates return new objects rather
   than mutating in place.
+
+## Storage — 6.102 reading 08
+
+`storage/` exposes one interface (`Backend`) and one or more implementations behind it,
+plus a facade that picks which implementation is active and delegates every call to it.
+The rest of the app is written against the interface, never against a concrete backend.
+
+Every `Backend` read is synchronous, answered from an in-memory cache; the only
+asynchronous method is `load()`, which populates that cache once. This is a deliberate
+choice, not an accident of the first implementation — the app renders synchronously off
+whatever is in memory, and `load()` is the one explicit place a caller has to wait.
+Record that choice as a comment on the interface itself when you add a second
+implementation, so it can't quietly reintroduce an async read.
+
+Test a `Backend` implementation against an injected fake of whatever it wraps (a narrow
+interface covering only the methods actually used — not the real browser API or a real
+network client), so the suite runs without a browser and can hit failure partitions
+(corrupt stored data, a write that throws) a real store can't be coerced into on demand.
 
 ## Terminology — project convention
 

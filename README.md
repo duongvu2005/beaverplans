@@ -22,12 +22,24 @@ npm run dev      # dev server with hot reload
 Other scripts:
 
 ```bash
-npm test         # run tests (Vitest)
-npm run lint     # ESLint
-npm run build    # type-check and production build
+npm test              # run tests (Vitest)
+npm run test:watch    # tests in watch mode
+npm run test:coverage # tests with coverage report
+npm run lint          # ESLint
+npm run format        # Prettier, writes changes
+npm run format:check  # Prettier, check only
+npm run build         # type-check and production build
 ```
 
 Built with React, TypeScript, and Vite.
+
+## Documentation
+
+- [docs/architecture.md](docs/architecture.md) — the React layer: state ownership,
+  component tree, props flow, and drag-and-drop, with diagrams.
+- [docs/conventions.md](docs/conventions.md) — coding conventions: spec template,
+  testing strategy, ADTs, storage, TypeScript rules, terminology.
+- [docs/week-model.md](docs/week-model.md) — how a plan is anchored to a calendar week.
 
 ## License
 

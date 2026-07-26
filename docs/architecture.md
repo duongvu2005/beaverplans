@@ -16,13 +16,14 @@ App                              owns plan: WeekPlan, view, open-dialog ids
 │
 ├── Plan view
 │   ├── ProjectView              heading only, spreads props
-│   │   └── ProjectList          maps projects, add-project button
-│   │       └── ProjectCard      one project: name, actions, task list
-│   │           └── TaskRow      one task: checkbox, name, actions
+│   │   └── ProjectList          maps projects, add-project button, owns
+│   │       │                    project/task drag-and-drop
+│   │       └── ProjectCard      one project: name, deadline, progress bar, task list
+│   │           └── TaskRow      one task: checkbox, name, points stat, actions
 │   │
 │   └── WeekView                 owns selectedDay + mode, derives the schedule
 │       ├── WeekGrid             7 columns
-│       │   └── DayColumn        one day's heading and cells
+│       │   └── DayColumn        one day's heading (+ points stat) and cells
 │       │       └── DayCell      one scheduled subtask
 │       ├── DayRail              7 weekday pills with progress
 │       └── FocusedDay           one day in full
@@ -30,24 +31,33 @@ App                              owns plan: WeekPlan, view, open-dialog ids
 │
 └── Overlay system
     ├── Dialog                   base: portal, scrim, focus, Escape stack
-    ├── TaskEditor               owns a draft of the task being edited
+    ├── TaskEditor               owns a draft of the task being edited, and
+    │   │                        subtask drag-and-drop within that draft
     │   └── SubtaskRow           one draft subtask
     │       └── WeightChip       pips, opens a sheet on coarse pointers
     │           └── WeightDots   fine-pointer variant
+    ├── ProjectEditor            one project's deadline, with a clear affordance
     ├── MovePopover              owns picked day + mark-missed
-    └── ConfirmDialog            Dialog plus a standard foot
+    └── ConfirmDialog            Dialog plus a standard foot; reused for clearing
+                                 a missed day and for delete-with-children confirms
 
-Drag and drop
-    useTreeDnd                   projects and tasks; owned by App
-    useSubtaskDnd                subtasks in the editor; owned by TaskEditor
-    dragPosition                 shared geometry helpers, no state
+Progress display (presentation, not domain logic)
+    PointsStat                   "n/total" text, optional "pts" suffix
+    ProgressBar                  a filled bar, width = percent
+    both take the same {done, total} shape core/progress already returns
+
+Drag and drop (dnd-kit)
+    ProjectList                  DndContext + SortableContext for projects and tasks
+    TaskEditor                   DndContext + SortableContext for subtasks in the draft
+    dndReorder                   shared pure helper: dnd-kit's drop event -> the
+                                  beforeId the core reorder producers take
 
 Kit          Grip, CloseIcon, EditIcon, MoveIcon, DeadlineIcon
 Shared CSS   checkbox, rowKit, dialogShell, moveUi
 ```
 
-Three components own state: `App`, `WeekView`, and `TaskEditor`. Everything else is a
-function of its props, apart from the two drag hooks, which own theirs.
+Four components own state: `App`, `WeekView`, `TaskEditor`, and `ProjectList` (its own
+drag-and-drop). Everything else is a function of its props.
 
 ## State ownership
 
@@ -57,7 +67,7 @@ edit goes through a pure producer in `core/projects.ts`, which returns a new pla
 Every hand-off is drawn, with labels, in the
 [props flow diagram](./diagrams/props-flow.svg) further down.
 
-The three state owners hold three different kinds of state, and the distinction is the
+The four state owners hold four different kinds of state, and the distinction is the
 point:
 
 **`App` owns user data.** The plan is what gets saved. Everything below edits it by calling
@@ -78,34 +88,45 @@ Note that both approaches to editing exist in the app on purpose. Name fields in
 no draft, because there is nothing to cancel. A dialog that edits several fields at once
 needs a draft so Cancel can revert all of them together.
 
-**The drag hooks own a fourth kind of state:** what is being dragged and where it would
-land. `useTreeDnd` is held by `App` and drives the project tree; `useSubtaskDnd` is held
-by `TaskEditor` and drives its draft. Both split that state deliberately. What is being
-dragged lives in a **ref**, because `dragover` fires continuously and the handlers must
-read the current value without re-rendering on every event. The drop hint lives in
-**state**, because it has to repaint.
+**`ProjectList` owns drag-and-drop state**, via [dnd-kit](https://dndkit.com): which
+item is active, and a live `preview` array of projects used only while a task is
+dragged across a project boundary — same-project reordering is left entirely to
+dnd-kit, which opens the gap itself, because touching state there would fight its
+animation and loop. `TaskEditor` owns the identical shape (`activeId` + a preview array
+of subtasks) for dragging within its draft. Both feed the same pure helper,
+`dndReorder.beforeIdForDrop`, which turns "what the pointer is over" into the `beforeId`
+the core reorder producers (`reorderProject`, `reorderTask`, and the draft-local
+subtask move) actually take. Neither owner reorders eagerly on every `dragover`: only a
+*cross*-container move touches `preview`, and the commit in `onDragEnd` reads the
+landing spot from that preview (or the untouched list, for a same-container drag) so
+what gets committed always matches what the user was already looking at.
 
-`useSubtaskDnd` goes further and defers its `draggingId` state by one animation frame.
-Setting it synchronously makes React flush a re-render inside the `dragstart` handler,
-while the browser is still initiating the drag, and altering the source's surroundings
-at that moment makes the browser cancel: `dragstart` is followed straight by `dragend`
-with no `dragover`. `useTreeDnd` does not need this because nothing structural changes
-around the tree when a drag begins. The asymmetry is deliberate, and collapsing it would
-reintroduce the bug.
+`ProjectList` also runs a custom `collisionDetection` (`closestCorners`, filtered to the
+draggable's own kind) so a project drag only ever resolves against other projects and a
+task drag only against task rows and project drop zones — without it, a nested task row
+would swallow a project drop before the project list itself got a chance to open a gap.
+`TaskEditor`'s drag-over handler additionally gates each candidate day through
+`canMoveSubtaskTo`, so a subtask can never preview a landing on a day the miss rule
+forbids — the same rule `MovePopover` applies to its day pills.
 
 ## Component tree
 
 ```mermaid
 flowchart TD
     App --> ProjectView --> ProjectList --> ProjectCard --> TaskRow
+    ProjectCard --> ProgressBar1["ProgressBar"]
+    TaskRow --> PointsStat1["PointsStat"]
     App --> WeekView
     WeekView --> WeekGrid --> DayColumn --> DayCell
+    DayColumn --> PointsStat2["PointsStat"]
     WeekView --> DayRail
     WeekView --> FocusedDay --> DayCell2["DayCell"]
     App --> TaskEditor --> SubtaskRow --> WeightChip --> WeightDots
+    App --> ProjectEditor
     App --> MovePopover
     App --> ConfirmDialog
     TaskEditor -.-> Dialog
+    ProjectEditor -.-> Dialog
     MovePopover -.-> Dialog
     ConfirmDialog -.-> Dialog
     WeightChip -.-> Dialog2["Dialog"]
@@ -125,29 +146,38 @@ omission.
 
 ![Props flow with derivations](./diagrams/props-flow.svg)
 
-The same information follows in text, one block per component, in tree order.
+The same information follows in text, one block per component, in tree order — text is
+the source of truth where the two disagree. The diagram covers `ProjectEditor` and the
+`MovePopover`/`ConfirmDialog` overlays as their own column; drag-and-drop ownership and
+the `PointsStat`/`ProgressBar` components are noted in its footer rather than drawn as
+boxes, to keep it readable.
 
-One thing threads through both branches and is left out of the blocks below to keep them
-readable: a single `dnd` object. `App` builds it with `useTreeDnd` and passes it down
-through `ProjectView`, `ProjectList` and `ProjectCard` to `TaskRow`; `TaskEditor` builds
-its own with `useSubtaskDnd` and passes it to `SubtaskRow`. Every component in those
-chains takes it, and the leaves are where it is finally used. The diagram above predates
-it and does not show it.
+Unlike the callbacks below, drag-and-drop needs nothing threaded down from a parent:
+every draggable or droppable component calls dnd-kit's own hooks (`useSortable` /
+`useDroppable`) directly with just its own id and a small `data` tag saying what kind of
+node it is (`ProjectCard`, `TaskRow`, `SubtaskRow` each do this). `ProjectList` and
+`TaskEditor` own the `DndContext` those hooks register into, but that context is
+ambient, not a prop — so it is left out of the blocks below the same way an ordinary
+React context would be.
 
 ### App
 
 ```
-owns       view, plan, editingTaskId, movingSubtaskId, clearing
-computes   today          = todayKey()
-           editingProject = the project whose tasks contain editingTaskId
-           editingTask    = that project's task with editingTaskId
-           moving         = findSubtask(plan, movingSubtaskId)
-                            -> { subtask, taskName, projectName }
-passes     projects, 8 callbacks                          -> ProjectView
+owns       view, plan, editingTaskId, editingDeadlineId, movingSubtaskId,
+           clearing, removing
+computes   today            = todayKey()
+           editingProject   = the project whose tasks contain editingTaskId
+           editingTask      = that project's task with editingTaskId
+           deadlineProject  = plan.projects.find(p => p.id === editingDeadlineId)
+           moving           = findSubtask(plan, movingSubtaskId)
+                              -> { subtask, taskName, projectName }
+passes     projects, 11 callbacks                          -> ProjectView
            projects, weekStart, today, 4 callbacks         -> WeekView
            editingTask, editingProject.name                -> TaskEditor
+           deadlineProject                                 -> ProjectEditor
            moving.*, weekStart, today                      -> MovePopover
-           clearing.*                                      -> ConfirmDialog
+           clearing.*                                      -> ConfirmDialog (clear)
+           removing.*                                      -> ConfirmDialog (delete)
 ```
 
 Dialogs are driven by a stored id, not a boolean. `App` looks the id up in the *current*
@@ -157,10 +187,13 @@ renders nothing rather than rendering against missing data.
 `findSubtask` is a local helper that walks the tree for a subtask id and returns it with
 its parent names, which the dialogs need for their headings.
 
+`ConfirmDialog` is instantiated twice with different driving state (`clearing` and
+`removing`), never both at once — they share a component, not an identity.
+
 ### ProjectView
 
 ```
-receives   projects, 8 callbacks                           from App
+receives   projects, 11 callbacks                          from App
 computes   nothing
 passes     all of it, unchanged, via {...props}            -> ProjectList
 ```
@@ -171,28 +204,30 @@ logic here.
 ### ProjectList
 
 ```
-receives   projects, 8 callbacks                           from ProjectView
-computes   nothing
+receives   projects, 11 callbacks                          from ProjectView
+owns       active drag id, a preview project order (cross-project task drags only)
+computes   nothing (see Drag and drop, below)
 uses here  onAddProject                                    (the add-project button)
-passes     project, 7 callbacks, one per project           -> ProjectCard
+passes     project, 8 callbacks, one per project            -> ProjectCard
 ```
 
 ### ProjectCard
 
 ```
-receives   project, 7 callbacks                            from ProjectList
-computes   nothing
-uses here  onRenameProject, onRemoveProject, onAddTask
-passes     task, onEditTask, onToggleTask,
+receives   project, 8 callbacks                            from ProjectList
+computes   projectProgress(project)                        -> ProgressBar
+uses here  onRenameProject, onRemoveProject, onAddTask, onEditDeadline
+passes     task, projectId, onEditTask, onToggleTask,
            onRenameTask, onRemoveTask, one per task        -> TaskRow
 ```
 
 ### TaskRow
 
 ```
-receives   task, 4 callbacks                               from ProjectCard
-computes   isTaskDone(task)   the checkbox state
-           undated            task has no subtasks
+receives   task, projectId, 4 callbacks                    from ProjectCard
+computes   isTaskDone(task)     the checkbox state
+           undated              task has no subtasks
+           taskProgress(task)   -> PointsStat, skipped when undated
 passes     nothing (leaf)
 ```
 
@@ -211,7 +246,7 @@ computes   schedule = scheduleByDay(projects)     7 days, each with its entries
            byDay    = progressByDay(projects)     per-day assigned and done weight
            todayDay = todayInWeek(weekStart)      undefined if not the current week
            focused  = schedule entry for selectedDay
-passes     schedule, weekStart, today,
+passes     schedule, byDay, weekStart, today,
            onFocusDay + 4 callbacks                        -> WeekGrid
            byDay, selectedDay, todayDay,
            onSelectDay, onBackToGrid                       -> DayRail
@@ -230,18 +265,19 @@ Both panes always render; `data-mode` plus CSS decides which is visible.
 ### WeekGrid
 
 ```
-receives   schedule, weekStart, today, 5 callbacks         from WeekView
+receives   schedule, byDay, weekStart, today, 5 callbacks  from WeekView
 computes   nothing
-passes     one daySchedule, weekStart, today,
+passes     one daySchedule, progress = byDay[i], weekStart, today,
            5 callbacks, one per day                        -> DayColumn
 ```
 
 ### DayColumn
 
 ```
-receives   daySchedule, weekStart, today, 5 callbacks      from WeekGrid
+receives   daySchedule, progress, weekStart, today, 5 callbacks   from WeekGrid
 computes   isMissed = daySchedule.day !== entry.subtask.assignedDay   per entry
-uses here  onFocusDay                                      (the day heading button)
+uses here  onFocusDay                                      (the day heading, with
+           progress -> PointsStat, shown when the day has any assigned weight)
 passes     entry, day, isMissed, weekStart, today,
            compact = true, 4 callbacks                     -> DayCell
 ```
@@ -333,6 +369,21 @@ segments with a hover hint. `WeightChip` shows the same pips as a button that op
 sheet on coarse pointers, with named options and what each counts for. CSS decides which is
 visible; both call the same `onChange`.
 
+### ProjectEditor
+
+```
+receives   project, onClose, onSave                        from App
+owns       date, time                                       the draft
+computes   seed = project.deadline, ignored unless parseDeadline says ok
+on save    date ? (time ? `${date}T${time}` : date) : undefined -> onSave
+passes     nothing (leaf)
+```
+
+The same shape as `TaskEditor`'s deadline field, deliberately: a stored deadline that
+does not parse is ignored on open rather than shown, so a corrupt value cannot be
+silently rewritten by opening and saving. Unlike `TaskEditor`, there is nothing else to
+draft, so `App` skips the id-lookup dance and passes the `Project` directly.
+
 ### MovePopover
 
 ```
@@ -408,8 +459,10 @@ main.pane
     ├── ProjectView
     └── WeekView
 TaskEditor                      (if editingTask)
+ProjectEditor                   (if deadlineProject)
 MovePopover                     (if moving)
-ConfirmDialog                   (if clearing)
+ConfirmDialog                   (if clearing)     -- clear a missed day
+ConfirmDialog                   (if removing)     -- delete confirmation
 ```
 
 ### ProjectView and ProjectList
@@ -427,12 +480,13 @@ div.projectView
 ```
 section.card
 ├── div.header
-│   ├── span.gripHandle > Grip              draggable, starts the drag
+│   ├── span.gripHandle > Grip              drag handle (dnd-kit)
 │   ├── input.name                          -> onRenameProject, controlled
+│   ├── ProgressBar                         projectProgress(project)
 │   └── div.actions
-│       ├── button.iconBtn > DeadlineIcon   (not yet wired)
+│       ├── button.iconBtn > DeadlineIcon   -> onEditDeadline
 │       └── button.iconBtn > CloseIcon      -> onRemoveProject
-├── ul.list
+├── ul.list                                 also a drop target (useDroppable)
 │   └── TaskRow *
 └── button.addTask                          -> onAddTask
 ```
@@ -441,10 +495,11 @@ section.card
 
 ```
 li.row
-├── span.gripHandle > Grip              draggable, starts the drag
+├── span.gripHandle > Grip              drag handle (dnd-kit)
 ├── input[checkbox].box                 -> onToggleTask, checked = isTaskDone(task)
 ├── input.name                          -> onRenameTask, controlled
 ├── button.assignHint                   (if undated) "assign days"
+├── PointsStat                          (if not undated) taskProgress(task)
 └── div.actions
     ├── button.iconBtn [.assignCta]     -> onEditTask
     └── button.iconBtn > CloseIcon      -> onRemoveTask
@@ -468,6 +523,8 @@ div.weekView [data-mode=grid|focus]
 div.grid
 └── section.column *                    7 of them
     ├── button.day                      -> onFocusDay
+    │   ├── span.dayName
+    │   └── PointsStat                  progress[i], with "pts" suffix
     └── ul.list
         └── DayCell *   compact
 ```
@@ -539,7 +596,7 @@ Dialog
 
 ```
 div.row
-├── span.gripHandle > Grip              draggable, starts the drag
+├── span.gripHandle > Grip              drag handle (dnd-kit)
 ├── input.subnote                       -> onSetNote
 ├── WeightChip                          -> onSetWeight
 └── button.iconBtn > CloseIcon          -> onRemove
@@ -557,6 +614,18 @@ span.wrap
         └── button.opt [.optSel] x3     Easy / Medium / Hard
 ```
 
+### ProjectEditor
+
+```
+Dialog
+├── div.head        eyebrow = "Project", h3 = project name
+├── div.body
+│   └── field: Deadline
+│       ├── button.clearDeadline        (if date) "Clear"
+│       └── div.deadrow > input[date] + input[time]   time disabled until date set
+└── div.foot        Cancel -> onClose | Save -> handleSave
+```
+
 ### MovePopover
 
 ```
@@ -571,39 +640,53 @@ Dialog
 
 ## Drag and drop
 
-Native HTML5 drag events throughout. Touch works through
-`@dragdroptouch/drag-drop-touch`, enabled once in `main.tsx`, which translates touch
-gestures into the same events and is a no-op for a mouse. Its `allowDragScroll` is
-turned off, because by default it scrolls the *window* when a drag nears a viewport
-edge, which panned the page sideways and scrolled the backdrop behind open dialogs.
+[dnd-kit](https://dndkit.com) throughout (`@dnd-kit/core` + `@dnd-kit/sortable`),
+replacing an earlier hand-rolled native-HTML5-DnD implementation. Two independent drag
+systems exist, matching the two containers that own drag state (see State ownership):
+`ProjectList` for projects and tasks, `TaskEditor` for subtasks within its draft. Each
+sets up its own `DndContext` with a `PointerSensor` (5px activation distance, so
+clicking a grip or typing in a name field is never mistaken for the start of a drag)
+and a `KeyboardSensor` (`sortableKeyboardCoordinates`, for accessible reordering).
+Touch is native to dnd-kit's pointer sensor — no separate polyfill.
 
-Only the grip is draggable; rows, cards and day groups are drop targets. The grip is a
-`span` wrapped around the `Grip` svg, because `draggable` on SVG elements is unreliable
-across browsers, and because the wrapper is somewhere to put `touch-action: none` and
-an enlarged hit area for touch.
+Only the grip is a drag handle: each draggable component (`ProjectCard`, `TaskRow`,
+`SubtaskRow`) calls `useSortable({ id, data: { type, ... } })` itself and spreads the
+returned `attributes`/`listeners` onto the grip's `span`, via `setActivatorNodeRef` so
+the drag originates from the grip while the whole row still moves. The `data` tag is
+what a drop target reads back to know what it caught.
 
-`dragPosition.ts` holds the geometry, shared by both hooks:
+`ProjectList` runs a custom `collisionDetection` (`closestCorners`, filtered to the
+dragged item's own kind — a project only collides with projects, a task only with task
+rows and project drop zones) so a project drag can't resolve against a task nested
+inside a card before the project list itself gets a chance to open a gap.
 
-- `halfPos` gives the half of a row the cursor is in, recomputed **at drop time** so a
-  stale hover hint can never misplace an item.
-- `idAfter` and `toBeforeId` convert "before or after this row" into the single
-  `beforeId | null` the core producers take. This is where the gesture meets the spec,
-  and it is why `moveBefore` defines `beforeId === id` as a no-op: dragging a row onto
-  its own predecessor's lower half resolves to the row itself.
-- `setRowDragImage` makes the drag preview the whole row rather than the grip, found via
-  a `data-drag-row` attribute. An attribute, not a class, because CSS Modules hashes
-  class names at build time.
+Both owners share the same commit pattern:
 
-Cross-day drags in the editor are refused when the missed-day rule forbids them, so an
-illegal move cannot be expressed rather than being rejected after the fact. That mirrors
-the rule `MovePopover` applies to its day pills.
+- **`onDragOver`** only touches state on a *cross*-container move (a task crossing into
+  a different project, a subtask crossing into a different day) — same-container
+  reordering is left entirely to dnd-kit's own animation, because writing state there
+  would fight it and loop. A cross-container move updates a `preview` array so the
+  destination visibly opens a gap before the drop.
+- **`onDragEnd`** commits by reading the landing spot from that preview (or the
+  untouched list, for a same-container drag) — never by recomputing against the live
+  plan — and calls `dndReorder.beforeIdForDrop` to turn "the id under the pointer" into
+  the single `beforeId | null` the core producers (`reorderProject`, `reorderTask`, and
+  the draft-local subtask move) take. Reading from the preview instead of the plan is
+  what keeps the committed order matching what the user was already looking at.
+- **`DragOverlay`** renders a floating copy of the dragged row/card so it doesn't jump
+  or clip against the container it's leaving.
+
+Cross-day drags in the editor are additionally refused when the missed-day rule
+forbids them (`canMoveSubtaskTo`, checked on every `dragOver`), so an illegal move
+cannot be expressed rather than being rejected after the fact. That mirrors the rule
+`MovePopover` applies to its own day pills.
 
 ## Where things are not wired yet
 
 Kept current so the gaps are visible rather than surprising.
 
-- **The deadline button** on a project card does nothing; task deadlines are editable in
-  `TaskEditor`.
 - **Stats and archive** are placeholder panes.
 - **Nothing persists.** `App` seeds from a fixture; the storage layer exists and is tested
   but is not connected to the UI.
+- **Days/Projects segmented toggle and per-subtask notes** on the mobile day-rail view
+  are not built (tracked as the Phase D mop-up in `plan/plan.md`).
