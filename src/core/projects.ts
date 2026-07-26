@@ -497,6 +497,18 @@ export function isTaskDone(task: Task): boolean {
 }
 
 /**
+ * Determine whether a project is done.
+ *
+ * @param project any valid project (satisfies isValidProject)
+ * @returns true iff the project has at least one task and every one of them is
+ *          done. False for a project with no tasks: there is no work to have
+ *          completed.
+ */
+export function isProjectDone(project: Project): boolean {
+    return project.tasks.length > 0 && project.tasks.every(isTaskDone);
+}
+
+/**
  * Determine whether a subtask may be reassigned to a given day.
  *
  * This is moveSubtask's precondition on toDay, made checkable: a subtask only

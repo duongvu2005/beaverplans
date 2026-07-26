@@ -22,6 +22,7 @@ import {
     reorderProject,
     reorderTask,
     isTaskDone,
+    isProjectDone,
     isValidProject,
     isValidSubtask,
     isValidTask,
@@ -1869,6 +1870,61 @@ describe('isTaskDone', () => {
             subtasks: [makeSubtask('s0', 'mon'), makeSubtask('s1', 'tue')], // both false
         };
         expect(isTaskDone(task)).toBe(false);
+    });
+});
+
+describe('isProjectDone', () => {
+    /**
+     * Testing strategy (precondition: a valid project):
+     *   - project.tasks: empty | non-empty
+     *   - non-empty, done-set: all done | some done | none done
+     *     ('some done' separates every(...) from a buggy some(...))
+     *   - task kind, for an all-done project: leaf-only | parent-only | mixed
+     *     (exercises both isTaskDone branches through this function)
+     */
+
+    it('covers empty: a project with no tasks is not done', () => {
+        expect(isProjectDone(makeProject('p'))).toBe(false);
+    });
+    it('covers all done, leaf-only: every leaf task done means the project is done', () => {
+        const project = projectWith('p', [
+            { ...makeTask('a'), isDone: true },
+            { ...makeTask('b'), isDone: true },
+        ]);
+        expect(isProjectDone(project)).toBe(true);
+    });
+    it('covers all done, parent-only: every parent task done means the project is done', () => {
+        const project = projectWith('p', [
+            { id: 'a', name: 'a', subtasks: [{ ...makeSubtask('s0', 'mon'), isDone: true }] },
+            { id: 'b', name: 'b', subtasks: [{ ...makeSubtask('s1', 'tue'), isDone: true }] },
+        ]);
+        expect(isProjectDone(project)).toBe(true);
+    });
+    it('covers all done, mixed: a done leaf beside a done parent means the project is done', () => {
+        const project = projectWith('p', [
+            { ...makeTask('a'), isDone: true },
+            { id: 'b', name: 'b', subtasks: [{ ...makeSubtask('s0', 'mon'), isDone: true }] },
+        ]);
+        expect(isProjectDone(project)).toBe(true);
+    });
+    it('covers some done: one done task and one open task is not done', () => {
+        const project = projectWith('p', [{ ...makeTask('a'), isDone: true }, makeTask('b')]);
+        expect(isProjectDone(project)).toBe(false);
+    });
+    it('covers none done: no task done is not done', () => {
+        const project = projectWith('p', [makeTask('a'), makeTask('b')]);
+        expect(isProjectDone(project)).toBe(false);
+    });
+    it('covers some done, mixed: a task with one open subtask keeps the project open', () => {
+        const project = projectWith('p', [
+            { ...makeTask('a'), isDone: true },
+            {
+                id: 'b',
+                name: 'b',
+                subtasks: [{ ...makeSubtask('s0', 'mon'), isDone: true }, makeSubtask('s1', 'tue')],
+            },
+        ]);
+        expect(isProjectDone(project)).toBe(false);
     });
 });
 
