@@ -123,12 +123,12 @@ describe('Dialog', () => {
         }
 
         const { rerender, unmount } = render(<Wrapper innerOpen={true} />);
-        expect(document.body.classList.contains('dialogOpen')).toBe(true);
+        expect(document.documentElement.classList.contains('dialogOpen')).toBe(true);
 
         rerender(<Wrapper innerOpen={false} />);
-        expect(document.body.classList.contains('dialogOpen')).toBe(true);
+        expect(document.documentElement.classList.contains('dialogOpen')).toBe(true);
 
         unmount();
-        expect(document.body.classList.contains('dialogOpen')).toBe(false);
+        expect(document.documentElement.classList.contains('dialogOpen')).toBe(false);
     });
 });

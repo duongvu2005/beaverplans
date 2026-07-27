@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Dialog.module.css';
 
@@ -9,19 +9,12 @@ import styles from './Dialog.module.css';
 // while its parent is still open.
 const openDialogs: symbol[] = [];
 
-// Page offset captured when the first dialog opened, restored when the last closes.
-let lockedScrollY = 0;
-
 function lockBodyScroll() {
-    lockedScrollY = window.scrollY;
-    document.body.style.top = `${-lockedScrollY}px`;
-    document.body.classList.add('dialogOpen');
+    document.documentElement.classList.add('dialogOpen');
 }
 
 function unlockBodyScroll() {
-    document.body.classList.remove('dialogOpen');
-    document.body.style.top = '';
-    window.scrollTo(0, lockedScrollY);
+    document.documentElement.classList.remove('dialogOpen');
 }
 
 type DialogProps = {
@@ -34,8 +27,18 @@ type DialogProps = {
 export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
     const panelRef = useRef<HTMLDivElement>(null);
     const idRef = useRef(Symbol('dialog'));
+    // Callers pass onClose as a fresh inline function on every render (e.g.
+    // onClose={() => setRemoving(null)}). Reading it through a ref, rather
+    // than putting it in the effect's dependency array, keeps the lock/unlock
+    // effect tied to open/close only — not to onClose's identity, which would
+    // otherwise re-run the effect (unlock, then immediately re-lock) on every
+    // unrelated parent re-render while the dialog is still open.
+    const onCloseRef = useRef(onClose);
+    useLayoutEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!open) return;
         const id = idRef.current;
         openDialogs.push(id);
@@ -45,7 +48,7 @@ export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
         panelRef.current?.focus();
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && openDialogs[openDialogs.length - 1] === id) {
-                onClose();
+                onCloseRef.current();
             }
         };
         document.addEventListener('keydown', onKey);
@@ -57,7 +60,7 @@ export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
                 unlockBodyScroll();
             }
         };
-    }, [open, onClose]);
+    }, [open]);
 
     if (!open) return null;
 

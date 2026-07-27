@@ -32,14 +32,16 @@
     outline: none;
 }
 
-/* Applied to <body> while any dialog is open. position: fixed rather than a bare
-   overflow: hidden because iOS Safari ignores the latter and keeps rubber-banding
-   the page behind the sheet. The component restores the scroll position on close,
-   since fixing the body otherwise jumps it to the top. */
-:global(body.dialogOpen) {
-    position: fixed;
-    width: 100%;
-    overflow: hidden;
+/* Applied to <html> while any dialog is open. Locking the scroll container's
+   overflow, rather than taking <body> out of flow with position: fixed, leaves the
+   document's geometry untouched: no height collapse, no scroll offset to save and
+   restore. Taking the body out of flow collapsed <html> to height 0 on every open
+   and back on every close, and the resulting full-document invalidation is what
+   flashed an unpainted band over the sheet. Locking <html> is also enough on iOS
+   Safari 15.4+; the scrim's overscroll-behavior stops the sheet chaining its own
+   scroll to the page. */
+:global(html.dialogOpen) {
+    overflow-y: hidden;
 }
 
 @media (min-width: 640px) {
