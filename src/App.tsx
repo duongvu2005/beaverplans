@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { DayOfWeek, Task, WeekPlan } from './core/types';
+import type { Archive, DayOfWeek, Task, WeekPlan } from './core/types';
 import {
     addMissedDay,
     addProject,
@@ -17,7 +17,8 @@ import {
     toggleSubtask,
     toggleTask,
 } from './core/projects';
-import { todayKey } from './core/dates';
+import { archiveWeek, carryUnfinished } from './core/archive';
+import { nextWeekStart, todayKey } from './core/dates';
 import { overallProgress } from './core/progress';
 import { newId } from './utils/newId';
 import { sampleWeek } from './fixtures/sampleWeek';
@@ -65,14 +66,17 @@ function findSubtask(plan: WeekPlan, subtaskId: string) {
 export default function App() {
     const [view, setView] = useState<View>('plan');
     const [plan, setPlan] = useState<WeekPlan>(sampleWeek);
+    const [archive, setArchive] = useState<Archive>([]);
     const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
     const [editingDeadlineId, setEditingDeadlineId] = useState<string | null>(null);
     const [movingSubtaskId, setMovingSubtaskId] = useState<string | null>(null);
     const [clearing, setClearing] = useState<Clearing | null>(null);
     const [removing, setRemoving] = useState<Removing | null>(null);
+    const [confirmingEndWeek, setConfirmingEndWeek] = useState(false);
 
     const today = todayKey();
     const overall = overallProgress(plan.projects);
+    const hasUnfinished = overall.done < overall.total;
 
     const editingProject = editingTaskId
         ? plan.projects.find((p) => p.tasks.some((t) => t.id === editingTaskId))
@@ -160,7 +164,21 @@ export default function App() {
         setClearing(null);
     }
 
-    function handleEndWeek() {}
+    function handleEndWeek() {
+        if (plan.projects.length === 0) return;
+        setConfirmingEndWeek(true);
+    }
+
+    function handleConfirmEndWeek(keepUnfinished: boolean) {
+        const newWeekStart = nextWeekStart(plan.weekStart);
+        setArchive((current) => archiveWeek(current, plan));
+        setPlan(
+            keepUnfinished
+                ? carryUnfinished(plan, newWeekStart)
+                : { weekStart: newWeekStart, projects: [] },
+        );
+        setConfirmingEndWeek(false);
+    }
 
     function handleAddProject() {
         setPlan((current) => addProject(current, newId()));
@@ -282,7 +300,11 @@ export default function App() {
                     </>
                 )}
                 {view === 'stats' && <div>stats pane</div>}
-                {view === 'archive' && <div>archive pane</div>}
+                {view === 'archive' && (
+                    <div>
+                        {archive.length} archived week{archive.length === 1 ? '' : 's'}
+                    </div>
+                )}
             </main>
             {editingTask && editingProject && (
                 <TaskEditor
@@ -326,9 +348,12 @@ export default function App() {
             )}
             {removing && (
                 <ConfirmDialog
-                    eyebrow={removing.kind === 'task' ? removing.projectName || 'Project' : 'Project'}
+                    eyebrow={
+                        removing.kind === 'task' ? removing.projectName || 'Project' : 'Project'
+                    }
                     title={`Delete ${removing.kind} "${removing.name || 'Untitled'}"?`}
                     confirmLabel="Delete"
+                    confirmTone="danger"
                     onConfirm={handleConfirmRemove}
                     onClose={() => setRemoving(null)}
                 >
@@ -336,6 +361,42 @@ export default function App() {
                         {removing.kind === 'project'
                             ? `This will permanently delete the project and its ${removing.taskCount} task${removing.taskCount === 1 ? '' : 's'}.`
                             : `This will permanently delete the task and its ${removing.subtaskCount} subtask${removing.subtaskCount === 1 ? '' : 's'}.`}
+                    </p>
+                </ConfirmDialog>
+            )}
+            {confirmingEndWeek && hasUnfinished && (
+                <ConfirmDialog
+                    eyebrow="End week"
+                    title="Some tasks aren't finished yet"
+                    onClose={() => setConfirmingEndWeek(false)}
+                    actions={[
+                        {
+                            label: 'Clear all',
+                            onAction: () => handleConfirmEndWeek(false),
+                            tone: 'danger',
+                        },
+                        {
+                            label: 'Carry forward',
+                            onAction: () => handleConfirmEndWeek(true),
+                        },
+                    ]}
+                >
+                    <p className={shell.text}>
+                        This records the week in your archive. Unfinished tasks can carry forward
+                        into next week, or be cleared along with everything else.
+                    </p>
+                </ConfirmDialog>
+            )}
+            {confirmingEndWeek && !hasUnfinished && (
+                <ConfirmDialog
+                    eyebrow="End week"
+                    title="Everything's done — nice work"
+                    confirmLabel="End week & start fresh"
+                    onConfirm={() => handleConfirmEndWeek(false)}
+                    onClose={() => setConfirmingEndWeek(false)}
+                >
+                    <p className={shell.text}>
+                        This records the week in your archive and starts a fresh board.
                     </p>
                 </ConfirmDialog>
             )}
