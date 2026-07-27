@@ -40,6 +40,8 @@ Built with React, TypeScript, and Vite.
 - [docs/conventions.md](docs/conventions.md) — coding conventions: spec template,
   testing strategy, ADTs, storage, TypeScript rules, terminology.
 - [docs/week-model.md](docs/week-model.md) — how a plan is anchored to a calendar week.
+- [docs/known-issues.md](docs/known-issues.md) — bugs with a traced cause: symptom, repro,
+  fix, and regression risk.
 
 ## License
 
