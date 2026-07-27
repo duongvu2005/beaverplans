@@ -5,6 +5,8 @@ import { nextWeekStart } from './core/dates';
 import { overallProgress } from './core/progress';
 import { sampleWeek } from './fixtures/sampleWeek';
 import { WeekBoard } from './components/WeekBoard';
+import { ArchiveBoard } from './components/ArchiveBoard';
+import { StatsBoard } from './components/StatsBoard';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { WeekProgressRow } from './components/WeekProgressRow';
 import shell from './components/dialogShell.module.css';
@@ -66,12 +68,8 @@ export default function App() {
                         <WeekBoard plan={plan} onChange={setPlan} />
                     </>
                 )}
-                {view === 'stats' && <div>stats pane</div>}
-                {view === 'archive' && (
-                    <div>
-                        {archive.length} archived week{archive.length === 1 ? '' : 's'}
-                    </div>
-                )}
+                {view === 'stats' && <StatsBoard />}
+                {view === 'archive' && <ArchiveBoard archive={archive} />}
             </main>
             {confirmingEndWeek && hasUnfinished && (
                 <ConfirmDialog
