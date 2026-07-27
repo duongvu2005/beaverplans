@@ -2,10 +2,12 @@ import type { ReactNode } from 'react';
 import { Dialog } from './Dialog';
 import shell from './dialogShell.module.css';
 
+type DialogTone = 'primary' | 'ghost' | 'danger';
+
 type DialogAction = {
     label: string;
     onAction: () => void;
-    tone?: 'primary' | 'ghost';
+    tone?: DialogTone;
 };
 
 type ConfirmDialogProps = {
@@ -14,15 +16,36 @@ type ConfirmDialogProps = {
     onClose: () => void;
     children: ReactNode;
 } & (
-    | { actions: ReadonlyArray<DialogAction>; confirmLabel?: undefined; onConfirm?: undefined }
-    | { actions?: undefined; confirmLabel?: string; onConfirm: () => void }
+    | {
+          actions: ReadonlyArray<DialogAction>;
+          confirmLabel?: undefined;
+          confirmTone?: undefined;
+          onConfirm?: undefined;
+      }
+    | {
+          actions?: undefined;
+          confirmLabel?: string;
+          confirmTone?: DialogTone;
+          onConfirm: () => void;
+      }
 );
+
+function toneClass(tone: DialogTone | undefined) {
+    if (tone === 'ghost') return shell.ghost;
+    if (tone === 'danger') return shell.danger;
+    return shell.primary;
+}
 
 export function ConfirmDialog(props: ConfirmDialogProps) {
     const { title, eyebrow, onClose, children } = props;
     const titleId = 'confirm-title';
-    const actions: ReadonlyArray<DialogAction> =
-        props.actions ?? [{ label: props.confirmLabel ?? 'Confirm', onAction: props.onConfirm }];
+    const actions: ReadonlyArray<DialogAction> = props.actions ?? [
+        {
+            label: props.confirmLabel ?? 'Confirm',
+            onAction: props.onConfirm,
+            tone: props.confirmTone,
+        },
+    ];
 
     return (
         <Dialog open onClose={onClose} labelledBy={titleId}>
@@ -43,7 +66,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
                     <button
                         key={action.label}
                         type="button"
-                        className={`${shell.btn} ${action.tone === 'ghost' ? shell.ghost : shell.primary}`}
+                        className={`${shell.btn} ${toneClass(action.tone)}`}
                         onClick={action.onAction}
                     >
                         {action.label}
