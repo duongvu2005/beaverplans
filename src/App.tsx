@@ -69,7 +69,7 @@ export default function App() {
                         <WeekBoard plan={plan} onChange={setPlan} />
                     </>
                 )}
-                {view === 'stats' && <StatsBoard />}
+                {view === 'stats' && <StatsBoard archive={archive} />}
                 {view === 'archive' && <ArchiveBoard archive={archive} onChange={setArchive} />}
             </main>
             {confirmingEndWeek && hasUnfinished && (

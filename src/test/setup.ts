@@ -12,3 +12,17 @@ afterEach(() => {
 // jsdom doesn't implement scrollTo; Dialog's scroll lock calls it, which would
 // otherwise print a "Not implemented" warning on every dialog test.
 window.scrollTo = () => {};
+
+// jsdom doesn't implement matchMedia either, and useMediaQuery calls it during
+// render. Nothing matches, so components under test get their narrow layout.
+window.matchMedia = (media: string) =>
+    ({
+        media,
+        matches: false,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+    }) as MediaQueryList;

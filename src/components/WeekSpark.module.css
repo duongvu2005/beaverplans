@@ -59,3 +59,17 @@
     font-size: 10px;
     color: var(--ink-faint);
 }
+
+/* A figure, never a sentence — it sits under the label at full ink so the
+   number reads before the axis does. A zero drops back to faint: it is the
+   absence of work, not a result to weigh. */
+.fig {
+    font: var(--fs-label) var(--mono);
+    font-size: 10px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+.zero {
+    color: var(--ink-faint);
+}

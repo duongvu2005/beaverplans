@@ -1,0 +1,77 @@
+/* Week-by-week bars. The bar itself is WeekSpark's (.barTrack/.bar, imported by
+   the component) driven through its two custom properties, so there is one bar
+   recipe in the app at three scales. Only the column layout, the break marker
+   and the two labels live here — a week column carries a percentage AND a date,
+   where a spark column carries one letter. */
+
+.trend {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    --spark-track-h: 78px;
+    /* the cap belongs to the column, not the bar: the bar fills its column */
+    --spark-bar-w: 100%;
+}
+
+.week {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.pct {
+    font: var(--fs-label) var(--mono);
+    font-size: 10px;
+    color: var(--ink);
+}
+
+.label {
+    font: var(--fs-label) var(--mono);
+    font-size: 9px;
+    letter-spacing: 0;
+    color: var(--ink-faint);
+    white-space: nowrap;
+}
+
+/* One run of untracked weeks, however long — a dashed rule with its length
+   spelled out. Narrower than a week column so it reads as a separator between
+   bars rather than as a bar of its own. Bottom padding clears the two label
+   lines a week column has and this one doesn't. */
+.brk {
+    flex: 0 0 38px;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    padding-bottom: 24px;
+}
+
+.rule {
+    width: 0;
+    flex: 1;
+    border-left: 1px dashed var(--line-strong);
+}
+
+.brkText {
+    font: var(--fs-label) var(--mono);
+    font-size: 9px;
+    letter-spacing: 0;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.2;
+}
+
+@media (min-width: 641px) {
+    .week {
+        max-width: 46px;
+    }
+    .brk {
+        flex-basis: 44px;
+    }
+}

@@ -1,0 +1,127 @@
+/* A year of days, one column per week. One source of truth for the grid's
+   metrics, because the day axis has to line up with the cell rows it labels:
+   row k sits at month-strip + gap + k * (cell + gap), so the axis's own top
+   padding is the month strip PLUS one gap. Hard-coding that offset is what
+   flattens every letter; deriving it cannot drift. */
+
+/* Declared for both scopes at once: the legend draws the same cells outside
+   the grid, and a second copy of these numbers is a second thing to drift. */
+.heat,
+.legend {
+    --heat-cell: 9px;
+    --heat-gap: 3px;
+    --heat-month-h: 15px;
+}
+
+.heat {
+    display: flex;
+    align-items: flex-start;
+}
+
+/* 52 columns never fit a phone, so this is the one thing in the pane that
+   scrolls sideways. It rests at its right (most recent) edge — see Heatmap.tsx. */
+.scroller {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+
+/* Pinned to the left edge while the year scrolls under it — an axis that
+   scrolls away stops being an axis. It carries the gutter as padding rather
+   than .heat carrying it as a gap, so cells pass behind the letters and not
+   through a transparent strip beside them. */
+.axis {
+    flex: none;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--heat-gap);
+    padding-top: calc(var(--heat-month-h) + var(--heat-gap));
+    padding-right: 6px;
+    background: var(--bg);
+}
+
+.axisLabel {
+    height: var(--heat-cell);
+    min-width: 14px;
+    font: var(--fs-label) var(--mono);
+    font-size: 9px;
+    line-height: var(--heat-cell);
+    text-align: right;
+    color: var(--ink-faint);
+}
+
+.grid {
+    display: flex;
+    gap: var(--heat-gap);
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--heat-gap);
+}
+
+/* Absolutely positioned inside a fixed-height strip so a month name can run
+   past its own 9px column without widening the grid. */
+.month {
+    height: var(--heat-month-h);
+    position: relative;
+    font: var(--fs-label) var(--mono);
+    font-size: 9px;
+    line-height: 12px;
+    white-space: nowrap;
+    color: var(--ink-faint);
+}
+.month span {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.cell {
+    width: var(--heat-cell);
+    height: var(--heat-cell);
+    border-radius: 2px;
+    background: var(--line);
+}
+
+/* Mixed from --good rather than hard-coded, so the ramp follows the theme into
+   dark mode instead of needing a second palette. */
+.cell[data-level='1'] {
+    background: var(--good-soft);
+}
+.cell[data-level='2'] {
+    background: color-mix(in srgb, var(--good) 40%, var(--good-soft));
+}
+.cell[data-level='3'] {
+    background: color-mix(in srgb, var(--good) 72%, var(--good-soft));
+}
+.cell[data-level='4'] {
+    background: var(--good);
+}
+
+/* "No record" is not "did nothing": a never-archived week is fainter than a
+   tracked day with nothing done, rather than absent, so the year still reads
+   as a continuous run of weeks. */
+.untracked {
+    background: color-mix(in srgb, var(--line) 40%, transparent);
+}
+
+.future {
+    background: none;
+    border: 1px dashed var(--line);
+}
+
+.legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}

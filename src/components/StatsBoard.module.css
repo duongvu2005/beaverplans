@@ -1,0 +1,136 @@
+/* The stats pane: four blocks stacked in one column. Capped and centred like
+   ArchiveBoard, and using its .year hairline recipe for the section headings,
+   so the two derived-from-the-archive panes read as the same surface.
+   Nothing here scrolls sideways except the heatmap. */
+
+.board {
+    max-width: 900px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+}
+
+.head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-3);
+}
+
+.count {
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}
+
+/* ArchiveBoard's .year exactly: a label with a hairline running off to the
+   right, so a heading reads as a divider rather than as content. */
+.section {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin: 0 0 var(--sp-3);
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+}
+.section::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+/* Heading and legend sharing a row: the heading's own rule still fills the
+   space between them. */
+.sectionHead {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+}
+.sectionHead .section {
+    flex: 1;
+    margin-bottom: 0;
+}
+.sectionHead {
+    margin-bottom: var(--sp-3);
+}
+
+/* Pulled up under its heading so the sentence belongs to the chart below it
+   rather than floating between the two. */
+.note {
+    margin: calc(-1 * var(--sp-2)) 0 var(--sp-3);
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+/* Three across at every width — at 375px each figure is a 20px number over an
+   11px label, which fits comfortably in a third of the screen. */
+.summary {
+    display: flex;
+    gap: var(--sp-3);
+}
+
+.summary > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.big {
+    display: block;
+    font: 400 20px / 1 var(--mono);
+    color: var(--accent);
+}
+
+.statLabel {
+    display: block;
+    margin-top: 5px;
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}
+
+.legendRow {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--sp-2);
+}
+
+.weekdays {
+    --spark-track-h: 92px;
+    --spark-bar-w: 30px;
+}
+
+.empty {
+    padding: var(--sp-6) var(--sp-4);
+    text-align: center;
+}
+
+.emptyTitle {
+    margin: 0;
+    font: var(--w-title) var(--fs-title) / 1.3 var(--display);
+    color: var(--ink);
+}
+
+.emptyText {
+    margin: var(--sp-2) 0 0;
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+@media (min-width: 641px) {
+    /* Rules between the three figures, which a phone has no width for. */
+    .summary > div + div {
+        border-left: 1px solid var(--line);
+        padding-left: var(--sp-4);
+    }
+
+    .weekdays {
+        --spark-track-h: 110px;
+        --spark-bar-w: 44px;
+    }
+}

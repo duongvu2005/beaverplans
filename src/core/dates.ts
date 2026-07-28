@@ -212,7 +212,21 @@ export function isValidWeekStart(key: DateKey): boolean {
     return true;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** Three-letter English month abbreviations, January first. */
+export const MONTHS: readonly string[] = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+];
 
 /**
  * Renders the calendar span of a week as a display label.
@@ -235,7 +249,7 @@ export function weekRangeLabel(weekStart: DateKey): string {
  * @param key any valid DateKey
  * @returns "MMM DD" for key's day
  */
-function monthAndDay(key: DateKey): string {
+export function monthAndDay(key: DateKey): string {
     const date = parseKey(key);
     const month = MONTHS[date.getMonth()]!; // getMonth() is always 0-11
     return `${month} ${date.getDate().toString().padStart(2, '0')}`;
