@@ -49,6 +49,19 @@ export function taskProgress(task: Task): Progress {
 }
 
 /**
+ * Counts how often a task's work slipped.
+ *
+ * @param task any valid task
+ * @returns the total number of recorded misses across task.subtasks. This counts
+ *          miss EVENTS, not distinct days and not distinct subtasks: one subtask
+ *          that slipped off two days and two subtasks that each slipped off one
+ *          both count 2. A leaf task has no subtasks and so no misses, and counts 0.
+ */
+export function taskMisses(task: Task): number {
+    return task.subtasks.reduce((misses, s) => misses + s.missedDays.length, 0);
+}
+
+/**
  * Calculates the progress of a project
  *
  * @param project any valid project

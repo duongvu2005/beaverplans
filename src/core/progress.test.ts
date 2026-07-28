@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import type { Project, Task, Subtask, DayOfWeek } from './types';
 import type { DayProgress } from './progress';
-import { taskProgress, projectProgress, overallProgress, progressByDay } from './progress';
+import {
+    taskProgress,
+    taskMisses,
+    projectProgress,
+    overallProgress,
+    progressByDay,
+} from './progress';
 
 const WEEK: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 // Minimal valid fixtures; pass overrides to set specific fields.
@@ -266,5 +272,59 @@ describe('progressByDay', () => {
             tasks: [makeTask('t1', { isDone: true }), makeTask('t2')],
         });
         expect(progressByDay([p])).toEqual(makeProgressByDay());
+    });
+});
+
+describe('taskMisses', () => {
+    /**
+     * Testing strategy:
+     *      - partition on subtasks: none (leaf) | one | many
+     *      - partition on where the misses sit: none at all | all on one subtask |
+     *        spread one-each across subtasks | mixed
+     *      - partition on misses per subtask: 0 | 1 | more than 1
+     */
+
+    it('covers a leaf task: no subtasks, no misses', () => {
+        expect(taskMisses(makeTask('t', { isDone: true }))).toBe(0);
+    });
+
+    it('covers subtasks present but none missed', () => {
+        const task = makeTask('t', {
+            subtasks: [makeSubtask('s1'), makeSubtask('s2', { missedDays: [] })],
+        });
+        expect(taskMisses(task)).toBe(0);
+    });
+
+    it('covers one subtask with one miss', () => {
+        const task = makeTask('t', { subtasks: [makeSubtask('s1', { missedDays: ['tue'] })] });
+        expect(taskMisses(task)).toBe(1);
+    });
+
+    it('covers one subtask that slipped twice: counts events, not subtasks', () => {
+        const task = makeTask('t', {
+            subtasks: [makeSubtask('s1', { assignedDay: 'thu', missedDays: ['tue', 'wed'] })],
+        });
+        expect(taskMisses(task)).toBe(2);
+    });
+
+    it('covers two subtasks with one miss each: same count as one slipping twice', () => {
+        const task = makeTask('t', {
+            subtasks: [
+                makeSubtask('s1', { assignedDay: 'tue', missedDays: ['mon'] }),
+                makeSubtask('s2', { assignedDay: 'fri', missedDays: ['thu'] }),
+            ],
+        });
+        expect(taskMisses(task)).toBe(2);
+    });
+
+    it('covers a mix of missed and clean subtasks', () => {
+        const task = makeTask('t', {
+            subtasks: [
+                makeSubtask('s1'),
+                makeSubtask('s2', { assignedDay: 'wed', missedDays: ['mon', 'tue'] }),
+                makeSubtask('s3', { assignedDay: 'sat', missedDays: ['fri'] }),
+            ],
+        });
+        expect(taskMisses(task)).toBe(3);
     });
 });
