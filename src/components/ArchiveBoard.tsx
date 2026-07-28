@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import type { Archive, DateKey, WeekPlan } from '../core/types';
+import type { Archive, DateKey, Project, WeekPlan } from '../core/types';
 import { archiveNewestFirst, removeArchived } from '../core/archive';
 import { weekRangeLabel } from '../core/dates';
 import { ArchiveRow } from './ArchiveRow';
 import { ArchiveQuickLook } from './ArchiveQuickLook';
 import { ConfirmDialog } from './ConfirmDialog';
+import { CopyWeekDialog } from './CopyWeekDialog';
 import shell from './dialogShell.module.css';
 import styles from './ArchiveBoard.module.css';
 
@@ -21,6 +22,7 @@ type ArchiveBoardProps = {
 
 export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
     const [opened, setOpened] = useState<WeekPlan | null>(null);
+    const [copying, setCopying] = useState<WeekPlan | null>(null);
     const [removing, setRemoving] = useState<WeekPlan | null>(null);
     const [clearingAll, setClearingAll] = useState(false);
 
@@ -47,6 +49,16 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
     function handleConfirmClearAll() {
         onChange(() => []);
         setClearingAll(false);
+    }
+
+    // The picker and its selection are real; the payload is not yet. Serializing
+    // a project tree to text is its own design (day 26's copy/paste pair), so
+    // until that exists this writes an empty string — swap the one line below
+    // for the serializer and the rest of the flow is already wired.
+    function handleCopy(projects: ReadonlyArray<Project>) {
+        void projects;
+        navigator.clipboard?.writeText('').catch(() => {});
+        setCopying(null);
     }
 
     if (archive.length === 0) {
@@ -87,7 +99,7 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
                             entry={entry}
                             label={weekRangeLabel(entry.weekStart)}
                             onOpen={() => setOpened(entry)}
-                            onCopy={() => {}}
+                            onCopy={() => setCopying(entry)}
                             onDelete={() => setRemoving(entry)}
                         />
                     </div>
@@ -101,6 +113,14 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
                     // Edit hands off to the editable WeekBoard; that flow is
                     // still being designed, so the button is inert for now.
                     onEdit={() => {}}
+                />
+            )}
+            {copying && (
+                <CopyWeekDialog
+                    entry={copying}
+                    label={weekRangeLabel(copying.weekStart)}
+                    onClose={() => setCopying(null)}
+                    onCopy={handleCopy}
                 />
             )}
             {removing && (

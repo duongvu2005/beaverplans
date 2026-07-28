@@ -8,6 +8,11 @@ type DialogAction = {
     label: string;
     onAction: () => void;
     tone?: DialogTone;
+    // An action the dialog offers but that isn't available yet given what the
+    // body currently holds (e.g. Copy with nothing selected). Shown greyed
+    // rather than hidden, so the button doesn't appear and vanish under the
+    // pointer as the selection changes. shell.primary:disabled styles it.
+    disabled?: boolean;
 };
 
 type ConfirmDialogProps = {
@@ -67,6 +72,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
                         key={action.label}
                         type="button"
                         className={`${shell.btn} ${toneClass(action.tone)}`}
+                        disabled={action.disabled}
                         onClick={action.onAction}
                     >
                         {action.label}
