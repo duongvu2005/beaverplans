@@ -69,7 +69,7 @@ export default function App() {
                     </>
                 )}
                 {view === 'stats' && <StatsBoard />}
-                {view === 'archive' && <ArchiveBoard archive={archive} />}
+                {view === 'archive' && <ArchiveBoard archive={archive} onChange={setArchive} />}
             </main>
             {confirmingEndWeek && hasUnfinished && (
                 <ConfirmDialog

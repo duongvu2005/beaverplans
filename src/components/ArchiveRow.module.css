@@ -72,10 +72,13 @@
     flex-direction: column;
     min-width: 0;
 }
+/* 128px fits the widest "MMM DD – MMM DD" label with a little slack; the old
+   118px was sized for the shorter "Jul 13 – 19" format and left ~9px, close
+   enough that a font fallback could clip it. */
 @media (min-width: 641px) {
     .when {
         flex: none;
-        width: 118px;
+        width: 128px;
     }
 }
 

@@ -1,0 +1,100 @@
+/* The archive pane: a newest-first list of ArchiveRows, grouped under year
+   headings. Row labels ("Jun 29 – Jul 05") deliberately carry no year, so the
+   heading is the only thing dating a row — hence a heading above every group,
+   not only at changes. */
+
+/* Capped and centred like .plan-layout, so the pane doesn't sprawl on a wide
+   monitor. Narrower than the plan's 1440px because this is a single column of
+   rows, not a two-pane layout — past ~900px the rows read as stretched. */
+.board {
+    max-width: 900px;
+    margin-inline: auto;
+}
+
+.head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-4);
+}
+
+.count {
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}
+
+.clearAll {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: var(--sp-1) var(--sp-2);
+    margin: calc(var(--sp-1) * -1) calc(var(--sp-2) * -1);
+    border-radius: var(--r-chip);
+    cursor: pointer;
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    transition:
+        background-color 0.13s,
+        color 0.13s;
+}
+.clearAll:hover {
+    background: var(--hover-accent);
+    color: var(--accent);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+/* Hairline rule running off to the right of the year, so the heading reads as a
+   divider rather than as another row. First group loses the top margin — its
+   spacing already comes from .head. */
+.year {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin: var(--sp-4) 0 0;
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+}
+.year::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+.group:first-child .year {
+    margin-top: 0;
+}
+
+.empty {
+    padding: var(--sp-6) var(--sp-4);
+    text-align: center;
+}
+
+.emptyTitle {
+    margin: 0;
+    font: var(--w-title) var(--fs-title) / 1.3 var(--display);
+    color: var(--ink);
+}
+
+.emptyText {
+    margin: var(--sp-2) 0 0;
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
