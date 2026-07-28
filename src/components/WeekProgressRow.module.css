@@ -54,7 +54,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font: 500 var(--fs-body) var(--sans);
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     padding: var(--sp-2) var(--sp-4);
     border-radius: var(--r);
     border: 1px solid var(--line-strong);

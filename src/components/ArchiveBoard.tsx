@@ -71,6 +71,9 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
                     className={styles.clearAll}
                     onClick={() => setClearingAll(true)}
                 >
+                    <span className={styles.clearIcon} aria-hidden="true">
+                        ×
+                    </span>
                     Clear all
                 </button>
             </div>
