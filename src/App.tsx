@@ -4,6 +4,7 @@ import { archiveWeek, carryUnfinished } from './core/archive';
 import { nextWeekStart } from './core/dates';
 import { overallProgress } from './core/progress';
 import { sampleWeek } from './fixtures/sampleWeek';
+import { sampleArchive } from './fixtures/sampleArchive';
 import { WeekBoard } from './components/WeekBoard';
 import { ArchiveBoard } from './components/ArchiveBoard';
 import { StatsBoard } from './components/StatsBoard';
@@ -17,7 +18,7 @@ type View = 'plan' | 'stats' | 'archive';
 export default function App() {
     const [view, setView] = useState<View>('plan');
     const [plan, setPlan] = useState<WeekPlan>(sampleWeek);
-    const [archive, setArchive] = useState<Archive>([]);
+    const [archive, setArchive] = useState<Archive>(sampleArchive);
     const [confirmingEndWeek, setConfirmingEndWeek] = useState(false);
 
     const overall = overallProgress(plan.projects);
