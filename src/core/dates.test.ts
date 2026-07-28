@@ -21,6 +21,7 @@ import {
     weekStatusOf,
     isValidWeekStart,
     todayInWeek,
+    weekRangeLabel,
 } from './dates';
 
 describe('weekStartOf', () => {
@@ -491,5 +492,64 @@ describe('todayInWeek', () => {
     it('covers a DST-week Sunday', () => {
         vi.setSystemTime(new Date('2026-03-08T12:00:00')); // spring-forward Sun, in the Mon 2026-03-02 week
         expect(todayInWeek('2026-03-02')).toBe('sun');
+    });
+});
+
+describe('weekRangeLabel', () => {
+    /**
+     * Testing strategy:
+     *      - partition on boundary crossed within the span: none | month | year
+     *      - partition on start month's length: 31 | 30 | Feb non-leap | Feb leap
+     *      - partition on day-number width: both 2-digit | end padded | both padded
+     *      - partition on DST: span contains a transition | does not
+     */
+
+    it('covers no boundary, 31-day month, both days 2-digit', () => {
+        // Mon Jul 13 2026 -> Sun Jul 19 2026
+        expect(weekRangeLabel('2026-07-13')).toBe('Jul 13 – Jul 19');
+    });
+
+    it('covers month boundary, 30-day month, end day padded', () => {
+        // Mon Jun 29 2026 -> Sun Jul 05 2026
+        expect(weekRangeLabel('2026-06-29')).toBe('Jun 29 – Jul 05');
+    });
+
+    it('covers year boundary, end day padded', () => {
+        // Mon Dec 28 2026 -> Sun Jan 03 2027
+        expect(weekRangeLabel('2026-12-28')).toBe('Dec 28 – Jan 03');
+    });
+
+    it('covers month boundary out of a non-leap February', () => {
+        // Mon Feb 23 2026 -> Sun Mar 01 2026 (Feb 2026 has 28 days)
+        expect(weekRangeLabel('2026-02-23')).toBe('Feb 23 – Mar 01');
+    });
+
+    it('covers month boundary out of a leap February', () => {
+        // Mon Feb 26 2024 -> Sun Mar 03 2024, spanning Feb 29
+        expect(weekRangeLabel('2024-02-26')).toBe('Feb 26 – Mar 03');
+    });
+
+    it('covers no boundary, both days padded', () => {
+        // Mon Sep 01 2025 -> Sun Sep 07 2025
+        expect(weekRangeLabel('2025-09-01')).toBe('Sep 01 – Sep 07');
+    });
+
+    it('covers a span containing a DST transition', () => {
+        // Mon Mar 02 2026 -> Sun Mar 08 2026. ET springs forward at 02:00 on
+        // Mar 08, i.e. after the local midnight each end is read at, so both
+        // ends resolve under the same offset.
+        expect(weekRangeLabel('2026-03-02')).toBe('Mar 02 – Mar 08');
+    });
+
+    it('property: every Monday from 2024 to 2027 labels as MMM DD – MMM DD', () => {
+        const d = new Date(2024, 0, 1); // Mon Jan 01 2024
+        const end = new Date(2027, 0, 4);
+        while (d <= end) {
+            const key = toDateKey(d);
+            expect(weekRangeLabel(key), `weekRangeLabel(${key}) is malformed`).toMatch(
+                /^[A-Z][a-z]{2} \d{2} – [A-Z][a-z]{2} \d{2}$/,
+            );
+            d.setDate(d.getDate() + 7);
+        }
     });
 });

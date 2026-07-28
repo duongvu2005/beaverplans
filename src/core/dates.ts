@@ -212,6 +212,35 @@ export function isValidWeekStart(key: DateKey): boolean {
     return true;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Renders the calendar span of a week as a display label.
+ *
+ * @param weekStart a DateKey that is a Monday (satisfies isValidWeekStart)
+ * @returns "MMM DD – MMM DD": weekStart and the Sunday six days later,
+ *          separated by a spaced en dash. Months are the three-letter English
+ *          abbreviations (Jan…Dec), named on both ends even when the two dates
+ *          fall in the same month, and day numbers are zero-padded to two
+ *          digits. The label carries no year, so the same span in two different
+ *          years produces the same string.
+ */
+export function weekRangeLabel(weekStart: DateKey): string {
+    return `${monthAndDay(weekStart)} – ${monthAndDay(dateKeyForDay(weekStart, 'sun'))}`;
+}
+
+/**
+ * Renders one date as an abbreviated month and zero-padded day.
+ *
+ * @param key any valid DateKey
+ * @returns "MMM DD" for key's day
+ */
+function monthAndDay(key: DateKey): string {
+    const date = parseKey(key);
+    const month = MONTHS[date.getMonth()]!; // getMonth() is always 0-11
+    return `${month} ${date.getDate().toString().padStart(2, '0')}`;
+}
+
 /**
  * The day of a given week that is today, or undefined if that week does not
  * contain today.
