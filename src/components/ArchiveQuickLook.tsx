@@ -9,6 +9,7 @@ import {
 import { percentOf } from '../core/math';
 import { Dialog } from './Dialog';
 import { WeekSpark } from './WeekSpark';
+import { weekdayColumns } from './sparkColumns';
 import { PointsStat } from './PointsStat';
 import shell from './dialogShell.module.css';
 import styles from './ArchiveQuickLook.module.css';
@@ -41,7 +42,7 @@ export function ArchiveQuickLook({ entry, label, onClose, onEdit }: ArchiveQuick
             </div>
             <div className={styles.body}>
                 <div className={styles.summary}>
-                    <WeekSpark days={progressByDay(entry.projects)} />
+                    <WeekSpark columns={weekdayColumns(progressByDay(entry.projects))} />
                     <span className={styles.tot}>
                         <span className={styles.totNum}>{pct}%</span>
                         <span className={styles.totCap}>

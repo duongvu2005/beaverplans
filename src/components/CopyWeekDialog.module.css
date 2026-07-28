@@ -3,9 +3,11 @@
    in its roomy list. The dialog chrome (head, body, field, foot, buttons) all
    comes from ConfirmDialog / dialogShell; only the list is here. */
 
-/* Field label on the left, the select-all toggle on the right, sharing one
-   baseline. The toggle is a quiet text button — it sits inside the body, not
-   the footer, and must not compete with Copy for the eye. */
+/* Mono label on the left, the select-all toggle on the right. Structurally the
+   same row as the editors' .deadlineHead — shell.label plus a quiet accent text
+   button — so it takes that row's styling wholesale, .clearDeadline included:
+   underlined sans, no pill. An in-body affordance is underlined here; only the
+   footer's real actions get a button shape. */
 .head {
     display: flex;
     align-items: baseline;
@@ -19,18 +21,22 @@
     appearance: none;
     border: none;
     background: none;
-    padding: var(--sp-1) var(--sp-2);
-    margin-right: calc(-1 * var(--sp-2));
-    border-radius: var(--r-chip);
+    padding: 0;
     cursor: pointer;
-    font: var(--fs-label) / 1.4 var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font: var(--fs-body) var(--sans);
     color: var(--accent);
-    transition: background-color 0.13s;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
+
 .toggleAll:hover {
-    background: var(--hover-accent);
+    opacity: 0.8;
+}
+
+.toggleAll:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
 }
 
 .list {
@@ -65,6 +71,8 @@
     white-space: nowrap;
 }
 
+/* Mono caps like ArchiveRow's "12/14 DONE": a numeric caption, and setting it
+   in the name's own face at nearly the name's size made the two compete. */
 .count {
     flex: none;
     font: var(--fs-label) var(--mono);

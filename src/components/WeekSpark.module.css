@@ -1,9 +1,11 @@
-/* Seven-bar week shape, shared by ArchiveRow and ArchiveQuickLook. Both draw
-   the identical chart from the identical numbers, so opening a week reads as
-   zooming in on the row rather than switching to a different object.
-   The two consumers differ only in scale, so the track height and bar cap are
-   custom properties with the row's values as the defaults; the dialog sets
-   smaller ones on its own container. */
+/* The app's one bar chart, at whatever scale and column count the caller wants:
+   a week's seven days in ArchiveRow and ArchiveQuickLook, weekdays summed across
+   the archive in StatsBoard. ArchiveRow and its dialog draw the identical chart
+   from the identical numbers, so opening a week reads as zooming in on the row
+   rather than switching to a different object.
+   Consumers differ only in scale, so the track height and bar cap are custom
+   properties with the row's values as the defaults; every other caller sets its
+   own on its container. */
 
 .spark {
     display: flex;
