@@ -6,10 +6,12 @@ import {
     bestWeek,
     currentStreak,
     longestStreak,
+    weekTrend,
 } from './archiveStats';
 import type { WeekProgress } from './archiveStats';
 import { WEEK } from './types';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek, Archive } from './types';
+import { sampleArchive } from '../fixtures/sampleArchive';
 
 function wp(weekStart: string, done: number, total: number): WeekProgress {
     return { weekStart, progress: { done, total } };
@@ -89,9 +91,7 @@ describe('dailyCompletions', () => {
     it('covers an undone subtask with a recorded miss (excluded entirely)', () => {
         const archive: Archive = [
             plan('2026-07-06', [
-                project('p1', [
-                    taskWithSubtasks('t1', [subtask('s1', 'thu', false, 1, ['wed'])]),
-                ]),
+                project('p1', [taskWithSubtasks('t1', [subtask('s1', 'thu', false, 1, ['wed'])])]),
             ]),
         ];
         expect(dailyCompletions(archive)).toEqual(new Map());
@@ -111,9 +111,7 @@ describe('dailyCompletions', () => {
     });
 
     it('covers a leaf task (no subtasks): contributes nothing even if done', () => {
-        const archive: Archive = [
-            plan('2026-07-06', [project('p1', [leafTask('t1', true)])]),
-        ];
+        const archive: Archive = [plan('2026-07-06', [project('p1', [leafTask('t1', true)])])];
         expect(dailyCompletions(archive)).toEqual(new Map());
     });
 
@@ -207,9 +205,7 @@ describe('weekdayHistory', () => {
     it('covers one entry with a recorded miss', () => {
         const archive: Archive = [
             plan('2026-07-06', [
-                project('p1', [
-                    taskWithSubtasks('t1', [subtask('s1', 'thu', false, 2, ['wed'])]),
-                ]),
+                project('p1', [taskWithSubtasks('t1', [subtask('s1', 'thu', false, 2, ['wed'])])]),
             ]),
         ];
         const expected = zeroWeek();
@@ -343,5 +339,115 @@ describe('longestStreak', () => {
         ];
         expect(longestStreak(history, 50)).toBe(3);
         expect(currentStreak(history, 50)).toBe(1);
+    });
+});
+
+describe('weekTrend', () => {
+    /**
+     * Testing strategy:
+     *      - partition on history length: empty | one week | more than one
+     *      - partition on gaps present: none | one | several
+     *      - partition on gap length: exactly 1 untracked week | many
+     *      - partition on whether n truncates: history exhausted first |
+     *        truncated
+     *      - partition on what truncation lands on: a week (the following gap
+     *        is never taken) | a gap (dropped, n-1 returned)
+     *      - partition on item count returned vs n: fewer | exactly n | n-1
+     *      - partition on output order: newest week is always the last item
+     */
+
+    const w = (start: string) => ({ kind: 'week', week: wp(start, 1, 2) }) as const;
+    const gap = (weeks: number) => ({ kind: 'gap', weeks }) as const;
+
+    it('covers an empty history', () => {
+        expect(weekTrend([], 8)).toEqual([]);
+    });
+
+    it('covers a single week: no gap is possible', () => {
+        expect(weekTrend([wp('2026-07-13', 1, 2)], 8)).toEqual([w('2026-07-13')]);
+    });
+
+    it('covers consecutive weeks, no gaps, history exhausted before n', () => {
+        const history = [wp('2026-06-29', 1, 2), wp('2026-07-06', 1, 2), wp('2026-07-13', 1, 2)];
+        expect(weekTrend(history, 8)).toEqual([w('2026-06-29'), w('2026-07-06'), w('2026-07-13')]);
+    });
+
+    it('covers a gap of one untracked week', () => {
+        const history = [wp('2026-06-29', 1, 2), wp('2026-07-13', 1, 2)];
+        expect(weekTrend(history, 8)).toEqual([w('2026-06-29'), gap(1), w('2026-07-13')]);
+    });
+
+    it('covers a gap of many untracked weeks', () => {
+        // Dec 22 2025 to Jun 22 2026 is 26 weeks apart, so 25 weeks untracked.
+        const history = [wp('2025-12-22', 1, 2), wp('2026-06-22', 1, 2)];
+        expect(weekTrend(history, 8)).toEqual([w('2025-12-22'), gap(25), w('2026-06-22')]);
+    });
+
+    it('covers several gaps of differing length', () => {
+        const history = [
+            wp('2026-06-01', 1, 2),
+            wp('2026-06-15', 1, 2),
+            wp('2026-06-22', 1, 2),
+            wp('2026-07-13', 1, 2),
+        ];
+        expect(weekTrend(history, 8)).toEqual([
+            w('2026-06-01'),
+            gap(1),
+            w('2026-06-15'),
+            w('2026-06-22'),
+            gap(2),
+            w('2026-07-13'),
+        ]);
+    });
+
+    it('covers exactly n items, history exhausted', () => {
+        const history = [wp('2026-06-29', 1, 2), wp('2026-07-13', 1, 2)];
+        expect(weekTrend(history, 3)).toEqual([w('2026-06-29'), gap(1), w('2026-07-13')]);
+    });
+
+    it('covers truncation landing on a week: older weeks dropped, newest kept last', () => {
+        const history = [
+            wp('2026-06-15', 1, 2),
+            wp('2026-06-22', 1, 2),
+            wp('2026-06-29', 1, 2),
+            wp('2026-07-06', 1, 2),
+            wp('2026-07-13', 1, 2),
+        ];
+        expect(weekTrend(history, 3)).toEqual([w('2026-06-29'), w('2026-07-06'), w('2026-07-13')]);
+    });
+
+    it('covers truncation landing on a week that a gap precedes: the gap is not taken', () => {
+        const history = [wp('2026-06-15', 1, 2), wp('2026-06-29', 1, 2), wp('2026-07-13', 1, 2)];
+        expect(weekTrend(history, 3)).toEqual([w('2026-06-29'), gap(1), w('2026-07-13')]);
+    });
+
+    it('covers truncation landing on a gap: dropped, n-1 returned, its older week left off', () => {
+        const history = [
+            wp('2026-06-01', 1, 2),
+            wp('2026-06-15', 1, 2),
+            wp('2026-06-29', 1, 2),
+            wp('2026-07-13', 1, 2),
+        ];
+        // Walking back: week, gap, week, gap — the 4th item is a gap, so it goes,
+        // and Jun 15 is NOT pulled in to replace it.
+        expect(weekTrend(history, 4)).toEqual([w('2026-06-29'), gap(1), w('2026-07-13')]);
+    });
+
+    it('covers n = 1: the most recent week alone', () => {
+        const history = [wp('2026-06-29', 1, 2), wp('2026-07-13', 1, 2)];
+        expect(weekTrend(history, 1)).toEqual([w('2026-07-13')]);
+    });
+
+    it('covers the real fixture: 7 items, both amendments idle', () => {
+        const items = weekTrend(weekHistory(sampleArchive), 8);
+        expect(items.map((i) => (i.kind === 'gap' ? `gap ${i.weeks}` : i.week.weekStart))).toEqual([
+            '2025-12-15',
+            '2025-12-22',
+            'gap 25',
+            '2026-06-22',
+            '2026-06-29',
+            '2026-07-06',
+            '2026-07-13',
+        ]);
     });
 });

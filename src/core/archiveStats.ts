@@ -1,9 +1,9 @@
-import { dateKeyForDay } from "./dates";
-import { percentOf } from "./math";
-import { overallProgress, progressByDay } from "./progress";
-import type { Progress, DayProgress } from "./progress";
-import type { Archive, DateKey, DayOfWeek } from "./types";
-import { WEEK } from "./types";
+import { dateKeyForDay, weeksBetween } from './dates';
+import { percentOf } from './math';
+import { overallProgress, progressByDay } from './progress';
+import type { Progress, DayProgress } from './progress';
+import type { Archive, DateKey, DayOfWeek } from './types';
+import { WEEK } from './types';
 
 /**
  * Completed weighted effort per calendar day, across every archived week.
@@ -156,4 +156,57 @@ export function longestStreak(history: ReadonlyArray<WeekProgress>, threshold: n
         }
     }
     return longest;
+}
+
+/**
+ * One item of a week trend: an archived week, or the run of untracked weeks
+ * lying between two archived ones.
+ */
+export type TrendItem =
+    | { readonly kind: 'week'; readonly week: WeekProgress }
+    | { readonly kind: 'gap'; readonly weeks: number };
+
+/**
+ * The most recent stretch of a week history, with the untracked runs between
+ * weeks made explicit.
+ *
+ * An archive is sparse, so listing its weeks alone would put non-adjacent
+ * weeks side by side and read as a continuous run. Each run of untracked
+ * weeks is therefore an item in its own right, whatever its length.
+ *
+ * @param history a week history sorted chronologically, oldest first, no two
+ *        entries in the same week — weekHistory's output
+ * @param n how many items to return at most; at least 1
+ * @returns at most n items in display order (oldest first, so the most recent
+ *          archived week is last), taken from the end of history: one 'week'
+ *          item per archived week, and between each pair of non-adjacent
+ *          weeks one 'gap' item counting the untracked weeks separating them.
+ *          Empty when history is empty. Fewer than n when history runs out,
+ *          and n-1 when the n'th item taken would be a gap: a gap counts the
+ *          span between two weeks, so it is dropped rather than returned with
+ *          nothing on its older side.
+ */
+export function weekTrend(
+    history: ReadonlyArray<WeekProgress>,
+    n: number,
+): ReadonlyArray<TrendItem> {
+    const newestFirst = [...history].reverse();
+    const items: TrendItem[] = [];
+
+    for (const [i, week] of newestFirst.entries()) {
+        if (items.length >= n) break;
+        items.push({ kind: 'week', week });
+
+        const older = newestFirst[i + 1];
+        if (older === undefined) continue;
+        const gap = weeksBetween(week.weekStart, older.weekStart) - 1;
+        if (gap > 0) items.push({ kind: 'gap', weeks: gap });
+    }
+
+    // At most one gap can be trailing — a gap is only ever pushed straight
+    // after a week — so one pop covers both running out of history mid-gap and
+    // overshooting n by the gap that ends the walk.
+    if (items.at(-1)?.kind === 'gap') items.pop();
+
+    return items.reverse();
 }
