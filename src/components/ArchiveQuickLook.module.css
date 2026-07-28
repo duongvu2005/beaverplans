@@ -1,0 +1,137 @@
+/* Read-only view of one archived week. Everything here quotes an existing
+   surface rather than inventing one: the summary is ArchiveRow's spark and
+   total at a smaller scale, the project line is ProjectCard's name plus the
+   Plan header's n/n · p% string, the task line is TaskRow's name plus
+   PointsStat, and the miss chip is DayCell's missed tag. Opening a week should
+   read as zooming in on the row you clicked, not switching to a new object. */
+
+.body {
+    padding: var(--sp-4);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+/* Full-bleed rule: breaks out of .body's padding so it runs edge to edge like
+   the head's and foot's own borders, while the project hairlines below stay
+   inset. Bleed, not colour, is what separates a section rule from a list
+   hairline — the dialog keeps one border value throughout. */
+.summary {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--sp-4);
+    margin: 0 calc(-1 * var(--sp-4));
+    padding: 0 var(--sp-4) var(--sp-4);
+    border-bottom: 1px solid var(--line);
+    /* smaller than ArchiveRow's spark: the dialog is narrower than a row */
+    --spark-track-h: 30px;
+    --spark-bar-w: 22px;
+}
+
+.tot {
+    flex: none;
+    text-align: right;
+}
+
+.totNum {
+    display: block;
+    font: 400 20px / 1 var(--mono);
+    color: var(--accent);
+}
+
+.totCap {
+    display: block;
+    margin-top: 3px;
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}
+
+.project + .project {
+    margin-top: var(--sp-3);
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--line);
+}
+
+.projectHead {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-1);
+}
+
+.projectName {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--display);
+    font-size: var(--fs-title);
+    font-weight: var(--w-title);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.projectStat {
+    flex: none;
+    font: var(--fs-body) / 1.4 var(--mono);
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+/* Indented by the Plan tree's own gutter — there a task name clears the project
+   name by the grip/checkbox columns, and --check-size is the documented single
+   source of truth for that width. Same offset here, minus the checkbox: a tick
+   box on a read-only surface is an affordance that lies, and the strike-through
+   plus the stat already say "done" at both levels. */
+.task {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1) 0;
+    padding-left: calc(var(--check-size) + var(--sp-2));
+}
+
+.taskName {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--display);
+    font-size: var(--fs-row);
+    font-weight: var(--w-row);
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The two levels read differently on purpose — grey mono fraction at project
+   level against PointsStat's green pill at task level marks which level you're
+   looking at, work that an indent alone was doing before. */
+
+.done {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-strong);
+}
+
+.missChip {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    border: 1px dashed var(--line-strong);
+    border-radius: 5px;
+    padding: 1px 5px;
+    white-space: nowrap;
+}
+
+.empty {
+    margin: 0;
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}

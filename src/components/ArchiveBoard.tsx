@@ -3,6 +3,7 @@ import type { Archive, DateKey, WeekPlan } from '../core/types';
 import { archiveNewestFirst, removeArchived } from '../core/archive';
 import { weekRangeLabel } from '../core/dates';
 import { ArchiveRow } from './ArchiveRow';
+import { ArchiveQuickLook } from './ArchiveQuickLook';
 import { ConfirmDialog } from './ConfirmDialog';
 import shell from './dialogShell.module.css';
 import styles from './ArchiveBoard.module.css';
@@ -19,6 +20,7 @@ type ArchiveBoardProps = {
 };
 
 export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
+    const [opened, setOpened] = useState<WeekPlan | null>(null);
     const [removing, setRemoving] = useState<WeekPlan | null>(null);
     const [clearingAll, setClearingAll] = useState(false);
 
@@ -84,13 +86,23 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
                         <ArchiveRow
                             entry={entry}
                             label={weekRangeLabel(entry.weekStart)}
-                            onOpen={() => {}}
+                            onOpen={() => setOpened(entry)}
                             onCopy={() => {}}
                             onDelete={() => setRemoving(entry)}
                         />
                     </div>
                 ))}
             </div>
+            {opened && (
+                <ArchiveQuickLook
+                    entry={opened}
+                    label={weekRangeLabel(opened.weekStart)}
+                    onClose={() => setOpened(null)}
+                    // Edit hands off to the editable WeekBoard; that flow is
+                    // still being designed, so the button is inert for now.
+                    onEdit={() => {}}
+                />
+            )}
             {removing && (
                 <ConfirmDialog
                     eyebrow="Archive"
