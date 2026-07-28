@@ -1,19 +1,10 @@
-import type { DayOfWeek, WeekPlan } from '../core/types';
+import type { WeekPlan } from '../core/types';
 import { overallProgress, progressByDay } from '../core/progress';
 import { percentOf } from '../core/math';
+import { WeekSpark } from './WeekSpark';
 import { CopyIcon } from './CopyIcon';
 import { CloseIcon } from './CloseIcon';
 import styles from './ArchiveRow.module.css';
-
-const LETTER: Record<DayOfWeek, string> = {
-    mon: 'M',
-    tue: 'T',
-    wed: 'W',
-    thu: 'T',
-    fri: 'F',
-    sat: 'S',
-    sun: 'S',
-};
 
 type ArchiveRowProps = {
     entry: WeekPlan;
@@ -27,7 +18,6 @@ export function ArchiveRow({ entry, label, onOpen, onCopy, onDelete }: ArchiveRo
     const overall = overallProgress(entry.projects);
     const pct = Math.round(percentOf(overall.done, overall.total));
     const days = progressByDay(entry.projects);
-    const maxAssigned = Math.max(1, ...days.map((d) => d.assigned));
 
     return (
         <div
@@ -56,22 +46,7 @@ export function ArchiveRow({ entry, label, onOpen, onCopy, onDelete }: ArchiveRo
                 </span>
             </div>
             <div className={styles.pline2}>
-                <span className={styles.spark}>
-                    {days.map((day) => {
-                        const barPct = percentOf(day.assigned, maxAssigned);
-                        const fillPct = percentOf(day.done, day.assigned);
-                        return (
-                            <span key={day.day} className={styles.col}>
-                                <span className={styles.barTrack}>
-                                    <span className={styles.bar} style={{ height: `${barPct}%` }}>
-                                        <i style={{ height: `${fillPct}%` }} />
-                                    </span>
-                                </span>
-                                <span className={styles.lab}>{LETTER[day.day]}</span>
-                            </span>
-                        );
-                    })}
-                </span>
+                <WeekSpark days={days} className={styles.spark} />
                 {/* Siblings of the row's own click target, not nested inside it —
                     stopPropagation keeps their clicks from also opening the row. */}
                 <span className={styles.actions}>

@@ -1,0 +1,59 @@
+/* Seven-bar week shape, shared by ArchiveRow and ArchiveQuickLook. Both draw
+   the identical chart from the identical numbers, so opening a week reads as
+   zooming in on the row rather than switching to a different object.
+   The two consumers differ only in scale, so the track height and bar cap are
+   custom properties with the row's values as the defaults; the dialog sets
+   smaller ones on its own container. */
+
+.spark {
+    display: flex;
+    align-items: flex-end;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+}
+
+/* Fixed-height reference frame so .bar's percentage height has something
+   definite to resolve against — .bar's own height is `assigned / weekMax`,
+   .bar > i's height is `done / assigned`, two independent numbers stacked
+   two percentages deep (each resolves fine since its own parent has a
+   definite, not auto, height by the time it's evaluated). */
+.barTrack {
+    width: 100%;
+    height: var(--spark-track-h, 34px);
+    display: flex;
+    align-items: flex-end;
+}
+
+.bar {
+    width: 100%;
+    max-width: var(--spark-bar-w, 26px);
+    margin-inline: auto;
+    min-height: 2px;
+    border-radius: 3px 3px 0 0;
+    background: var(--good-soft);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+.bar i {
+    display: block;
+    width: 100%;
+    background: var(--good);
+    border-radius: 3px 3px 0 0;
+}
+
+.lab {
+    font: var(--fs-label) var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+}
