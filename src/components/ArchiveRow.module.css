@@ -1,0 +1,205 @@
+/* One archived week. The whole row (everything except Copy/Delete) opens it —
+   .row itself carries the click/keyboard handling in the component, this file
+   only supplies the affordance: pointer cursor, and a hover/focus border so
+   the target reads as interactive before you click it.
+   Phone-first: two stacked lines (date/done/% on top, spark/actions below, so
+   the spark always gets the row's full width instead of splitting it with
+   everything else). At >=641px .pline1/.pline2 become `display: contents` so
+   their children join .row's own single-line flex row directly — same markup
+   both ways, only the CSS reflows. */
+.row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: var(--sp-4);
+    cursor: pointer;
+    transition: border-color 0.12s;
+}
+.row:hover {
+    border-color: var(--line-strong);
+}
+.row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.pline1 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-3);
+}
+
+.pline2 {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+}
+
+@media (min-width: 641px) {
+    .row {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--sp-4);
+    }
+    .pline1,
+    .pline2 {
+        display: contents;
+    }
+    /* display: contents keeps DOM order (when, stat, spark, actions —
+       pline1's children then pline2's), but the desktop reading order should
+       be date, spark, %, actions. Reorder visually rather than reshuffling
+       the DOM. */
+    .when {
+        order: 1;
+    }
+    .spark {
+        order: 2;
+    }
+    .stat {
+        order: 3;
+    }
+    .actions {
+        order: 4;
+    }
+}
+
+.when {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+@media (min-width: 641px) {
+    .when {
+        flex: none;
+        width: 118px;
+    }
+}
+
+.date {
+    font: 600 var(--fs-row) / 1.3 var(--display);
+    color: var(--ink);
+}
+
+.sub {
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    margin-top: 3px;
+}
+
+/* Stacked 2-row at every width, matching .when's own date/sub stack on the
+   other side of the line — a single-row baseline layout here read top-heavy
+   and unbalanced against that. */
+.stat {
+    flex: none;
+    text-align: right;
+}
+@media (min-width: 641px) {
+    .stat {
+        min-width: 64px;
+    }
+}
+
+.pctBig {
+    /* JetBrains Mono, regular weight — color (--accent) carries the emphasis,
+       not bold (matches the old app's .arch-tot exactly). */
+    display: block;
+    font: 400 20px / 1 var(--mono);
+    color: var(--accent);
+}
+
+.complete {
+    display: block;
+    margin-top: 3px;
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}
+
+.spark {
+    display: flex;
+    align-items: flex-end;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+}
+
+/* Fixed-height reference frame so .bar's percentage height has something
+   definite to resolve against — .bar's own height is `assigned / weekMax`,
+   .bar > i's height is `done / assigned`, two independent numbers stacked
+   two percentages deep (each resolves fine since its own parent has a
+   definite, not auto, height by the time it's evaluated). */
+.barTrack {
+    width: 100%;
+    height: 34px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.bar {
+    width: 100%;
+    max-width: 26px;
+    margin-inline: auto;
+    min-height: 2px;
+    border-radius: 3px 3px 0 0;
+    background: var(--good-soft);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+.bar i {
+    display: block;
+    width: 100%;
+    background: var(--good);
+    border-radius: 3px 3px 0 0;
+}
+
+.lab {
+    font: var(--fs-label) var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+}
+
+.actions {
+    flex: none;
+    display: flex;
+    gap: 2px;
+}
+
+.iconBtn {
+    appearance: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    color: var(--ink-faint);
+}
+.iconBtn:hover {
+    background: var(--hover-neutral);
+    color: var(--ink);
+}
+.iconBtn svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
