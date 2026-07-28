@@ -13,24 +13,18 @@
     --heat-month-h: 15px;
 }
 
+/* The grid's own shape only. How wide it may be and whether it scrolls are the
+   caller's, passed in as a class — same division as WeekSpark's. */
 .heat {
     display: flex;
     align-items: flex-start;
 }
 
-/* 52 columns never fit a phone, so this is the one thing in the pane that
-   scrolls sideways. It rests at its right (most recent) edge — see Heatmap.tsx. */
-.scroller {
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 4px;
-    scrollbar-width: thin;
-}
-
 /* Pinned to the left edge while the year scrolls under it — an axis that
-   scrolls away stops being an axis. It carries the gutter as padding rather
-   than .heat carrying it as a gap, so cells pass behind the letters and not
-   through a transparent strip beside them. */
+   scrolls away stops being an axis. Sticky resolves against whichever ancestor
+   the caller made scrollable, .heat itself included. It carries the gutter as
+   padding rather than .heat carrying it as a gap, so cells pass behind the
+   letters and not through a transparent strip beside them. */
 .axis {
     flex: none;
     position: sticky;
@@ -41,7 +35,10 @@
     gap: var(--heat-gap);
     padding-top: calc(var(--heat-month-h) + var(--heat-gap));
     padding-right: 6px;
-    background: var(--bg);
+    /* Opaque, or scrolling cells show through it. --paper because the chart
+       sits on a card; a heatmap dropped straight onto the page would need the
+       caller to override this. */
+    background: var(--paper);
 }
 
 .axisLabel {

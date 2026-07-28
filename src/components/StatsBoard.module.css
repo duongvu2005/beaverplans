@@ -1,6 +1,8 @@
-/* The stats pane: four blocks stacked in one column. Capped and centred like
-   ArchiveBoard, and using its .year hairline recipe for the section headings,
-   so the two derived-from-the-archive panes read as the same surface.
+/* The stats pane: four blocks stacked in one column, capped and centred like
+   ArchiveBoard. Each block is a card on the same recipe as ArchiveRow and
+   ProjectCard — paper surface, hairline border, --r-card — so a stats block
+   reads as the same kind of object as a project or an archived week, and the
+   pane belongs to the app rather than to itself.
    Nothing here scrolls sideways except the heatmap. */
 
 .board {
@@ -8,7 +10,14 @@
     margin-inline: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--sp-5);
+    gap: var(--sp-3);
+}
+
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: var(--sp-4);
 }
 
 .head {
@@ -16,6 +25,7 @@
     align-items: baseline;
     justify-content: space-between;
     gap: var(--sp-3);
+    margin-bottom: var(--sp-1);
 }
 
 .count {
@@ -25,38 +35,27 @@
     color: var(--ink-faint);
 }
 
-/* ArchiveBoard's .year exactly: a label with a hairline running off to the
-   right, so a heading reads as a divider rather than as content. */
+/* No trailing hairline, unlike ArchiveBoard's .year: that rule exists to divide
+   a bare list, and inside a card the card's own edge already does it. Same
+   treatment as FocusedDay's .head — a mono label at the top of its container. */
 .section {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
     margin: 0 0 var(--sp-3);
     font: var(--fs-label) var(--mono);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--ink-faint);
 }
-.section::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--line);
-}
 
-/* Heading and legend sharing a row: the heading's own rule still fills the
-   space between them. */
+/* Heading and legend sharing the card's top line. */
 .sectionHead {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: var(--sp-3);
+    margin-bottom: var(--sp-3);
 }
 .sectionHead .section {
-    flex: 1;
     margin-bottom: 0;
-}
-.sectionHead {
-    margin-bottom: var(--sp-3);
 }
 
 /* Pulled up under its heading so the sentence belongs to the chart below it
@@ -92,6 +91,16 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--ink-faint);
+}
+
+/* 52 columns never fit a phone, so the heatmap is the one thing in the pane
+   that scrolls sideways. Sized here rather than in Heatmap for the reason
+   .weekdays sizes WeekSpark here: the pane decides how much room a chart gets. */
+.heatmap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
 }
 
 .legendRow {

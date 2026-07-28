@@ -105,7 +105,7 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                 </span>
             </div>
 
-            <div className={styles.summary}>
+            <div className={`${styles.card} ${styles.summary}`}>
                 <div>
                     <span className={styles.big}>
                         {Math.round(percentOf(pooledDone, pooledTotal))}%
@@ -126,7 +126,7 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                 </div>
             </div>
 
-            <section>
+            <section className={styles.card}>
                 <h3 className={styles.section}>Week by week</h3>
                 <p className={styles.note}>
                     Bar height is the week&apos;s size; the fill is what you finished.
@@ -134,7 +134,7 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                 <WeekTrend items={items} />
             </section>
 
-            <section>
+            <section className={styles.card}>
                 <div className={styles.sectionHead}>
                     <h3 className={styles.section}>Scheduled work</h3>
                     {wide && <HeatmapLegend />}
@@ -144,7 +144,7 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                     {undated > 0 &&
                         ` ${undated} more ${undated === 1 ? 'was' : 'were'} finished on undated tasks, which have no day to sit on.`}
                 </p>
-                <Heatmap columns={columns} />
+                <Heatmap columns={columns} className={styles.heatmap} />
                 {!wide && (
                     <div className={styles.legendRow}>
                         <HeatmapLegend />
@@ -152,7 +152,7 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                 )}
             </section>
 
-            <section>
+            <section className={styles.card}>
                 <h3 className={styles.section}>By weekday</h3>
                 {strongest !== undefined && (
                     <p className={styles.note}>
