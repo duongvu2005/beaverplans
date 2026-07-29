@@ -7,6 +7,7 @@
 .trend {
     display: flex;
     align-items: flex-end;
+    justify-content: center;
     gap: 6px;
     --spark-track-h: 78px;
     /* the cap belongs to the column, not the bar: the bar fills its column */

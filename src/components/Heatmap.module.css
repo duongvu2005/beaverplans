@@ -8,7 +8,7 @@
    the grid, and a second copy of these numbers is a second thing to drift. */
 .heat,
 .legend {
-    --heat-cell: 9px;
+    --heat-cell: 13px;
     --heat-gap: 3px;
     --heat-month-h: 15px;
 }
@@ -41,11 +41,13 @@
     background: var(--paper);
 }
 
+/* line-height tracks the cell, so a letter always centres on the row it names
+   however the cell is resized. */
 .axisLabel {
     height: var(--heat-cell);
-    min-width: 14px;
+    min-width: 16px;
     font: var(--fs-label) var(--mono);
-    font-size: 9px;
+    font-size: 10px;
     line-height: var(--heat-cell);
     text-align: right;
     color: var(--ink-faint);
@@ -86,19 +88,21 @@
     background: var(--line);
 }
 
-/* Mixed from --good rather than hard-coded, so the ramp follows the theme into
-   dark mode instead of needing a second palette. */
+/* Terracotta, the old app's own heat colour, rather than the green that means
+   "done" elsewhere here — this grid is about how much landed on a day, not
+   whether anything was completed. Mixed from the token rather than hard-coded,
+   so the ramp follows the theme into dark mode. */
 .cell[data-level='1'] {
-    background: var(--good-soft);
+    background: var(--accent-soft);
 }
 .cell[data-level='2'] {
-    background: color-mix(in srgb, var(--good) 40%, var(--good-soft));
+    background: color-mix(in srgb, var(--accent) 40%, var(--accent-soft));
 }
 .cell[data-level='3'] {
-    background: color-mix(in srgb, var(--good) 72%, var(--good-soft));
+    background: color-mix(in srgb, var(--accent) 72%, var(--accent-soft));
 }
 .cell[data-level='4'] {
-    background: var(--good);
+    background: var(--accent);
 }
 
 /* "No record" is not "did nothing": a never-archived week is fainter than a

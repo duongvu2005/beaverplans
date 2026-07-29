@@ -96,17 +96,26 @@
 /* 52 columns never fit a phone, so the heatmap is the one thing in the pane
    that scrolls sideways. Sized here rather than in Heatmap for the reason
    .weekdays sizes WeekSpark here: the pane decides how much room a chart gets. */
+/* Scrollbar hidden, not disabled — the grid still drags and wheels sideways,
+   and a bar under a year of squares only adds noise. */
 .heatmap {
     overflow-x: auto;
     overflow-y: hidden;
-    padding-bottom: 4px;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+    /* Centred once a year of columns fits; `safe` so that when it doesn't, the
+       overflow stays reachable from the start edge instead of being clipped. */
+    justify-content: safe center;
+}
+.heatmap::-webkit-scrollbar {
+    display: none;
 }
 
-.legendRow {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: var(--sp-2);
+/* Terracotta, like the heatmap: this chart is about where work landed, not
+   about completion, so the green that means "done" everywhere else would
+   misread. Follow-through keeps the green for exactly that reason. */
+.distribution {
+    --spark-bar-bg: var(--accent-soft);
+    --spark-bar-fill: var(--accent);
 }
 
 .weekdays {

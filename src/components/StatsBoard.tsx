@@ -74,10 +74,10 @@ export function StatsBoard({ archive }: StatsBoardProps) {
     const items = weekTrend(history, wide ? TREND_ITEMS_WIDE : TREND_ITEMS_NARROW);
 
     const completions = dailyCompletions(archive);
+    // What the grid actually holds, not everything finished: only subtasks
+    // carry a weekday, so a finished leaf task has no date to be drawn on and
+    // is not counted here either. The caption stays true to the chart.
     const scheduled = [...completions.values()].reduce((sum, count) => sum + count, 0);
-    // Only subtasks carry a weekday, so a finished leaf task has no date to be
-    // drawn on. Said out loud below rather than left to under-report quietly.
-    const undated = pooledDone - scheduled;
     const columns = heatColumns(
         completions,
         new Set(history.map((week) => week.weekStart)),
@@ -96,6 +96,23 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                     : leader,
             undefined,
         );
+
+    const byWeekday = weekdayColumns(weekdays);
+    // Where finished work landed: each weekday's share of everything completed,
+    // so the seven figures add up to 100%. Solid bars — there is no second
+    // quantity to show inside them, unlike the follow-through chart.
+    const finishedOnDays = weekdays.reduce((sum, day) => sum + day.done, 0);
+    const distribution = byWeekday.map((column) => ({
+        ...column,
+        assigned: column.done,
+    }));
+    // Every bar full height so only the fill differs — the point is comparing
+    // rates across days, which unequal heights make harder, not easier.
+    const followed = byWeekday.map((column) => ({
+        ...column,
+        assigned: 100,
+        done: Math.round(percentOf(column.done, column.assigned)),
+    }));
 
     return (
         <div className={styles.board}>
@@ -136,32 +153,37 @@ export function StatsBoard({ archive }: StatsBoardProps) {
 
             <section className={styles.card}>
                 <div className={styles.sectionHead}>
-                    <h3 className={styles.section}>Scheduled work</h3>
-                    {wide && <HeatmapLegend />}
+                    <h3 className={styles.section}>Activity</h3>
+                    <HeatmapLegend />
                 </div>
                 <p className={styles.note}>
-                    {scheduled} unit{scheduled === 1 ? '' : 's'} completed on a scheduled day.
-                    {undated > 0 &&
-                        ` ${undated} more ${undated === 1 ? 'was' : 'were'} finished on undated tasks, which have no day to sit on.`}
+                    {scheduled} task unit{scheduled === 1 ? '' : 's'} completed
                 </p>
                 <Heatmap columns={columns} className={styles.heatmap} />
-                {!wide && (
-                    <div className={styles.legendRow}>
-                        <HeatmapLegend />
-                    </div>
-                )}
             </section>
 
             <section className={styles.card}>
-                <h3 className={styles.section}>By weekday</h3>
-                {strongest !== undefined && (
-                    <p className={styles.note}>
-                        {DAY_NAME[strongest.day]} is your strongest day —{' '}
-                        {Math.round(percentOf(strongest.done, strongest.assigned))}% of what you
-                        plan there gets done.
-                    </p>
-                )}
-                <WeekSpark className={styles.weekdays} columns={weekdayColumns(weekdays)} figures />
+                <h3 className={styles.section}>Distribution</h3>
+                <p className={styles.note}>
+                    Where your finished work landed — each weekday&apos;s share of everything you
+                    completed.
+                </p>
+                <WeekSpark
+                    className={`${styles.weekdays} ${styles.distribution}`}
+                    columns={distribution}
+                    figures
+                    figureOf={(column) => `${Math.round(percentOf(column.done, finishedOnDays))}%`}
+                />
+            </section>
+
+            <section className={styles.card}>
+                <h3 className={styles.section}>Follow-through</h3>
+                <p className={styles.note}>
+                    {strongest === undefined
+                        ? 'How much of each weekday you finish.'
+                        : `${DAY_NAME[strongest.day]} is your strongest day — ${Math.round(percentOf(strongest.done, strongest.assigned))}% of what you plan there gets done.`}
+                </p>
+                <WeekSpark className={styles.weekdays} columns={followed} figures />
             </section>
         </div>
     );

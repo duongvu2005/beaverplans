@@ -5,8 +5,10 @@ import styles from './WeekSpark.module.css';
 type WeekSparkProps = {
     columns: ReadonlyArray<SparkColumn>;
     className?: string;
-    /** Print each column's completion under its label. */
+    /** Print a figure under each column's label. */
     figures?: boolean;
+    /** What that figure says. Defaults to the column's completion. */
+    figureOf?: (column: SparkColumn) => string;
 };
 
 /**
@@ -22,7 +24,12 @@ type WeekSparkProps = {
  * Size is set by the caller through --spark-track-h and --spark-bar-w;
  * className is for the caller's own layout concerns (e.g. flex ordering).
  */
-export function WeekSpark({ columns, className, figures = false }: WeekSparkProps) {
+export function WeekSpark({
+    columns,
+    className,
+    figures = false,
+    figureOf = (column) => `${Math.round(percentOf(column.done, column.assigned))}%`,
+}: WeekSparkProps) {
     const maxAssigned = Math.max(1, ...columns.map((c) => c.assigned));
 
     return (
@@ -43,8 +50,10 @@ export function WeekSpark({ columns, className, figures = false }: WeekSparkProp
                     </span>
                     <span className={styles.lab}>{column.label}</span>
                     {figures && (
-                        <span className={`${styles.fig} ${column.done === 0 ? styles.zero : ''}`}>
-                            {Math.round(percentOf(column.done, column.assigned))}%
+                        <span
+                            className={`${styles.fig} ${column.assigned === 0 ? styles.zero : ''}`}
+                        >
+                            {figureOf(column)}
                         </span>
                     )}
                 </span>

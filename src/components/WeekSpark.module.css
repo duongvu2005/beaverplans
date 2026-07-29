@@ -41,7 +41,9 @@
     margin-inline: auto;
     min-height: 2px;
     border-radius: 3px 3px 0 0;
-    background: var(--good-soft);
+    /* Green is the app's "done" colour and stays the default; a chart that is
+       not about completion overrides these two from its container. */
+    background: var(--spark-bar-bg, var(--good-soft));
     display: flex;
     align-items: flex-end;
     overflow: hidden;
@@ -50,7 +52,7 @@
 .bar i {
     display: block;
     width: 100%;
-    background: var(--good);
+    background: var(--spark-bar-fill, var(--good));
     border-radius: 3px 3px 0 0;
 }
 
