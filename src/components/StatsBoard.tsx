@@ -1,10 +1,11 @@
 import type { Archive, DayOfWeek } from '../core/types';
-import { todayKey, weekStartOf } from '../core/dates';
+import { todayKey, weekRangeLabel, weekStartOf } from '../core/dates';
 import { percentOf } from '../core/math';
 import {
     bestWeek,
     currentStreak,
     dailyCompletions,
+    longestStreak,
     weekHistory,
     weekTrend,
     weekdayHistory,
@@ -68,6 +69,8 @@ export function StatsBoard({ archive }: StatsBoardProps) {
     const pooledDone = history.reduce((sum, week) => sum + week.progress.done, 0);
     const pooledTotal = history.reduce((sum, week) => sum + week.progress.total, 0);
     const best = bestWeek(history);
+    const streak = currentStreak(history, STREAK_THRESHOLD);
+    const longest = longestStreak(history, STREAK_THRESHOLD);
 
     // A real prop, not CSS-hidden columns: WeekTrend normalises bar height
     // against the biggest week SHOWN, so a hidden column could own the maximum.
@@ -96,6 +99,12 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                     : leader,
             undefined,
         );
+    const biggestShare = weekdays
+        .filter((day) => day.done > 0)
+        .reduce<(typeof weekdays)[number] | undefined>(
+            (leader, day) => (leader === undefined || day.done > leader.done ? day : leader),
+            undefined,
+        );
 
     const byWeekday = weekdayColumns(weekdays);
     // Where finished work landed: each weekday's share of everything completed,
@@ -116,37 +125,49 @@ export function StatsBoard({ archive }: StatsBoardProps) {
 
     return (
         <div className={styles.board}>
-            <div className={styles.head}>
-                <span className={styles.count}>
-                    {history.length} week{history.length === 1 ? '' : 's'} tracked
-                </span>
-            </div>
-
-            <div className={`${styles.card} ${styles.summary}`}>
-                <div>
+            <div className={styles.stats}>
+                <div className={styles.stat}>
                     <span className={styles.big}>
                         {Math.round(percentOf(pooledDone, pooledTotal))}%
                     </span>
-                    <span className={styles.statLabel}>Completed</span>
+                    <span className={styles.statLabel}>Avg completion</span>
+                    <span className={styles.statSub}>
+                        {pooledDone} of {pooledTotal} task unit{pooledTotal === 1 ? '' : 's'} done
+                    </span>
                 </div>
-                <div>
+                <div className={styles.stat}>
                     <span className={styles.big}>
                         {best === undefined
                             ? '—'
                             : `${Math.round(percentOf(best.progress.done, best.progress.total))}%`}
                     </span>
                     <span className={styles.statLabel}>Best week</span>
+                    <span className={styles.statSub}>
+                        {best === undefined ? 'no data' : weekRangeLabel(best.weekStart)}
+                    </span>
                 </div>
-                <div>
-                    <span className={styles.big}>{currentStreak(history, STREAK_THRESHOLD)}</span>
-                    <span className={styles.statLabel}>Streak</span>
+                <div className={styles.stat}>
+                    <span className={styles.big}>{streak}</span>
+                    <span className={styles.statLabel}>Week streak</span>
+                    <span className={styles.statSub}>
+                        {streak > 0
+                            ? 'in a row at 50%+'
+                            : longest > 0
+                              ? `best run was ${longest}`
+                              : 'no streak yet'}
+                    </span>
+                </div>
+                <div className={styles.stat}>
+                    <span className={styles.big}>{history.length}</span>
+                    <span className={styles.statLabel}>Weeks tracked</span>
+                    <span className={styles.statSub}>all-time</span>
                 </div>
             </div>
 
             <section className={styles.card}>
                 <h3 className={styles.section}>Week by week</h3>
                 <p className={styles.note}>
-                    Bar height is the week&apos;s size; the fill is what you finished.
+                    Bar height is the week&apos;s workload; the fill is what you completed.
                 </p>
                 <WeekTrend items={items} />
             </section>
@@ -157,23 +178,9 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                     <HeatmapLegend />
                 </div>
                 <p className={styles.note}>
-                    {scheduled} task unit{scheduled === 1 ? '' : 's'} completed
+                    {scheduled} task unit{scheduled === 1 ? '' : 's'} completed in the last year
                 </p>
                 <Heatmap columns={columns} className={styles.heatmap} />
-            </section>
-
-            <section className={styles.card}>
-                <h3 className={styles.section}>Distribution</h3>
-                <p className={styles.note}>
-                    Where your finished work landed — each weekday&apos;s share of everything you
-                    completed.
-                </p>
-                <WeekSpark
-                    className={`${styles.weekdays} ${styles.distribution}`}
-                    columns={distribution}
-                    figures
-                    figureOf={(column) => `${Math.round(percentOf(column.done, finishedOnDays))}%`}
-                />
             </section>
 
             <section className={styles.card}>
@@ -184,6 +191,21 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                         : `${DAY_NAME[strongest.day]} is your strongest day — ${Math.round(percentOf(strongest.done, strongest.assigned))}% of what you plan there gets done.`}
                 </p>
                 <WeekSpark className={styles.weekdays} columns={followed} figures />
+            </section>
+
+            <section className={styles.card}>
+                <h3 className={styles.section}>Distribution</h3>
+                <p className={styles.note}>
+                    {biggestShare === undefined
+                        ? "Where each weekday's finished work lands."
+                        : `${DAY_NAME[biggestShare.day]} is your busiest day — ${Math.round(percentOf(biggestShare.done, finishedOnDays))}% of everything you complete lands there.`}
+                </p>
+                <WeekSpark
+                    className={`${styles.weekdays} ${styles.distribution}`}
+                    columns={distribution}
+                    figures
+                    figureOf={(column) => `${Math.round(percentOf(column.done, finishedOnDays))}%`}
+                />
             </section>
         </div>
     );

@@ -20,21 +20,6 @@
     padding: var(--sp-4);
 }
 
-.head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    margin-bottom: var(--sp-1);
-}
-
-.count {
-    font: var(--fs-label) var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-faint);
-}
-
 /* No trailing hairline, unlike ArchiveBoard's .year: that rule exists to divide
    a bare list, and inside a card the card's own edge already does it. Same
    treatment as FocusedDay's .head — a mono label at the top of its container. */
@@ -66,15 +51,17 @@
     color: var(--ink-faint);
 }
 
-/* Three across at every width — at 375px each figure is a 20px number over an
-   11px label, which fits comfortably in a third of the screen. */
-.summary {
-    display: flex;
+/* One card per figure (2x2 on a phone, 4 across once there's room), same
+   recipe as .card — each stat reads as its own object, not a slot in a
+   shared strip. */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--sp-3);
 }
 
-.summary > div {
-    flex: 1;
+.stat {
+    composes: card;
     min-width: 0;
 }
 
@@ -91,6 +78,18 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--ink-faint);
+}
+
+/* The number's own context — what it's counting, which week, how the streak
+   compares to its record — so a figure never has to be taken on faith. */
+.statSub {
+    display: block;
+    margin-top: 3px;
+    font: var(--fs-label) var(--sans);
+    color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* 52 columns never fit a phone, so the heatmap is the one thing in the pane
@@ -141,10 +140,8 @@
 }
 
 @media (min-width: 641px) {
-    /* Rules between the three figures, which a phone has no width for. */
-    .summary > div + div {
-        border-left: 1px solid var(--line);
-        padding-left: var(--sp-4);
+    .stats {
+        grid-template-columns: repeat(4, 1fr);
     }
 
     .weekdays {
