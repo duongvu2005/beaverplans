@@ -1,0 +1,365 @@
+/* WeekHeader: the plan view's one header block, replacing the separate
+   WeekStepper and WeekProgressRow rows.
+
+   Three rows in a grid — controls / gauge / note. `1fr auto` columns pin the
+   actions to the right edge, which is what carries the layout-stability rule
+   the old stepper enforced with `min-width: 140px` on Move: when the armed
+   label grows to "MOVE → AUG 10" it eats the free column, and End week does not
+   move. Nothing here appears or disappears with state except the note, which is
+   prose rather than a control and so cannot be mis-clicked.
+
+   Button shape: one recipe, three intensities (.btn, .ghost, .move[armed]).
+   radius --r-chip, matching the arrows — --r rounds a short mono-caps box into a
+   lozenge and echoes nothing else on the row. */
+
+.head {
+    /* how far the block has to pull out to put its CONTENT back on the pane's
+       inset: its own padding plus the 1px border the armed/ended states paint */
+    --bleed: calc(var(--sp-3) + 1px);
+    display: grid;
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        'nav   acts'
+        'gauge gauge'
+        'note  note';
+    column-gap: var(--sp-4);
+    row-gap: var(--sp-3);
+    padding: var(--sp-3);
+    /* bleed back out so the block's content lines up with .plan-layout below,
+       which takes its inset from .pane's padding */
+    margin: calc(var(--bleed) * -1);
+    margin-bottom: var(--sp-4);
+    border: 1px solid transparent;
+    border-radius: var(--r-card);
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease;
+}
+
+/* Matches .plan-layout's own cap (App.css), widened by this block's bleed so
+   the two share a content edge instead of the header running wider.
+
+   Not `margin-inline: auto`: that discards the negative margin above the moment
+   the block is NARROWER than the cap, which is most desktop widths, and the
+   header's content then sat --sp-3 to the right of both the board below it and
+   the app bar above. Centring is what auto was for, so do only that — take the
+   same offset .plan-layout's own auto margins produce, less the bleed, and
+   never let it fall back inside the bleed. */
+@container app (min-width: 1000px) {
+    .head {
+        max-width: calc(1440px + var(--bleed) * 2);
+        margin-inline: max(calc(var(--bleed) * -1), calc((100% - 1440px) / 2 - var(--bleed)));
+    }
+}
+
+/* --- navigation cluster ---------------------------------------------------
+   Today lives here, not with the actions: it is a jump, not a mutation. */
+
+.nav {
+    grid-area: nav;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    min-width: 0;
+}
+
+/* No box at all: the 26px stays as hit area (a thumb needs it) but nothing is
+   painted, so colour is the only thing that moves on hover. A stroked chevron
+   rather than a text guillemet, so the pair's weight is ours to set and not
+   whatever the display face happens to draw. */
+.arrow {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.arrow:hover:not(:disabled) {
+    color: var(--ink);
+}
+
+.arrow:disabled {
+    color: var(--line-strong);
+    cursor: not-allowed;
+}
+
+/* The chevron is centred in that 26px box, so it sits ~9px inside the block's
+   content edge while the gauge below starts flush at it. Pulling the box out by
+   that much gives both rows one left edge. */
+.prev {
+    margin-left: -9px;
+}
+
+.read {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+    padding-inline: var(--sp-2);
+    min-width: 0;
+}
+
+/* Fixed slot so the date beside it never moves as the name swaps between
+   "This week", "12 weeks ago" and "Move to". 112px fits the longest of those. */
+.name {
+    flex: 0 0 112px;
+    font: 600 var(--fs-row) / 1.4 var(--sans);
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.name[data-now='true'] {
+    color: var(--good);
+}
+
+.date {
+    flex: none;
+    font: var(--fs-body) / 1.4 var(--mono);
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+/* --- one button recipe ----------------------------------------------------
+   Type is dialogShell's .btn — 500/--fs-body sans, sentence case — because that
+   is already every other button in the app, and mono caps here was the one
+   place that diverged. The box is tighter than a dialog's (--r-chip and less
+   padding) so the header still sits lighter than a modal does. */
+
+.btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    font: 500 var(--fs-body) var(--sans);
+    padding: 6px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.15s;
+}
+
+/* Border AND colour move: a background-only hover between --paper and
+   --hover-neutral is a 2% shift on a warm off-white, i.e. no feedback at all. */
+.btn:hover:not(:disabled) {
+    border-color: var(--ink-faint);
+    color: var(--ink);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Today: same family, no box. */
+.ghost {
+    border-color: transparent;
+    background: none;
+}
+
+.ghost:hover:not(:disabled) {
+    border-color: transparent;
+    background: var(--hover-neutral);
+    color: var(--ink);
+}
+
+/* End week is the only irreversible control here, so it is the only one that
+   goes terracotta on hover. */
+.end:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.acts {
+    grid-area: acts;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+/* The sheet's trigger only has a job where the pair does not fit; the narrow
+   block below is the one place it is shown. */
+.manage {
+    display: none;
+}
+
+/* Armed: filled accent, the loudest thing on the screen. */
+.head[data-armed='true'] .move {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+}
+
+:root[data-theme='dark'] .head[data-armed='true'] .move {
+    color: #1a1815;
+}
+
+.head[data-armed='true'] .move:hover:not(:disabled) {
+    filter: brightness(1.06);
+}
+
+/* --- the gauge: the block's baseline --------------------------------------
+   Uncapped on purpose. The old 320px cap existed because the bar sat alone on
+   its own row with nothing to hold; here it IS the row, tying the two halves of
+   the header together. */
+
+.gauge {
+    grid-area: gauge;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-width: 0;
+}
+
+.track {
+    flex: 1 1 auto;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line-strong);
+    overflow: hidden;
+}
+
+.fill {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--good);
+    transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pct {
+    flex: none;
+    font: var(--fs-body) / 1.4 var(--mono);
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+/* --- the note -------------------------------------------------------------
+   A button cannot say that weeks archive oldest-first, or that Move is about to
+   change what the arrows mean. Absent entirely on an ordinary live week, so it
+   costs nothing — not even a row-gap — in the state you are in most of the
+   time. */
+
+.note {
+    grid-area: note;
+    margin: 0;
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+.note b {
+    color: var(--ink-soft);
+    font-weight: 600;
+}
+
+/* --- block states --------------------------------------------------------- */
+
+/* Armed washes the WHOLE block: move mode is modal, so the modal surface is the
+   header, not one row of it. */
+.head[data-mode='armed'] {
+    background: var(--hover-accent);
+    border-color: var(--accent-soft);
+}
+
+.head[data-mode='armed'] .name,
+.head[data-mode='armed'] .note,
+.head[data-mode='armed'] .arrow {
+    color: var(--accent);
+}
+
+.head[data-mode='armed'] .arrow:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+/* the gauge describes the week you came FROM, which is not what you are aiming */
+.head[data-mode='armed'] .track,
+.head[data-mode='armed'] .pct {
+    opacity: 0.45;
+}
+
+/* Ended: a record that has been filed, not a board that is broken. */
+.head[data-mode='ended'] {
+    background: var(--paper);
+    border-style: dashed;
+    border-color: var(--line-strong);
+}
+
+.head[data-mode='ended'] .name,
+.head[data-mode='ended'] .date,
+.head[data-mode='ended'] .pct {
+    color: var(--ink-faint);
+}
+
+.head[data-mode='ended'] .fill {
+    background: var(--ink-faint);
+}
+
+/* --- narrow: the pane's container, not the viewport (see App.css) ---------
+   Line 1 is the nav cluster at full width, which is what buys room for the
+   whole "Jul 27 – Aug 02" range. Line 2 is the gauge plus ONE control: Move and
+   End have no room here and neither explains itself, so both go into the sheet
+   where each gets a sentence. While armed, the commit button takes that slot
+   instead — the move has to be finishable without reopening anything. */
+
+@container (max-width: 620px) {
+    .head {
+        grid-template-areas:
+            'nav   nav'
+            'gauge acts'
+            'note  note';
+        column-gap: var(--sp-2);
+        row-gap: var(--sp-2);
+    }
+
+    .read {
+        flex: 0 1 auto;
+        padding-inline: var(--sp-1);
+    }
+
+    .name {
+        flex: 0 1 auto;
+    }
+
+    .date {
+        font-size: 12px;
+    }
+
+    .today {
+        margin-left: auto;
+    }
+
+    .move,
+    .end {
+        display: none;
+    }
+
+    .manage {
+        display: inline-flex;
+    }
+
+    .head[data-armed='true'] .move {
+        display: inline-flex;
+    }
+
+    .head[data-armed='true'] .manage {
+        display: none;
+    }
+}
+
+/* Very narrow: the gauge keeps the bar, the numerator goes. */
+@container (max-width: 400px) {
+    .count {
+        display: none;
+    }
+}
