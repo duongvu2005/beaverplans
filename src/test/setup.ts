@@ -13,16 +13,8 @@ afterEach(() => {
 // otherwise print a "Not implemented" warning on every dialog test.
 window.scrollTo = () => {};
 
-// jsdom doesn't implement matchMedia either, and useMediaQuery calls it during
-// render. Nothing matches, so components under test get their narrow layout.
-window.matchMedia = (media: string) =>
-    ({
-        media,
-        matches: false,
-        onchange: null,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        addListener: () => {},
-        removeListener: () => {},
-        dispatchEvent: () => false,
-    }) as MediaQueryList;
+// jsdom doesn't implement ResizeObserver either, and useContainerWidth installs
+// one. The hook already guards on `typeof ResizeObserver === 'undefined'` and
+// falls back to its one-shot measurement, so leaving it undefined is a faithful
+// test environment: jsdom reports every element as 0 wide, which is what a
+// component under test should see — its narrow layout, with no resize tracking.

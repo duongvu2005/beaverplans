@@ -1,62 +1,30 @@
-/* App shell layout: a tab bar and the active view pane.
-   Desktop: tab bar across the top.
-   Phone (<=640px): the SAME tab bar docks to the bottom (native app pattern).
-   Only the CSS changes across breakpoints — the markup is identical. */
+/* App shell layout: the app bar (TopBar, which owns its own stylesheet) and the
+   active view pane.
 
-/* --- tab bar --- */
-.tabs {
-    display: flex;
-    gap: 4px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--line);
-    background: var(--bg);
-}
-
-.tabs button {
-    flex: 0 0 auto;
-    appearance: none;
-    border: none;
-    background: none;
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition:
-        background-color 0.15s,
-        color 0.15s;
-}
-
-.tabs button:hover {
-    background: var(--paper);
-    color: var(--ink);
-}
-
-.tabs button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-/* the active tab — hooked off aria-current="page", so no separate class to track */
-.tabs button[aria-current] {
-    color: var(--accent);
-    background: var(--accent-soft);
-}
+   Every breakpoint here is `@container app (...)` — a question about the app's
+   own box (established on [data-app-container] in index.css), never about the
+   browser viewport. That is what makes the phone layout appear whenever the app
+   ITSELF is phone-width, including inside a panel or an embedded frame on a
+   much wider page. Two finer containers nest below it and are queried unnamed
+   by the components that own them: .pane (the week stepper's collapse) and
+   .weekGridPane (the grid's column count). */
 
 /* --- active view pane --- */
 .pane {
     flex: 1 1 auto;
     padding: 24px;
     overflow: auto;
+    /* a nested container: the week stepper's collapse keys off this pane's
+       width specifically, not the shell's (the week grid establishes its own
+       container further in). Unnamed, so the components that mean "the app box"
+       ask for `app` by name and skip past this one. */
+    container-type: inline-size;
 }
 
 /* --- plan view: projects + week grid --- */
-/* Stacked in one column by default; at >=1000px the projects tree sits left and
-   the week grid takes the rest. Capped and centred so it doesn't sprawl on wide
-   monitors. */
+/* Stacked in one column by default; once the app's box is >=1000px the projects
+   tree sits left and the week grid takes the rest. Capped and centred so it
+   doesn't sprawl on wide monitors. */
 .plan-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr); /* not bare 1fr: let the column shrink below content */
@@ -64,7 +32,7 @@
     align-items: start;
 }
 
-@media (min-width: 1000px) {
+@container app (min-width: 1000px) {
     .plan-layout {
         grid-template-columns: minmax(0, 25rem) minmax(0, 1fr);
         max-width: 1440px;
@@ -72,10 +40,44 @@
     }
 }
 
-/* The week column holds two views of the same week. Below 1000px it is always
-   the phone focus-day (rail + one day); the 7-col grid is hidden and the Week/Day
-   mode is irrelevant. At 1000px+ the mode (set on .weekView[data-mode]) decides
-   which of the two panes shows. */
+/* An ended week's board is inert (see WeekBoard): every control in it is out of
+   play. Only the pointer cue is corrected here — a blanket opacity would fight the
+   row actions, which are hover-revealed and so already at opacity 0, and dragging
+   them up to a dimmed-but-visible state offers MORE than the live board does.
+   How a frozen week should read is a visual question, still open. */
+.plan-layout[inert],
+.plan-layout[inert] * {
+    cursor: default;
+}
+
+/* A frozen record, matching WeekHeader's own ended frame directly above it:
+   same dashed border, paper background and bleed math, so the two boxes'
+   outer edges line up instead of one wide box sitting over two loose panes. */
+.plan-layout[data-ended='true'] {
+    /* same bleed WeekHeader's .head uses: own padding plus the 1px border */
+    --bleed: calc(var(--sp-3) + 1px);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--r-card);
+    background: var(--paper);
+    padding: var(--sp-3);
+    margin: calc(var(--bleed) * -1);
+}
+
+@container app (min-width: 1000px) {
+    .plan-layout[data-ended='true'] {
+        max-width: calc(1440px + var(--bleed) * 2);
+        /* not plain auto: below the cap that resolves to 0, which would leave
+           the horizontal bleed unpulled while the vertical bleed still pulls
+           out, so the padding just eats into the content instead of the frame
+           growing to meet it. Same max() WeekHeader's .head uses. */
+        margin-inline: max(calc(var(--bleed) * -1), calc((100% - 1440px) / 2 - var(--bleed)));
+    }
+}
+
+/* The week column holds two views of the same week. While the app's box is
+   below 1000px it is always the phone focus-day (rail + one day); the 7-col grid
+   is hidden and the Week/Day mode is irrelevant. At 1000px+ the mode (set on
+   .weekView[data-mode]) decides which of the two panes shows. */
 .projectView,
 .weekView {
     min-width: 0;
@@ -83,7 +85,8 @@
 
 .weekGridPane {
     min-width: 0;
-    /* the week grid's column count keys off this pane's width, not the viewport */
+    /* another nested, unnamed container: the week grid's column count keys off
+       this pane's width, which is narrower than the shell's in the 2-pane layout */
     container-type: inline-size;
 }
 
@@ -93,7 +96,7 @@
     gap: var(--sp-3);
 }
 
-@media (max-width: 999px) {
+@container app (max-width: 999px) {
     .weekGridPane {
         display: none;
     }
@@ -105,7 +108,7 @@
     }
 }
 
-@media (min-width: 1000px) {
+@container app (min-width: 1000px) {
     .weekView[data-mode='grid'] .focusPane {
         display: none;
     }
@@ -114,25 +117,14 @@
     }
 }
 
-/* --- phone: dock the tab bar to the bottom, spread tabs to full width --- */
-@media (max-width: 640px) {
-    .tabs {
-        position: fixed;
-        inset: auto 0 0 0; /* pin to bottom edge */
-        z-index: 100; /* keep the bar above scrolled pane content (checkboxes etc.) */
-        border-bottom: none;
-        border-top: 1px solid var(--line);
-        padding: 6px 8px;
-        padding-bottom: max(6px, env(safe-area-inset-bottom)); /* clear iPhone home bar */
-    }
-
-    .tabs button {
-        flex: 1 1 0; /* equal-width tabs */
-        text-align: center;
-    }
-
+/* --- phone: the bar is gone and the tabs float (see TopBar.module.css) ---
+   The pill is inset --sp-3 from the bottom and --tabbar-h tall, so clearing it
+   costs that plus a gap — content must not merely stop at the pill, it has to
+   stop clear of it, since the pill has a shadow and the page shows through
+   around all four sides. */
+@container app (max-width: 640px) {
     .pane {
         padding: 16px;
-        padding-bottom: calc(var(--tabbar-h) + 16px); /* don't hide content behind the fixed bar */
+        padding-bottom: calc(var(--sp-3) + var(--tabbar-h) + var(--sp-4));
     }
 }
