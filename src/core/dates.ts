@@ -212,6 +212,16 @@ export function isValidWeekStart(key: DateKey): boolean {
     return true;
 }
 
+/**
+ * The reachable range of weeks, as week-starts: the first and last Mondays that
+ * isValidWeekStart accepts (its year range is 1000-9999). These are the bounds on
+ * stepping through weeks — 469,596 weeks apart, so they restrict nothing a user
+ * would do, and unlike bounds derived from stored data they do not collapse to a
+ * single week when nothing is stored yet.
+ */
+export const FIRST_WEEK_START: DateKey = '1000-01-06';
+export const LAST_WEEK_START: DateKey = '9999-12-27';
+
 /** Three-letter English month abbreviations, January first. */
 export const MONTHS: readonly string[] = [
     'Jan',

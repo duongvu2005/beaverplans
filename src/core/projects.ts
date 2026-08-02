@@ -20,8 +20,8 @@ import { WEEK } from './types';
  *
  * @param plan the current plan
  * @param projectId the id of the new project, must be a new unique id
- * @returns a new plan with the same weekStart and projects, plus an empty
- *          project (name = '', no tasks) appended to the end
+ * @returns a new plan with an empty project (name = '', no tasks) appended to the
+ *          end of its projects, and everything else about the plan unchanged
  */
 export function addProject(plan: WeekPlan, projectId: string): WeekPlan {
     const newProject: Project = {
@@ -30,7 +30,7 @@ export function addProject(plan: WeekPlan, projectId: string): WeekPlan {
         tasks: [],
     };
     return {
-        weekStart: plan.weekStart,
+        ...plan,
         projects: [...plan.projects, newProject],
     };
 }
@@ -581,6 +581,21 @@ export function isValidProject(project: Project): boolean {
 }
 
 /**
+ * Every node id in a plan.
+ *
+ * @param plan any plan
+ * @returns the id of every project, task, and subtask in the plan, in tree order,
+ *          with duplicates kept — so a caller can test uniqueness by comparing the
+ *          length against a Set of the same ids.
+ */
+export function idsOf(plan: WeekPlan): ReadonlyArray<string> {
+    return plan.projects.flatMap((project) => [
+        project.id,
+        ...project.tasks.flatMap((task) => [task.id, ...task.subtasks.map((s) => s.id)]),
+    ]);
+}
+
+/**
  * Check whether a plan is well-formed.
  *
  * @param plan any plan
@@ -591,10 +606,7 @@ export function isValidProject(project: Project): boolean {
  */
 export function isValidPlan(plan: WeekPlan): boolean {
     const validWeekStart = isValidWeekStart(plan.weekStart);
-    const allIds = plan.projects.flatMap((project) => [
-        project.id,
-        ...project.tasks.flatMap((task) => [task.id, ...task.subtasks.map((s) => s.id)]),
-    ]);
+    const allIds = idsOf(plan);
     const idsUnique = allIds.length === new Set(allIds).size;
     return validWeekStart && idsUnique && plan.projects.every((project) => isValidProject(project));
 }

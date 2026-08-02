@@ -40,11 +40,13 @@ export type Subtask = {
  *   holds an ordered list of tasks; each task is carried out through its
  *   subtasks (or, if it has none, is a single leaf item that is done or not).
  *   Within the week, each subtask is scheduled on weekday `assignedDay` and
- *   recorded as missed on each weekday in `missedDays`.
+ *   recorded as missed on each weekday in `missedDays`. `ended` says the week has
+ *   been closed out and belongs to the archive; absent means it has not.
  *
  * Rep invariant:
  *   - weekStart is a well-formed DateKey (local YYYY-MM-DD) AND is a Monday.
- *   - every id across all projects, tasks, and subtasks is globally unique.
+ *   - every id across this plan's projects, tasks, and subtasks is unique. Weeks
+ *     strengthens this: an id identifies one node across every week, not one per week.
  *   - every project is well-formed: isValidProject -> isValidTask ->
  *     isValidSubtask (e.g. a subtask's weight is 1..3 and its missedDays all fall
  *     strictly before its assignedDay in weekday order; a task carries isDone only
@@ -69,6 +71,68 @@ export type Subtask = {
 export type WeekPlan = {
     readonly weekStart: DateKey;
     readonly projects: ReadonlyArray<Project>;
+    /** whether this week has been ended; absent means it has not */
+    readonly ended?: boolean;
 };
 
+/**
+ * Every week the planner knows about — past, present and future alike, active
+ * weeks and ended ones together, at most one entry per week.
+ *
+ * Abstraction function:
+ *   AF(weeks) = the partial function from a week-start Monday to the plan for that
+ *   week, defined exactly on the weekStarts present in weeks. A week with no entry
+ *   has no work, which is indistinguishable from an entry holding no projects — so
+ *   no such entry is ever stored, and stepping onto an untouched week leaves no
+ *   trace. The entries with ended = true are the archive; the rest are the active
+ *   weeks.
+ *
+ * Rep invariant:
+ *   - strictly increasing by weekStart: weeks[i-1].weekStart < weeks[i].weekStart
+ *     for every adjacent pair. This carries both the ordering and the absence of
+ *     duplicate weekStarts, and DateKey's fixed-width YYYY-MM-DD shape makes the
+ *     string comparison agree with chronological order.
+ *   - no entry is empty: every entry has at least one project.
+ *   - every entry satisfies isValidPlan.
+ *   - every id is unique across ALL entries: a project, task, or subtask id
+ *     identifies one node in the whole collection, not one node per week. Stronger
+ *     than isValidPlan's per-plan uniqueness, and it is what makes combining two
+ *     weeks' work a plain concatenation — two weeks provably share no nodes —
+ *     leaving merge needed only where two independently-created histories collide
+ *     (guest -> cloud).
+ *   - the ended entries come first: no ended entry appears after an active one.
+ *     Equivalently, the archive is a prefix — everything at or before the last
+ *     ended week is settled, everything after it is still open. endWeek maintains
+ *     it by only ever ending the earliest active week, and moveWeek by only ever
+ *     landing a plan after the last ended week. It is what makes a carry's
+ *     destination provably un-ended, and what lets "is this week still mine to
+ *     plan?" be one comparison (isAfterArchive) rather than a search.
+ *   checkRep = isValidWeeks (see weeks.ts), which also validates untrusted JSON on
+ *   the storage read path.
+ *
+ * Ended weeks are frozen. Once ended, an entry is never edited, never relabelled
+ * and never un-ended: putWeek refuses to write over one, moveWeek refuses one as
+ * either endpoint, and there is no unlock. removeWeek may still discard one whole —
+ * discarding is not editing. So an ended entry is the record of what that week
+ * actually looked like, and carryForward copies out of it rather than emptying it.
+ *
+ * One further invariant the producers maintain, which the rep cannot state because
+ * it needs the clock: every ended week has weekStart no later than the current
+ * week. endWeek is the only way to create an ended entry and requires it; nothing
+ * can move or edit an entry afterward; and the current week only advances, so once
+ * true of an entry it stays true. It is asserted in tests rather than checked in
+ * isValidWeeks, so that a skewed device clock cannot reject a valid stored
+ * collection on the storage read path.
+ *
+ * Safety from rep exposure:
+ *   - a ReadonlyArray of deeply immutable WeekPlans, so the whole rep is immutable
+ *     and observers may hand back references into it safely.
+ *   - producers return a new array and share unchanged entries by reference, which
+ *     is safe for the same reason it is safe within a WeekPlan.
+ *   - like WeekPlan, this is a public structural type rather than an encapsulated
+ *     rep: the RI is one the producers maintain and the tests assert.
+ */
+export type Weeks = ReadonlyArray<WeekPlan>;
+
+/** @deprecated use Weeks. Remaining consumers migrate file by file. */
 export type Archive = ReadonlyArray<WeekPlan>;

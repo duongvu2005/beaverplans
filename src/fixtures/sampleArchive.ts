@@ -1,4 +1,4 @@
-import type { Archive } from '../core/types';
+import type { Weeks } from '../core/types';
 
 /** Hand-built sample archive for rendering the archive pane and stats views.
  *  Six ended weeks, deliberately varied so the list and its derived numbers have
@@ -7,17 +7,18 @@ import type { Archive } from '../core/types';
  *  1..3, leaf tasks alongside tasks with subtasks, and projects that appear in
  *  some weeks but not others.
  *
- *  Entries are stored oldest-last but in no meaningful order — the archive's
- *  order is unspecified, and the pane sorts with archiveNewestFirst.
+ *  Every entry carries ended: true — these are archived weeks. Entries are
+ *  listed newest-first here; putWeek sorts them on the way into state.
  *
  *  The four 2026 weeks run up to (but do not include) sampleWeek's 2026-07-20
  *  anchor. The two Dec 2025 weeks sit across a gap, so the list exercises its
  *  year divider the way a real archive would: a term's worth of use, a break,
  *  then a return.
  */
-export const sampleArchive: Archive = [
+export const sampleArchive: Weeks = [
     {
         weekStart: '2026-07-13', // a Monday — a strong week
+        ended: true,
         projects: [
             {
                 id: 'a1p1',
@@ -85,6 +86,7 @@ export const sampleArchive: Archive = [
     },
     {
         weekStart: '2026-07-06', // a Monday — a middling week, work slipping
+        ended: true,
         projects: [
             {
                 id: 'a2p1',
@@ -158,6 +160,7 @@ export const sampleArchive: Archive = [
     },
     {
         weekStart: '2026-06-29', // a Monday — a bad week, almost nothing landed
+        ended: true,
         projects: [
             {
                 id: 'a3p1',
@@ -216,6 +219,7 @@ export const sampleArchive: Archive = [
     },
     {
         weekStart: '2026-06-22', // a Monday — small and perfect, everything done
+        ended: true,
         projects: [
             {
                 id: 'a4p1',
@@ -248,6 +252,7 @@ export const sampleArchive: Archive = [
     },
     {
         weekStart: '2025-12-22', // a Monday — winter break, barely used
+        ended: true,
         projects: [
             {
                 id: 'a5p1',
@@ -279,6 +284,7 @@ export const sampleArchive: Archive = [
     },
     {
         weekStart: '2025-12-15', // a Monday — finals, the busiest week here
+        ended: true,
         projects: [
             {
                 id: 'a6p1',
