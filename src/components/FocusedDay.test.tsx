@@ -48,6 +48,7 @@ describe('FocusedDay', () => {
                 isToday={false}
                 weekStart={weekStart}
                 today={today}
+                ended={false}
                 onToggleSubtask={() => {}}
                 onEditSubtask={() => {}}
                 onRequestMove={() => {}}
@@ -67,6 +68,7 @@ describe('FocusedDay', () => {
                 isToday={true}
                 weekStart={weekStart}
                 today={today}
+                ended={false}
                 onToggleSubtask={() => {}}
                 onEditSubtask={() => {}}
                 onRequestMove={() => {}}
@@ -84,6 +86,7 @@ describe('FocusedDay', () => {
                 isToday={false}
                 weekStart={weekStart}
                 today={today}
+                ended={false}
                 onToggleSubtask={() => {}}
                 onEditSubtask={() => {}}
                 onRequestMove={() => {}}
@@ -111,6 +114,7 @@ describe('FocusedDay', () => {
                 isToday={false}
                 weekStart={weekStart}
                 today={today}
+                ended={false}
                 onToggleSubtask={() => {}}
                 onEditSubtask={() => {}}
                 onRequestMove={() => {}}
@@ -137,6 +141,7 @@ describe('FocusedDay', () => {
                 isToday={false}
                 weekStart={weekStart}
                 today={today}
+                ended={false}
                 onToggleSubtask={() => {}}
                 onEditSubtask={() => {}}
                 onRequestMove={() => {}}

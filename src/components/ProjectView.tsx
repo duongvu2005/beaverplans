@@ -4,6 +4,8 @@ import styles from './ProjectView.module.css';
 
 type ProjectViewProps = {
     projects: ReadonlyArray<Project>;
+    /** whether this week's board is frozen to edits (ended, or behind the archive bound) */
+    readOnly?: boolean;
     onReorderProject: (projectId: string, beforeProjectId: string | null) => void;
     onReorderTask: (taskId: string, destProjectId: string, beforeTaskId: string | null) => void;
     onEditTask: (taskId: string) => void;
@@ -17,9 +19,9 @@ type ProjectViewProps = {
     onRemoveTask: (taskId: string) => void;
 };
 
-export function ProjectView(props: ProjectViewProps) {
+export function ProjectView({ readOnly = false, ...props }: ProjectViewProps) {
     return (
-        <div className="projectView">
+        <div className="projectView" inert={readOnly}>
             <div className={styles.head}>
                 <span className={styles.eyebrow}>Projects</span>
             </div>

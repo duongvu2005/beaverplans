@@ -9,6 +9,10 @@ type WeekGridProps = {
     byDay: ReadonlyArray<DayProgress>;
     weekStart: DateKey;
     today: DateKey;
+    /** whether this week has been ended, and so is a frozen record */
+    ended: boolean;
+    /** whether this week's board is frozen to edits (ended, or behind the archive bound) */
+    readOnly?: boolean;
     onFocusDay: (day: DayOfWeek) => void;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;
@@ -21,6 +25,8 @@ export function WeekGrid({
     byDay,
     weekStart,
     today,
+    ended,
+    readOnly = false,
     onFocusDay,
     onToggleSubtask,
     onEditSubtask,
@@ -36,6 +42,8 @@ export function WeekGrid({
                     progress={byDay[i]}
                     weekStart={weekStart}
                     today={today}
+                    ended={ended}
+                    readOnly={readOnly}
                     onFocusDay={onFocusDay}
                     onToggleSubtask={onToggleSubtask}
                     onEditSubtask={onEditSubtask}

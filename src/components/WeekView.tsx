@@ -24,6 +24,10 @@ type WeekViewProps = {
     projects: ReadonlyArray<Project>;
     weekStart: string;
     today: string;
+    /** whether this week has been ended, and so is a frozen record */
+    ended: boolean;
+    /** whether this week's board is frozen to edits (ended, or behind the archive bound) */
+    readOnly?: boolean;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;
     onRequestMove: (subtaskId: string) => void;
@@ -34,6 +38,8 @@ export function WeekView({
     projects,
     weekStart,
     today,
+    ended,
+    readOnly = false,
     onToggleSubtask,
     onEditSubtask,
     onRequestMove,
@@ -93,6 +99,8 @@ export function WeekView({
                     byDay={byDay}
                     weekStart={weekStart}
                     today={today}
+                    ended={ended}
+                    readOnly={readOnly}
                     onFocusDay={focusDay}
                     onToggleSubtask={onToggleSubtask}
                     onEditSubtask={onEditSubtask}
@@ -114,6 +122,8 @@ export function WeekView({
                     isToday={selectedDay === todayDay}
                     weekStart={weekStart}
                     today={today}
+                    ended={ended}
+                    readOnly={readOnly}
                     onToggleSubtask={onToggleSubtask}
                     onEditSubtask={onEditSubtask}
                     onRequestMove={onRequestMove}

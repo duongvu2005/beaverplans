@@ -10,10 +10,14 @@ describe('DayCell', () => {
      * Testing strategy
      *     partition on isMissed: true (ghost: checkbox disabled + unchecked,
      *         "missed" tag + Clear button -> onClearMissed) | false
-     *     partition on isOverdue, only reachable when isMissed is false: true
-     *         (past assigned day, current week, not done) | false because done
-     *         | false because the assigned day isn't past | false because the
-     *         week isn't the current one
+     *     partition on ended, only reachable when isMissed is false: true and
+     *         not done (reads as missed, but with nothing recorded: no "now on
+     *         <Day>" note, no Clear button, checkbox disabled) | true and done
+     *         | false
+     *     partition on isOverdue, only reachable when isMissed and ended are
+     *         false: true (past assigned day, current week, not done) | false
+     *         because done | false because the assigned day isn't past | false
+     *         because the week isn't the current one
      *     partition on subtask.isDone, only reachable when isMissed is false:
      *         true | false -- drives the checkbox's checked state
      *     partition on compact: true (short labels, icon-only action buttons)
@@ -55,6 +59,7 @@ describe('DayCell', () => {
             isMissed: false,
             weekStart,
             today,
+            ended: false,
             onToggleSubtask: noop,
             onEditSubtask: noop,
             onRequestMove: noop,
@@ -62,6 +67,44 @@ describe('DayCell', () => {
             ...overrides,
         };
     }
+
+    it('covers ended true, not done: reads as missed, the same one concept', () => {
+        render(<DayCell {...baseProps({ ended: true })} />);
+        expect(screen.getByText('missed')).toBeInTheDocument();
+        expect(screen.getByRole('checkbox')).toBeDisabled();
+        expect(screen.getByRole('checkbox')).not.toBeChecked();
+    });
+
+    it('covers ended true, not done, not compact: no "now on" note and no Clear', () => {
+        // nothing was RECORDED as missed, so there is nowhere for it to have moved
+        // to and nothing to clear — the parts of a real miss that would not be true
+        render(<DayCell {...baseProps({ ended: true, compact: false })} />);
+        expect(screen.getByText('missed')).toBeInTheDocument();
+        expect(screen.queryByText(/now on/)).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Clear this missed mark' })).toBeNull();
+    });
+
+    it('covers ended true, not done: no overdue tag — a closed week is settled', () => {
+        // the assigned day is past within the current week, which is exactly the
+        // case that would be overdue on an open week
+        render(<DayCell {...baseProps({ ended: true })} />);
+        expect(screen.queryByText(/overdue/)).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Move to another day' })).toBeNull();
+    });
+
+    it('covers ended true, done: stays done, reads as done, and cannot be un-ticked', () => {
+        render(
+            <DayCell
+                {...baseProps({
+                    ended: true,
+                    entry: makeEntry({ subtask: makeSubtask({ isDone: true }) }),
+                })}
+            />,
+        );
+        expect(screen.queryByText('missed')).toBeNull();
+        expect(screen.getByRole('checkbox')).toBeChecked();
+        expect(screen.getByRole('checkbox')).toBeDisabled();
+    });
 
     it('covers isOverdue true: past assigned day, current week, not done -> overdue tag + Move button', () => {
         render(<DayCell {...baseProps({ entry: makeEntry({ subtask: makeSubtask({ assignedDay: 'mon' }) }) })} />);

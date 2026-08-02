@@ -45,6 +45,7 @@ describe('DayColumn', () => {
             weekStart: '2026-07-20',
             today: '2026-07-22',
             onFocusDay: noop,
+            ended: false,
             onToggleSubtask: noop,
             onEditSubtask: noop,
             onRequestMove: noop,

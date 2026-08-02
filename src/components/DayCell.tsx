@@ -22,6 +22,8 @@ type DayCellProps = {
     isMissed: boolean;
     weekStart: DateKey;
     today: DateKey;
+    /** whether this week has been ended, and so is a frozen record */
+    ended: boolean;
     compact?: boolean;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;
@@ -35,6 +37,7 @@ export function DayCell({
     isMissed,
     weekStart,
     today,
+    ended,
     compact = false,
     onToggleSubtask,
     onEditSubtask,
@@ -42,9 +45,18 @@ export function DayCell({
     onClearMissed,
 }: DayCellProps) {
     const { subtask, taskName, projectName } = entry;
-    // overdue = the live cell (not a missed ghost) sitting on a past day, not done
+    // A cell reads as missed for two reasons that mean the same thing to the user —
+    // a day that went by without the work: the subtask was moved off this day, or
+    // the week was closed out with it still not done. Only the first is RECORDED,
+    // in missedDays, and only it has somewhere to point at ("now on Wed") or
+    // anything to clear. The second is presentation only: writing it into
+    // missedDays would record a miss on the subtask's own assigned day, which the
+    // rep invariant forbids and which progressByDay would double-count.
+    const showsMissed = isMissed || (ended && !subtask.isDone);
+    // overdue = the live cell sitting on a past day, not done, on a week still
+    // open. An ended week is settled, so there is nothing left to reschedule.
     const isOverdue =
-        !isMissed &&
+        !showsMissed &&
         !subtask.isDone &&
         weekStatusOf(weekStart, today) === 'current' &&
         dayStatusOf(subtask.assignedDay, weekStart, today) === 'past';
@@ -52,7 +64,7 @@ export function DayCell({
         styles.cell,
         compact && styles.compact,
         subtask.isDone && !isMissed && styles.done,
-        isMissed && styles.missed,
+        showsMissed && styles.missed,
         isOverdue && styles.overdue,
     ]
         .filter(Boolean)
@@ -62,9 +74,9 @@ export function DayCell({
         <li className={cellClass}>
             <input
                 type="checkbox"
-                className={isMissed ? `${check.box} ${styles.missedCheck}` : check.box}
+                className={showsMissed ? `${check.box} ${styles.missedCheck}` : check.box}
                 checked={subtask.isDone && !isMissed}
-                disabled={isMissed}
+                disabled={isMissed || ended}
                 onChange={() => onToggleSubtask(subtask.id)}
             />
             <div className={styles.text} onClick={() => onEditSubtask(subtask.id)}>
@@ -84,24 +96,26 @@ export function DayCell({
                 <div className={styles.task}>{taskName}</div>
                 {subtask.description && <span className={styles.desc}>{subtask.description}</span>}
 
-                {isMissed ? (
+                {showsMissed ? (
                     <div className={styles.tagRow}>
                         <span className={`${styles.cellTag} ${styles.missTag}`}>
-                            missed{!compact && ` · now on ${SHORT[subtask.assignedDay]}`}
+                            missed{!compact && isMissed && ` · now on ${SHORT[subtask.assignedDay]}`}
                         </span>
-                        <button
-                            type="button"
-                            className={compact ? styles.clearBtn : styles.clearPill}
-                            aria-label="Clear this missed mark"
-                            title="Clear missed"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onClearMissed(subtask.id, day);
-                            }}
-                        >
-                            <CloseIcon />
-                            {!compact && <span>Clear</span>}
-                        </button>
+                        {isMissed && (
+                            <button
+                                type="button"
+                                className={compact ? styles.clearBtn : styles.clearPill}
+                                aria-label="Clear this missed mark"
+                                title="Clear missed"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClearMissed(subtask.id, day);
+                                }}
+                            >
+                                <CloseIcon />
+                                {!compact && <span>Clear</span>}
+                            </button>
+                        )}
                     </div>
                 ) : isOverdue ? (
                     <div className={styles.tagRow}>

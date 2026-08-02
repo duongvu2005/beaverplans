@@ -19,6 +19,10 @@ type FocusedDayProps = {
     isToday: boolean;
     weekStart: DateKey;
     today: DateKey;
+    /** whether this week has been ended, and so is a frozen record */
+    ended: boolean;
+    /** whether this week's board is frozen to edits (ended, or behind the archive bound) */
+    readOnly?: boolean;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;
     onRequestMove: (subtaskId: string) => void;
@@ -31,6 +35,8 @@ export function FocusedDay({
     isToday,
     weekStart,
     today,
+    ended,
+    readOnly = false,
     onToggleSubtask,
     onEditSubtask,
     onRequestMove,
@@ -52,7 +58,7 @@ export function FocusedDay({
             {items.length === 0 ? (
                 <p className={styles.empty}>No tasks on this day.</p>
             ) : (
-                <ul className={styles.list}>
+                <ul className={styles.list} inert={readOnly}>
                     {items.map((entry) => (
                         <DayCell
                             key={entry.subtask.id}
@@ -61,6 +67,7 @@ export function FocusedDay({
                             isMissed={entry.subtask.assignedDay !== day}
                             weekStart={weekStart}
                             today={today}
+                            ended={ended}
                             onToggleSubtask={onToggleSubtask}
                             onEditSubtask={onEditSubtask}
                             onRequestMove={onRequestMove}

@@ -10,6 +10,10 @@ type DayColumnProps = {
     progress: DayProgress | undefined;
     weekStart: DateKey;
     today: DateKey;
+    /** whether this week has been ended, and so is a frozen record */
+    ended: boolean;
+    /** whether this week's board is frozen to edits (ended, or behind the archive bound) */
+    readOnly?: boolean;
     onFocusDay: (day: DayOfWeek) => void;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;
@@ -22,6 +26,8 @@ export function DayColumn({
     progress,
     weekStart,
     today,
+    ended,
+    readOnly = false,
     onFocusDay,
     onToggleSubtask,
     onEditSubtask,
@@ -39,7 +45,10 @@ export function DayColumn({
                 <span className={styles.dayName}>{daySchedule.day}</span>
                 <PointsStat done={progress?.done ?? 0} total={progress?.assigned ?? 0} showPoint={true} />
             </button>
-            <ul className={styles.list}>
+            {/* inert on the list only, not the day button above: viewing which
+                day has what is navigation, not an edit, and should still work
+                on a frozen week. */}
+            <ul className={styles.list} inert={readOnly}>
                 {daySchedule.items.map((entry) => (
                     <DayCell
                         key={entry.subtask.id}
@@ -48,6 +57,7 @@ export function DayColumn({
                         isMissed={daySchedule.day !== entry.subtask.assignedDay}
                         weekStart={weekStart}
                         today={today}
+                        ended={ended}
                         compact={true}
                         onToggleSubtask={onToggleSubtask}
                         onEditSubtask={onEditSubtask}
