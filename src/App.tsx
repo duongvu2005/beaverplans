@@ -15,10 +15,8 @@ import {
     earliestActiveWeek,
     endWeek,
     endedWeeks,
-    isAfterArchive,
     isEmptyWeek,
     isEnded,
-    lastEndedWeek,
     moveWeek,
     putWeek,
     weekAt,
@@ -45,39 +43,30 @@ export default function App() {
     const [view, setView] = useState<View>('plan');
     const [weeks, setWeeks] = useState<Weeks>(seedWeeks);
     const currentWeek = weekStartOf(new Date());
-    const [viewing, setViewing] = useState<DateKey>(() =>
-        earliestActiveWeek(seedWeeks, currentWeek),
-    );
+    // Always the literal current week, whether it holds work, is empty, or has
+    // already been ended — weeks may interleave now, so there is no archive
+    // boundary to land in front of instead. If older work is still open, the
+    // header note below points at it rather than the app silently jumping there.
+    const [viewing, setViewing] = useState<DateKey>(currentWeek);
     const [confirmingEndWeek, setConfirmingEndWeek] = useState(false);
 
     const plan = weekAt(weeks, viewing);
     const overall = overallProgress(plan.projects);
     const hasUnfinished = overall.done < overall.total;
     const archive = endedWeeks(weeks);
-    // Any week still open may have its plan relabelled, past ones included; only a
-    // frozen week and an empty one are dead. Where it may LAND is moveWeek's
-    // business — see moveBlockReason below.
     const ended = isEnded(plan);
     const empty = isEmptyWeek(plan);
     const canMove = !empty && !ended;
     const canEnd = canEndWeek(weeks, viewing, currentWeek);
-    // TEMPORARY (2026-08-01). A week at or before the last ended one cannot be
-    // planned, because putWeek would store an active entry before an ended one
-    // and break Weeks' ended-come-first clause. weekAt hands back a blank,
-    // un-ended plan for any week with no entry, so without this the board offers
-    // a fully live board for every gap inside the archive and every week before
-    // it — and an edit there produces a collection isValidWeeks rejects, which
-    // is also the validator for stored JSON.
-    //
-    // This is a UI guard over a domain hole, which is backwards, and the
-    // restriction it imposes is real: you cannot record a week you forgot to
-    // plan at the time. Both go away when the ended-come-first clause is
-    // dropped; see the note on isValidWeeks.
-    const plannable = isAfterArchive(weeks, viewing);
-    const archiveBound = lastEndedWeek(weeks);
-    // The week the queue is waiting on. Naming it is what lets the header say
-    // WHY End week is dead somewhere else, instead of just greying out.
+    // The oldest week still waiting to be ended — no longer a gate on ending
+    // (any open week may be ended on its own), just what the header note below
+    // points you at when it sits behind the week on screen.
     const queueHead = earliestActiveWeek(weeks, currentWeek);
+    // Carrying forward lands on the following week; if that week is already
+    // ended (frozen), carryForward is a no-op, so the option is hidden rather
+    // than offered and silently doing nothing.
+    const carryDestination = nextWeekStart(viewing);
+    const carryBlocked = isEnded(weekAt(weeks, carryDestination));
 
     // Prose for whichever state the viewed week is in. Absent on an ordinary live
     // week — there the controls speak for themselves and a line of explanation
@@ -95,23 +84,12 @@ export default function App() {
         <>
             This week is over. <b>End it</b> to file it in your archive and start the next one.
         </>
-    ) : !plannable ? (
+    ) : queueHead < viewing ? (
         <>
-            This week sits behind your archive. Everything up to{' '}
-            {archiveBound === undefined ? (
-                ''
-            ) : (
-                <WeekRef weekStart={archiveBound} onView={setViewing} />
-            )}{' '}
-            is settled, so it can be read but not planned.
+            <WeekRef weekStart={queueHead} onView={setViewing} /> is still open.
         </>
     ) : empty ? (
         <>Nothing planned yet — add a project to start the week.</>
-    ) : !canEnd && queueHead < viewing ? (
-        <>
-            End <WeekRef weekStart={queueHead} onView={setViewing} /> first — weeks are archived
-            oldest first.
-        </>
     ) : undefined;
 
     // A week named on another tab. Setting the week without the tab would leave
@@ -126,13 +104,12 @@ export default function App() {
         setWeeks((current) => putWeek(current, updater(weekAt(current, viewing))));
     }
 
-    // The two reasons moveWeek can refuse an armed destination that are
-    // reachable from the UI — arming only starts when canMove is true, so the
-    // source itself is never the problem. Shown in place of the destination
-    // note so a blocked target explains itself instead of Move silently
-    // declining to commit.
+    // The one reason moveWeek can refuse an armed destination that is reachable
+    // from the UI — arming only starts when canMove is true, so the source
+    // itself is never the problem. Shown in place of the destination note so a
+    // blocked target explains itself instead of Move silently declining to
+    // commit.
     function moveBlockReason(destination: DateKey): string | undefined {
-        if (!isAfterArchive(weeks, destination)) return 'This week sits behind your archive.';
         if (!isEmptyWeek(weekAt(weeks, destination))) return 'This week already has work in it.';
         return undefined;
     }
@@ -166,12 +143,13 @@ export default function App() {
     // it, which is why the two buttons differ by one call and not by a flag deep in
     // the producer. The default destination is the following week.
     function handleConfirmEndWeek(keepUnfinished: boolean) {
-        const next = nextWeekStart(viewing);
         setWeeks((current) => {
             const ended = endWeek(current, viewing, currentWeek);
-            return keepUnfinished ? carryForward(ended, viewing, next, newId) : ended;
+            return keepUnfinished
+                ? carryForward(ended, viewing, carryDestination, newId)
+                : ended;
         });
-        setViewing(next);
+        setViewing(carryDestination);
         setConfirmingEndWeek(false);
     }
 
@@ -196,7 +174,7 @@ export default function App() {
                             onMoveWork={handleMoveWork}
                             onEndWeek={handleEndWeek}
                         />
-                        <WeekBoard plan={plan} onChange={handlePlanChange} readOnly={!plannable} />
+                        <WeekBoard plan={plan} onChange={handlePlanChange} />
                     </>
                 )}
                 {view === 'stats' && <StatsBoard archive={archive} onOpenWeek={handleOpenWeek} />}
@@ -215,15 +193,15 @@ export default function App() {
                             onAction: () => handleConfirmEndWeek(false),
                             tone: 'danger',
                         },
-                        {
-                            label: 'Carry forward',
-                            onAction: () => handleConfirmEndWeek(true),
-                        },
+                        ...(carryBlocked
+                            ? []
+                            : [{ label: 'Carry forward', onAction: () => handleConfirmEndWeek(true) }]),
                     ]}
                 >
                     <p className={shell.text}>
-                        This records the week in your archive. Unfinished tasks can carry forward
-                        into next week, or be cleared along with everything else.
+                        {carryBlocked
+                            ? "This records the week in your archive. Next week is already ended, so unfinished tasks will be cleared along with everything else."
+                            : 'This records the week in your archive. Unfinished tasks can carry forward into next week, or be cleared along with everything else.'}
                     </p>
                 </ConfirmDialog>
             )}

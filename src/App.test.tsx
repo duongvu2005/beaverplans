@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
@@ -11,8 +11,24 @@ import type { Weeks } from './core/types';
 // The app's state is one collection of weeks (see plan/week-model.md). These
 // cover the seeding and the derivations App does on it, plus a render smoke
 // check; the operations themselves are tested in core/weeks.test.ts.
+//
+// "Today" is pinned to 2026-07-29 (a Wednesday, week-start 2026-07-27) — one
+// week after sampleWeek's own week (2026-07-20). That gap is deliberate: App
+// now always lands on the literal current week (see plan/fast-track-log.md),
+// so pinning it a week past the fixtures' only active week is what exercises
+// the landing-week nudge (queueHead < viewing) instead of landing on that week
+// by coincidence.
 describe('App under the weeks model', () => {
     const seed: Weeks = [sampleWeek, ...sampleArchive].reduce<Weeks>(putWeek, []);
+
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-07-29T12:00:00'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
 
     it('seeding the fixtures through putWeek sorts them and satisfies the rep invariant', () => {
         expect(isValidWeeks(seed)).toBe(true);
@@ -39,12 +55,12 @@ describe('App under the weeks model', () => {
         expect(endedWeeks(seed)).not.toContain(sampleWeek);
     });
 
-    it('the landing week is the oldest week still waiting to be ended', () => {
-        // Every fixture week but sampleWeek is ended, so once its week is not in
-        // the future it is the one the app opens on, whatever the date.
+    // earliestActiveWeek itself is exercised thoroughly in core/weeks.test.ts.
+    // This just confirms the fixture keeps producing what the header note
+    // below depends on — App no longer uses it to pick the landing week, only
+    // to name the week the nudge points at.
+    it('earliestActiveWeek finds the earliest open week in the fixtures', () => {
         expect(earliestActiveWeek(seed, '2026-08-31')).toBe('2026-07-20');
-        expect(earliestActiveWeek(seed, '2026-07-20')).toBe('2026-07-20');
-        // Before that week exists to be worked on, the app opens on the current week.
         expect(earliestActiveWeek(seed, '2026-07-13')).toBe('2026-07-13');
     });
 
@@ -54,23 +70,37 @@ describe('App under the weeks model', () => {
         expect(screen.getByRole('button', { name: 'plan' })).toBeTruthy();
     });
 
-    // The landing week (2026-07-20) is active and has work, so both actions are
-    // live on it: it is the head of the end-week queue, and being past does not
-    // stop its plan being pushed forward. Both stay true however long after that
-    // date the suite runs, so neither depends on the clock beyond "not before
-    // July 2026".
-    it('End week and Move are both live on the landing week', () => {
+    // The landing week is always the current week now (2026-07-27, per the
+    // pinned clock), untouched by the fixtures and so empty. End week and Move
+    // are dead on an empty week, and the note points at sampleWeek's week,
+    // which is still open one week behind it.
+    it('lands on the current week; when empty, the note points at the earlier open week', () => {
         render(<App />);
+        expect(screen.getByRole('button', { name: /^End week/ }).hasAttribute('disabled')).toBe(
+            true,
+        );
+        const move = screen.getByRole('button', { name: /work/i });
+        expect(move.hasAttribute('disabled')).toBe(true);
+        expect(screen.getByRole('button', { name: /^Go to Jul 20/ })).toBeTruthy();
+        expect(screen.getByText(/is still open/)).toBeTruthy();
+    });
+
+    it('stepping back onto the earlier open week makes End week and Move live', async () => {
+        const user = userEvent.setup();
+        render(<App />);
+        await user.click(screen.getByLabelText('Previous week'));
+
         expect(screen.getByRole('button', { name: /^End week/ }).hasAttribute('disabled')).toBe(
             false,
         );
-        const move = screen.getByRole('button', { name: /Move this week's work/ });
+        const move = screen.getByRole('button', { name: /work/i });
         expect(move.hasAttribute('disabled')).toBe(false);
     });
 
     it('an ended week offers no editing controls, but the day picker still works', async () => {
         const user = userEvent.setup();
         render(<App />);
+        await user.click(screen.getByLabelText('Previous week')); // onto sampleWeek's week
         await user.click(screen.getByRole('button', { name: /^End week/ }));
         await user.click(screen.getByRole('button', { name: 'Clear all' }));
         await user.click(screen.getByLabelText('Previous week')); // back onto it
@@ -87,27 +117,28 @@ describe('App under the weeks model', () => {
         expect(screen.getByText(/Focusing/)).toBeTruthy();
     });
 
-    // The fixtures leave a six-month hole between 2025-12-22 and 2026-06-22, and
-    // weekAt hands back a blank un-ended plan for every week in it. Those weeks
-    // used to render a fully live board, and one edit there stored an ACTIVE
-    // entry before an ended one — a collection isValidWeeks rejects, and it is
-    // also the validator for stored JSON. The guard is UI-side and temporary;
-    // see the note on isValidWeeks.
-    it('a free week inside the archive is readable but not plannable', async () => {
+    // Weeks may now interleave (plan/fast-track-log.md): a free week that sits
+    // before an ended one is no longer frozen. This is the direct opposite of
+    // what this test used to assert.
+    it('a free week inside the archive is editable, not frozen (weeks interleave)', async () => {
         const user = userEvent.setup();
         render(<App />);
 
-        // 2026-07-20 is the landing week; step back past the whole archive into
-        // the hole. Eight steps lands on 2026-05-25, which has no entry and sits
-        // before the last ended week (2026-07-13).
-        for (let i = 0; i < 8; i++) {
+        // Landing is 2026-07-27; step back nine times into the fixtures' hole.
+        // 2026-05-25 has no entry and sits before the last ended week
+        // (2026-07-13).
+        for (let i = 0; i < 9; i++) {
             await user.click(screen.getByLabelText('Previous week'));
         }
         expect(screen.getByText('May 25 – May 31')).toBeTruthy();
 
         const projects = document.querySelector('.projectView');
-        expect(projects?.hasAttribute('inert')).toBe(true);
-        expect(screen.getByText(/sits behind your archive/)).toBeTruthy();
+        expect(projects?.hasAttribute('inert')).toBe(false);
+        expect(screen.queryByText(/sits behind your archive/)).toBeNull();
+        expect(screen.getByText(/Nothing planned yet/)).toBeTruthy();
+
+        await user.click(screen.getByRole('button', { name: '+ add project' }));
+        expect(screen.getByPlaceholderText('Project name…')).toBeTruthy();
     });
 
     // A week named on another tab is a link to it. Setting the week without also
@@ -132,12 +163,13 @@ describe('App under the weeks model', () => {
         const user = userEvent.setup();
         render(<App />);
 
+        await user.click(screen.getByLabelText('Previous week')); // onto sampleWeek's week
         await user.click(screen.getByRole('button', { name: /^End week/ }));
         await user.click(screen.getByRole('button', { name: 'Carry forward' }));
 
-        // The view followed the carry onto the following week, which now holds the
-        // work that was left over — and is itself the earliest active week, so it
-        // is the next one up to be ended.
+        // The view followed the carry onto the following week (2026-07-27,
+        // which is also the current week), which now holds the work that was
+        // left over.
         expect(screen.getByRole('button', { name: /^End week/ }).hasAttribute('disabled')).toBe(
             false,
         );

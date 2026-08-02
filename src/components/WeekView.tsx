@@ -26,7 +26,7 @@ type WeekViewProps = {
     today: string;
     /** whether this week has been ended, and so is a frozen record */
     ended: boolean;
-    /** whether this week's board is frozen to edits (ended, or behind the archive bound) */
+    /** whether this week's board is frozen to edits (the week has ended) */
     readOnly?: boolean;
     onToggleSubtask: (subtaskId: string) => void;
     onEditSubtask: (subtaskId: string) => void;

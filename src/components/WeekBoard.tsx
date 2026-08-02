@@ -61,17 +61,10 @@ function findSubtask(plan: WeekPlan, subtaskId: string) {
 type WeekBoardProps = {
     plan: WeekPlan;
     onChange: (updater: (current: WeekPlan) => WeekPlan) => void;
-    /**
-     * Whether this week may be planned at all. Wider than isEnded(plan): a week
-     * with no entry that sits at or before the last ended one is not frozen —
-     * it is unreachable, because storing an active entry there would put an
-     * active week before an ended one. Only App knows the archive bound, so the
-     * answer is passed in rather than derived here.
-     */
-    readOnly: boolean;
 };
 
-export function WeekBoard({ plan, onChange, readOnly }: WeekBoardProps) {
+export function WeekBoard({ plan, onChange }: WeekBoardProps) {
+    const readOnly = isEnded(plan);
     const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
     const [editingDeadlineId, setEditingDeadlineId] = useState<string | null>(null);
     const [movingSubtaskId, setMovingSubtaskId] = useState<string | null>(null);
@@ -242,12 +235,9 @@ export function WeekBoard({ plan, onChange, readOnly }: WeekBoardProps) {
                 `inert` themselves rather than one blanket wrapper here, so
                 that navigation can sit outside it.
 
-                For an ended week the edits were already no-ops (putWeek refuses
-                an ended entry) and this only stops them being offered. For a
-                free week behind the archive bound it is load-bearing: putWeek
-                would happily store an active entry there and break the
-                collection's ended-come-first invariant. See App. */}
-            <div className="plan-layout" data-ended={isEnded(plan) || undefined}>
+                The edits were already no-ops for an ended plan (putWeek refuses
+                an ended entry) — this only stops them being offered. */}
+            <div className="plan-layout" data-ended={readOnly || undefined}>
                 <ProjectView
                     projects={plan.projects}
                     readOnly={readOnly}
@@ -267,7 +257,7 @@ export function WeekBoard({ plan, onChange, readOnly }: WeekBoardProps) {
                     projects={plan.projects}
                     weekStart={plan.weekStart}
                     today={today}
-                    ended={isEnded(plan)}
+                    ended={readOnly}
                     readOnly={readOnly}
                     onToggleSubtask={handleToggleSubtask}
                     onEditSubtask={handleEditSubtask}

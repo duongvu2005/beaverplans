@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
     canEndWeek,
     carryForward,
-    isAfterArchive,
-    lastEndedWeek,
     earliestActiveWeek,
     endWeek,
     endedWeeks,
@@ -246,6 +244,11 @@ describe('earliestActiveWeek', () => {
     it('an active current week is itself the answer', () => {
         expect(earliestActiveWeek([week(JUL20, 'a')], JUL20)).toBe(JUL20);
     });
+
+    it('finds an active week even when it sits before an ended one (interleaved)', () => {
+        const weeks: Weeks = [week(JUL06, 'a'), week(JUL13, 'b', true)];
+        expect(earliestActiveWeek(weeks, JUL20)).toBe(JUL06);
+    });
 });
 
 describe('moveWeek', () => {
@@ -283,11 +286,15 @@ describe('moveWeek', () => {
         expect(isValidWeeks(weeks)).toBe(true);
     });
 
-    it('destination at or before the last ended week: unchanged', () => {
+    it('a free week before an ended one is now a legal destination (interleaving)', () => {
         const before: Weeks = [week(JUL13, 'a', true), week(JUL27, 'b')];
-        // JUN29 is free, but it is behind the archive
-        expect(moveWeek(before, JUL27, JUN29)).toEqual(before);
-        // and so is the last ended week itself, twice over — it is also occupied
+        const weeks = moveWeek(before, JUL27, JUN29);
+        expect(starts(weeks)).toEqual([JUN29, JUL13]);
+        expect(isValidWeeks(weeks)).toBe(true);
+    });
+
+    it('the ended week itself is still occupied, so still refused', () => {
+        const before: Weeks = [week(JUL13, 'a', true), week(JUL27, 'b')];
         expect(moveWeek(before, JUL27, JUL13)).toEqual(before);
     });
 
@@ -333,26 +340,6 @@ describe('moveWeek', () => {
     });
 });
 
-describe('lastEndedWeek / isAfterArchive', () => {
-    it('nothing ended: no bound, and every week is still open', () => {
-        const weeks: Weeks = [week(JUL13, 'a'), week(JUL20, 'b')];
-        expect(lastEndedWeek(weeks)).toBeUndefined();
-        expect(isAfterArchive(weeks, JUN22)).toBe(true);
-    });
-
-    it('the latest ended week is the bound, not the latest week', () => {
-        const weeks: Weeks = [week(JUL06, 'a', true), week(JUL13, 'b', true), week(JUL27, 'c')];
-        expect(lastEndedWeek(weeks)).toBe(JUL13);
-    });
-
-    it('the bound itself is settled; only strictly after it is open', () => {
-        const weeks: Weeks = [week(JUL13, 'a', true), week(JUL27, 'b')];
-        expect(isAfterArchive(weeks, JUL06)).toBe(false);
-        expect(isAfterArchive(weeks, JUL13)).toBe(false);
-        expect(isAfterArchive(weeks, JUL20)).toBe(true);
-    });
-});
-
 describe('canEndWeek', () => {
     it('the only active week, in the past: yes', () => {
         expect(canEndWeek([week(JUL13, 'a')], JUL13, JUL20)).toBe(true);
@@ -374,9 +361,9 @@ describe('canEndWeek', () => {
         expect(canEndWeek([week(JUL13, 'a', true)], JUL13, JUL20)).toBe(false);
     });
 
-    it('an older active week is still open: no, that one goes first', () => {
+    it('an older active week is still open: no longer blocks — each week ends on its own', () => {
         const weeks: Weeks = [week(JUL06, 'a'), week(JUL13, 'b')];
-        expect(canEndWeek(weeks, JUL13, JUL20)).toBe(false);
+        expect(canEndWeek(weeks, JUL13, JUL20)).toBe(true);
         expect(canEndWeek(weeks, JUL06, JUL20)).toBe(true);
     });
 
@@ -408,10 +395,17 @@ describe('endWeek', () => {
         expect(endWeek(before, JUL27, JUL20)).toEqual(before);
     });
 
-    it('maintains the rep invariant, ended entries first (oracle)', () => {
+    it('maintains the rep invariant (oracle)', () => {
         const weeks = endWeek([week(JUL06, 'a'), week(JUL13, 'b')], JUL06, JUL20);
         expect(isValidWeeks(weeks)).toBe(true);
         expect(starts(endedWeeks(weeks))).toEqual([JUL06]);
+    });
+
+    it('ending the newer of two open weeks leaves an active one behind it (interleaved)', () => {
+        const weeks = endWeek([week(JUL06, 'a'), week(JUL13, 'b')], JUL13, JUL20);
+        expect(isValidWeeks(weeks)).toBe(true);
+        expect(isEnded(weekAt(weeks, JUL13))).toBe(true);
+        expect(isEnded(weekAt(weeks, JUL06))).toBe(false);
     });
 });
 
@@ -499,6 +493,16 @@ describe('isValidWeeks', () => {
 
     it('sorted, distinct, non-empty, uniquely identified: valid', () => {
         expect(isValidWeeks([week(JUL06, 'a'), week(JUL13, 'b'), week(JUL20, 'c')])).toBe(true);
+    });
+
+    it('ended and active entries interleaved: still valid', () => {
+        const weeks: Weeks = [
+            week(JUL06, 'a'),
+            week(JUL13, 'b', true),
+            week(JUL20, 'c'),
+            week(JUL27, 'd', true),
+        ];
+        expect(isValidWeeks(weeks)).toBe(true);
     });
 
     it('out of order: invalid', () => {

@@ -74,31 +74,6 @@ export function endedWeeks(weeks: Weeks): Weeks {
 }
 
 /**
- * The last week that has been ended, which is the boundary the archive reaches to.
- *
- * @param weeks any Weeks
- * @returns the weekStart of the latest ended entry, or undefined when none has been
- *          ended. Because the ended entries come first, everything after this week
- *          is still open, and everything at or before it is settled.
- */
-export function lastEndedWeek(weeks: Weeks): DateKey | undefined {
-    return endedWeeks(weeks).at(-1)?.weekStart;
-}
-
-/**
- * Whether a week lies beyond the archive, and so is still yours to plan.
- *
- * @param weeks any Weeks
- * @param weekStart the week in question
- * @returns true iff weekStart is strictly after every ended week — trivially true
- *          when nothing has been ended
- */
-export function isAfterArchive(weeks: Weeks, weekStart: DateKey): boolean {
-    const bound = lastEndedWeek(weeks);
-    return bound === undefined || weekStart > bound;
-}
-
-/**
  * The week the app should open on: the oldest week still waiting to be ended.
  *
  * Ending weeks is a queue worked oldest first, and a week that was never touched
@@ -119,28 +94,21 @@ export function earliestActiveWeek(weeks: Weeks, currentWeek: DateKey): DateKey 
 /**
  * Whether a week may be ended.
  *
- * Weeks are ended oldest first, so that none silently escapes being counted: the
- * app opens on the earliest active week, and that is the only week this allows you
- * to close out.
+ * Any week you have actually lived may be closed out on its own — ending is no
+ * longer restricted to the oldest still-open week. earliestActiveWeek remains
+ * useful (it names the week worth nudging you toward), it just no longer gates
+ * this.
  *
  * @param weeks any Weeks
  * @param weekStart the week in question
  * @param currentWeek the week-start of the week containing today, a Monday
  * @returns true iff all of: weeks holds an entry at weekStart, that entry is not
- *          already ended, weekStart is no later than currentWeek — a week you have
- *          not lived cannot be closed out — and weekStart is the earliest active
- *          week
+ *          already ended, and weekStart is no later than currentWeek — a week you
+ *          have not lived cannot be closed out
  */
 export function canEndWeek(weeks: Weeks, weekStart: DateKey, currentWeek: DateKey): boolean {
     const plan = weekAt(weeks, weekStart);
-    return (
-        !isEmptyWeek(plan) &&
-        !isEnded(plan) &&
-        // Implied by the clause below, since earliestActiveWeek never answers with
-        // a future entry — stated anyway, because it is the rule, not a corollary.
-        weekStart <= currentWeek &&
-        weekStart === earliestActiveWeek(weeks, currentWeek)
-    );
+    return !isEmptyWeek(plan) && !isEnded(plan) && weekStart <= currentWeek;
 }
 
 /**
@@ -155,11 +123,10 @@ export function canEndWeek(weeks: Weeks, weekStart: DateKey, currentWeek: DateKe
  *          - every entry is a valid plan (isValidPlan)
  *          - no id appears twice across the whole collection, not merely twice
  *            within one entry
- *          - no ended entry follows an active one: once an entry is active, every
- *            later entry is active too
+ *          Ended and active entries may interleave in any order: an ended week's
+ *          position carries no meaning beyond its own weekStart.
  */
 export function isValidWeeks(weeks: Weeks): boolean {
-    let seenActive = false;
     for (const [index, week] of weeks.entries()) {
         const previous = weeks[index - 1];
         if (previous !== undefined && previous.weekStart >= week.weekStart) {
@@ -168,10 +135,6 @@ export function isValidWeeks(weeks: Weeks): boolean {
         if (isEmptyWeek(week) || !isValidPlan(week)) {
             return false;
         }
-        if (isEnded(week) && seenActive) {
-            return false;
-        }
-        seenActive = seenActive || !isEnded(week);
     }
     const allIds = weeks.flatMap(idsOf);
     return allIds.length === new Set(allIds).size;
@@ -245,16 +208,14 @@ export function removeWeek(weeks: Weeks, weekStart: DateKey): Weeks {
  * ending a week, which sweeps individual subtasks into a week that has its own
  * separate day structure, and so must strip their misses.)
  *
- * A plan may move out of any week that is still open and onto any free week after
- * the last ended one, in either direction and however far. The clock does not come
- * into it — only the archive does. Landing after every ended week is what keeps the
- * collection's ended-come-first invariant, and it is the weakest rule that does:
- * the whole span from the last ended week to the end of the calendar is reachable,
- * which is every week you could still be planning.
+ * A plan may move out of any week that is still open and onto any free week at
+ * all, in either direction and however far, regardless of where the archive sits.
+ * The clock does not come into it either — moveWeek does not take currentWeek.
  *
- * The source needs no such rule. The invariant guarantees every active entry
- * already lies after every ended one, so a week with work to move is always past
- * the bound.
+ * The only two refusals left are about frozen records: the source may not be
+ * ended, and the destination may not already hold work — which, since a stored
+ * entry is never empty, also rejects an ended destination and the case to === from
+ * without a separate check.
  *
  * @param weeks any Weeks
  * @param from the week whose plan is moving
@@ -263,21 +224,14 @@ export function removeWeek(weeks: Weeks, weekStart: DateKey): Weeks {
  *          plan with weekStart set to to, everything else about it unchanged. The
  *          collection is returned unchanged when the move is not one the model
  *          allows: from holds no work, from has been ended (an ended week is
- *          frozen), to already holds work, to is not a valid week-start, or to is
- *          not strictly after every ended week.
+ *          frozen), to already holds work, or to is not a valid week-start.
  */
 export function moveWeek(weeks: Weeks, from: DateKey, to: DateKey): Weeks {
     const source = weekAt(weeks, from);
     // A stored entry is never empty, so this also rejects an ended destination
     // and the case to === from.
     const destinationTaken = !isEmptyWeek(weekAt(weeks, to));
-    if (
-        isEmptyWeek(source) ||
-        isEnded(source) ||
-        destinationTaken ||
-        !isValidWeekStart(to) ||
-        !isAfterArchive(weeks, to)
-    ) {
+    if (isEmptyWeek(source) || isEnded(source) || destinationTaken || !isValidWeekStart(to)) {
         return weeks;
     }
     return putWeek(removeWeek(weeks, from), { ...source, weekStart: to });

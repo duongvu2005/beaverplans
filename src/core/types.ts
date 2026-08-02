@@ -100,13 +100,11 @@ export type WeekPlan = {
  *     weeks' work a plain concatenation — two weeks provably share no nodes —
  *     leaving merge needed only where two independently-created histories collide
  *     (guest -> cloud).
- *   - the ended entries come first: no ended entry appears after an active one.
- *     Equivalently, the archive is a prefix — everything at or before the last
- *     ended week is settled, everything after it is still open. endWeek maintains
- *     it by only ever ending the earliest active week, and moveWeek by only ever
- *     landing a plan after the last ended week. It is what makes a carry's
- *     destination provably un-ended, and what lets "is this week still mine to
- *     plan?" be one comparison (isAfterArchive) rather than a search.
+ *   Ended and active entries may interleave freely: an ended week's position among
+ *   the others carries no meaning beyond its own weekStart. A week you forgot to
+ *   plan does not become unreachable just because later weeks have already been
+ *   archived — moveWeek and canEndWeek both act on one entry at a time and neither
+ *   consults where the archive sits.
  *   checkRep = isValidWeeks (see weeks.ts), which also validates untrusted JSON on
  *   the storage read path.
  *

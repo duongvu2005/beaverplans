@@ -4,7 +4,7 @@ import styles from './ProjectView.module.css';
 
 type ProjectViewProps = {
     projects: ReadonlyArray<Project>;
-    /** whether this week's board is frozen to edits (ended, or behind the archive bound) */
+    /** whether this week's board is frozen to edits (the week has ended) */
     readOnly?: boolean;
     onReorderProject: (projectId: string, beforeProjectId: string | null) => void;
     onReorderTask: (taskId: string, destProjectId: string, beforeTaskId: string | null) => void;
