@@ -138,6 +138,22 @@ interface covering only the methods actually used — not the real browser API o
 network client), so the suite runs without a browser and can hit failure partitions
 (corrupt stored data, a write that throws) a real store can't be coerced into on demand.
 
+## Type in the interface — project convention
+
+Two families, two jobs. The tokens in `index.css` say which face is which; this says what
+each one *means* on a control.
+
+- **Mono, uppercase (`--mono`)** — navigation. A control in mono caps moves you somewhere
+  and changes nothing: the app's three tabs, the day rail, weekday headers, section
+  eyebrows.
+- **Sans, sentence case (`--sans`)** — action. A control that changes something is sans:
+  every button in a dialog, in the week header, in the top bar's right cluster.
+
+The split is worth keeping because the two kinds of control sit inches apart — the tab row
+and the week header's buttons are 24px away from each other — and because it means a
+reader never has to click a thing to find out whether it is safe. When adding a control,
+pick the family from what the control does, not from what looks good in the row.
+
 ## Terminology — project convention
 
 The three levels have fixed names in code:
