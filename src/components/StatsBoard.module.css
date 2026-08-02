@@ -44,7 +44,10 @@
 }
 
 /* Pulled up under its heading so the sentence belongs to the chart below it
-   rather than floating between the two. */
+   rather than floating between the two.
+
+   Same face and size as .statSub: both are a caption explaining the thing above
+   them, so two sizes read as two different kinds of text in one pane. */
 .note {
     margin: calc(-1 * var(--sp-2)) 0 var(--sp-3);
     font: var(--fs-body) / 1.5 var(--sans);
@@ -81,15 +84,17 @@
 }
 
 /* The number's own context — what it's counting, which week, how the streak
-   compares to its record — so a figure never has to be taken on faith. */
+   compares to its record — so a figure never has to be taken on faith.
+
+   Identical to .note by intent; keep the two in step. Two cards to a row on a phone
+   leaves it about 130px, so the copy is written short — but it WRAPS rather than
+   truncating, because these lines carry figures and an ellipsis would hide a digit.
+   Cards share a row's height in the grid, so a second line costs nothing but space. */
 .statSub {
     display: block;
     margin-top: 3px;
-    font: var(--fs-label) var(--sans);
+    font: var(--fs-body) / 1.5 var(--sans);
     color: var(--ink-faint);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* 52 columns never fit a phone, so the heatmap is the one thing in the pane
@@ -139,7 +144,7 @@
     color: var(--ink-faint);
 }
 
-@media (min-width: 641px) {
+@container app (min-width: 641px) {
     .stats {
         grid-template-columns: repeat(4, 1fr);
     }

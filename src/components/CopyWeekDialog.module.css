@@ -59,24 +59,27 @@
     cursor: pointer;
 }
 
+/* --w-title, not --w-row: these are project names, which is what that weight is
+   for. Weight only, so the row height is unchanged. */
 .name {
     flex: 1;
     min-width: 0;
     font-family: var(--display);
     font-size: var(--fs-row);
-    font-weight: var(--w-row);
+    font-weight: var(--w-title);
     color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* Mono caps like ArchiveRow's "12/14 DONE": a numeric caption, and setting it
-   in the name's own face at nearly the name's size made the two compete. */
+/* The weight picker's count treatment (mono, body size, no caps), not the
+   uppercase label voice: "3 tasks" is a value describing this row, not a label
+   for a field, and it is easier to read at 13px than as spaced 11px caps. It can
+   afford the extra presence now that .name carries --w-title — at --w-row the two
+   would have competed. */
 .count {
     flex: none;
-    font: var(--fs-label) var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font: var(--fs-body) var(--mono);
     color: var(--ink-faint);
 }

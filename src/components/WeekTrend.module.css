@@ -4,20 +4,27 @@
    and the two labels live here — a week column carries a percentage AND a date,
    where a spark column carries one letter. */
 
+/* Weeks fill from the left; whatever slots are left over stand empty to their
+   right (see .slot), so the chart always spans the card and a short history reads
+   as one filling up rather than a cluster floating in the middle.
+
+   Because the slot count is fixed, columns can stretch to fill the row without
+   a few weeks becoming absurdly wide — so the width cap moves off the column and
+   onto the BAR (--spark-bar-w), which keeps bar width and every label position
+   identical whether the chart is full or nearly empty. */
 .trend {
     display: flex;
     align-items: flex-end;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 6px;
     --spark-track-h: 78px;
-    /* the cap belongs to the column, not the bar: the bar fills its column */
-    --spark-bar-w: 100%;
+    --spark-bar-w: 32px;
 }
 
-.week {
+.week,
+.slot {
     flex: 1 1 0;
     min-width: 0;
-    max-width: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -36,6 +43,31 @@
     letter-spacing: 0;
     color: var(--ink-faint);
     white-space: nowrap;
+}
+
+/* A week no plan has reached yet: the same column, holding a dashed outline at an
+   illustrative height (PLACEHOLDER_HEIGHTS in the component), so an empty chart
+   shows the shape it will take rather than a flat row of nubs. Same track as a
+   week column, so every outline's foot is on the shared baseline.
+
+   Dashed, unfilled, label-less and drawn in --line rather than the bars' greens:
+   four separate cues that it is not data. A real bar is solid, carries a fill for
+   what was completed, and is captioned with a percentage and a date. */
+.slotTrack {
+    width: 100%;
+    height: var(--spark-track-h);
+    display: flex;
+    align-items: flex-end;
+}
+
+.slotBar {
+    width: 100%;
+    max-width: var(--spark-bar-w);
+    margin-inline: auto;
+    min-height: 4px;
+    border: 1px dashed var(--line);
+    border-bottom: none;
+    border-radius: 3px 3px 0 0;
 }
 
 /* One run of untracked weeks, however long — a dashed rule with its length
@@ -68,9 +100,9 @@
     line-height: 1.2;
 }
 
-@media (min-width: 641px) {
-    .week {
-        max-width: 46px;
+@container app (min-width: 641px) {
+    .trend {
+        --spark-bar-w: 38px;
     }
     .brk {
         flex-basis: 44px;
