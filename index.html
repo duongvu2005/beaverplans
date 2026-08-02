@@ -5,9 +5,23 @@
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>beaverplans</title>
+        <!-- Apply the remembered theme before the first paint. useTheme sets the
+             same attribute, but only after React has mounted, which is one full
+             frame of the light palette on every load for anyone using dark. -->
+        <script>
+            try {
+                var t = localStorage.getItem('beaverplans:theme');
+                if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+            } catch (e) {
+                /* private mode: fall through to the default light theme */
+            }
+        </script>
     </head>
     <body>
-        <div id="root"></div>
+        <!-- data-app-container marks the box every layout breakpoint measures
+             (see index.css). It is what lets the app render its phone layout
+             when the app itself is phone-width inside a wider page. -->
+        <div id="root" data-app-container></div>
         <script type="module" src="/src/main.tsx"></script>
     </body>
 </html>

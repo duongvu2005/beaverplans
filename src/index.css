@@ -72,7 +72,12 @@
     --fs-section: 15px;
 
     /* shape / metrics */
-    --tabbar-h: 52px; /* approx height of the phone bottom bar; used to pad the pane */
+    --tabbar-h: 46px; /* height of the phone's floating tab pill; used to pad the pane */
+
+    /* the one elevation in the app: the phone tab bar floats clear of the bottom
+       edge, and without a shadow a floating element reads as a misaligned strip
+       rather than as something above the page */
+    --shadow-float: 0 6px 20px rgb(28 26 23 / 10%);
 
     /* tree column widths — single source of truth so a row's grip/checkbox and
        the "+ add task" row's spacer/plus stay aligned by construction. */
@@ -109,6 +114,7 @@
     --hover-accent: #31251f;
     --good: #7ba874;
     --good-soft: #2a3626;
+    --shadow-float: 0 6px 20px rgb(0 0 0 / 45%);
 }
 
 * {
@@ -130,9 +136,39 @@ body {
     margin: 0;
 }
 
-/* The app shell fills the viewport as a vertical stack: tab bar + pane. */
+/* The app shell fills the viewport as a vertical stack: tab bar + pane.
+   height, not min-height: this box is also the fixed-position containing
+   block above, so once content is taller than the viewport a min-height floor
+   lets it grow past 100svh instead — .pane's overflow:auto never gets a
+   constrained box to scroll within, and the phone tab pill (position: fixed)
+   ends up anchored to the bottom of that oversized box instead of staying
+   pinned to the viewport. */
 #root {
-    min-height: 100svh;
+    height: 100svh;
     display: flex;
     flex-direction: column;
+}
+
+/* THE breakpoint context for the whole app.
+   Every responsive rule below the shell is an `@container app (...)` query
+   against this box, never an `@media` query against the browser viewport, and
+   useContainerWidth measures this same element for the handful of decisions CSS
+   cannot express. The two are equivalent when the app owns the whole page, and
+   only this version is right when it does not: embedded in a panel, an iframe,
+   or a design tool's phone frame, the viewport says "desktop" while the app's
+   own box is 390px wide. Marked with an attribute rather than #root so an
+   embedder can establish it on whatever element actually bounds the app.
+   Consequence worth knowing: an inline-size container is the containing block
+   for its position: fixed descendants, so the phone tab pill (TopBar) and the
+   dialog scrim anchor to this box rather than the viewport — which is the
+   behaviour we want, and identical when this box IS the viewport. */
+[data-app-container] {
+    container: app / inline-size;
+    /* Explicit layout containment, which container-type alone does not give us
+       in practice: without it the phone tab pill (TopBar, position: fixed) and
+       the dialog scrim anchor to the browser viewport and spill across the whole
+       host page when the app is embedded. With it, this box is their containing
+       block — and when the app owns the page, this box IS the viewport, so
+       nothing changes. */
+    contain: layout;
 }
