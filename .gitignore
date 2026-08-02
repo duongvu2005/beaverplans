@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # private weekly plan
 plan/
+
+# generated type declarations
+index.d.ts
