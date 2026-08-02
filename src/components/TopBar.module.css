@@ -1,0 +1,327 @@
+/* The app's chrome. One element, two shapes.
+
+   Desktop: a 48px bar, inset --sp-5 to match .pane, so the tabs and the week
+   header 24px below them finally share a left edge. (The bar it replaces used
+   12px against the pane's 24px — two competing left edges.)
+
+   Phone (<=640px): no bar. The same element becomes a pill floating clear of the
+   bottom edge, holding the tabs plus a fourth slot for everything the bar was
+   carrying on its right. Only the CSS changes — the markup is identical, which
+   is the rule the docked tab bar already followed. */
+
+.bar {
+    flex: none;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    padding-inline: var(--sp-5);
+}
+
+.inner {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    height: 48px;
+    /* the cap .plan-layout and the week header already use */
+    max-width: 1440px;
+    margin-inline: auto;
+}
+
+.mark {
+    flex: none;
+    font: 600 15px/1 var(--display);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    white-space: nowrap;
+}
+
+.dot {
+    color: var(--accent);
+}
+
+/* Hairlines, not gaps: they say the wordmark is not part of the nav and the
+   account cluster is not part of the utilities. */
+.rule {
+    flex: none;
+    width: 1px;
+    height: 18px;
+    background: var(--line);
+}
+
+.grow {
+    flex: 1 1 auto;
+}
+
+/* --- the tabs -------------------------------------------------------------
+   Carried over unchanged in language from the bar this replaces: mono caps on
+   --accent-soft when current. In this app mono caps means "moves you
+   somewhere"; every control that CHANGES something is sans sentence case. Only
+   the box is tightened, to sit in 48px. */
+
+.tabs {
+    display: flex;
+    gap: var(--sp-1);
+}
+
+.tabs button {
+    flex: 0 0 auto;
+    appearance: none;
+    border: none;
+    background: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition:
+        background-color 0.15s,
+        color 0.15s;
+}
+
+.tabs button:hover {
+    background: var(--paper);
+    color: var(--ink);
+}
+
+.tabs button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* the current view — hooked off aria-current="page", so no separate class */
+.tabs button[aria-current] {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+/* --- utilities ------------------------------------------------------------ */
+
+.util {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 500 var(--fs-body) var(--sans);
+    padding: 5px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r-chip);
+    background: none;
+    color: var(--ink-soft);
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.15s;
+}
+
+.util:hover {
+    background: var(--hover-neutral);
+    color: var(--ink);
+}
+
+/* The label goes before the icon does: the heart still reads as support, an
+   unlabelled word does not read as anything. */
+@container app (max-width: 900px) {
+    .utilLabel {
+        display: none;
+    }
+
+    .util {
+        padding: 5px 7px;
+    }
+}
+
+.iconBtn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 8px;
+    border: 0;
+    border-radius: var(--r-chip);
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.iconBtn:hover {
+    background: var(--hover-neutral);
+    color: var(--ink);
+}
+
+/* Tighten the air before the account pair — .inner's gap is uniform, so this
+   is the one place that needs a nudge back. */
+.iconBtn + .rule {
+    margin-right: 4px;
+}
+
+/* The theme control draws the thing it does rather than a sun or a moon: half
+   the disc filled, so it reads the same whichever theme you are in. */
+.half {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    background: linear-gradient(90deg, transparent 50%, currentColor 50%);
+}
+
+/* Reads the current mode, like Guest does — a status readout, not the
+   destination the click takes you to (that's the aria-label/title). */
+.themeLabel {
+    font: 500 var(--fs-body) var(--sans);
+    color: var(--ink-soft);
+}
+
+/* --- where your weeks are kept -------------------------------------------- */
+
+/* Same box-height as .btn: they're a status + action pair, not two unrelated
+   controls, and read that way only when they share a frame. */
+.guest {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    font: var(--fs-label) / 1 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    background: var(--hover-neutral);
+    border: 1px solid var(--line);
+    padding: 0 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    margin-right: -4px;
+}
+
+.guest i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+}
+
+/* Same recipe as WeekHeader's .btn — one button shape across the app. Height
+   matches .guest, since the two sit as a paired status + action cluster. */
+.btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    font: 500 var(--fs-body) var(--sans);
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+    border-color: var(--ink-faint);
+    color: var(--ink);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* --- the phone's fourth slot ---------------------------------------------- */
+
+.divider,
+.you {
+    display: none;
+}
+
+/* --- phone: no bar, a floating pill ---------------------------------------
+   Support, the theme toggle and Sign in have no room here, so they fold into
+   the sheet behind the account slot. The pill lifts off the bottom edge, which
+   is why --shadow-float exists: a floating element with no shadow reads as a
+   misaligned strip rather than as something above the page. */
+
+@container app (max-width: 640px) {
+    .bar {
+        position: fixed;
+        left: var(--sp-3);
+        right: var(--sp-3);
+        bottom: max(var(--sp-3), env(safe-area-inset-bottom));
+        z-index: 100; /* above scrolled pane content (checkboxes etc.) */
+        padding: 0;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: var(--paper);
+        box-shadow: var(--shadow-float);
+    }
+
+    .inner {
+        height: auto;
+        gap: 2px;
+        padding: var(--sp-1);
+    }
+
+    .mark,
+    .rule,
+    .grow,
+    .util,
+    .iconBtn,
+    .guest,
+    .btn {
+        display: none;
+    }
+
+    .tabs {
+        flex: 1 1 auto;
+        gap: 2px;
+    }
+
+    .tabs button {
+        flex: 1 1 0; /* equal-width tabs */
+        text-align: center;
+        padding: 10px 0;
+        border-radius: 999px;
+    }
+
+    .divider {
+        display: block;
+        flex: none;
+        width: 1px;
+        height: 22px;
+        align-self: center;
+        margin-inline: 2px;
+        background: var(--line);
+    }
+
+    .you {
+        flex: 0 0 52px;
+        display: grid;
+        place-items: center;
+        appearance: none;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--ink-faint);
+        cursor: pointer;
+    }
+
+    .you span {
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--hover-neutral);
+        border: 1px solid var(--line);
+    }
+
+    .you:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 999px;
+    }
+}
