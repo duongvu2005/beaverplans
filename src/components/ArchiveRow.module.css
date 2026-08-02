@@ -41,7 +41,7 @@
     gap: var(--sp-3);
 }
 
-@media (min-width: 641px) {
+@container app (min-width: 641px) {
     .row {
         flex-direction: row;
         align-items: center;
@@ -77,7 +77,7 @@
 /* 128px fits the widest "MMM DD – MMM DD" label with a little slack; the old
    118px was sized for the shorter "Jul 13 – 19" format and left ~9px, close
    enough that a font fallback could clip it. */
-@media (min-width: 641px) {
+@container app (min-width: 641px) {
     .when {
         flex: none;
         width: 128px;
@@ -104,7 +104,7 @@
     flex: none;
     text-align: right;
 }
-@media (min-width: 641px) {
+@container app (min-width: 641px) {
     .stat {
         min-width: 64px;
     }

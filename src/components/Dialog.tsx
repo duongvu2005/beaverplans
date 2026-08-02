@@ -1,6 +1,18 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { APP_CONTAINER_SELECTOR } from './useContainerWidth';
 import styles from './Dialog.module.css';
+
+// Where the overlay is portalled to. The app shell's own box, not <body>: the
+// scrim is position: fixed, so its containing block is the nearest container —
+// portalling into the shell keeps the overlay inside the app's box when the app
+// is embedded in a wider page, and is identical to <body> when the app owns the
+// whole page. It also gives the panel's own breakpoint an `app` container to
+// query. Falls back to <body> when there is no shell (a Dialog rendered
+// standalone in a test or a preview), which is the old behaviour exactly.
+function portalTarget(): HTMLElement {
+    return document.querySelector<HTMLElement>(APP_CONTAINER_SELECTOR) ?? document.body;
+}
 
 // Stack of open dialogs (topmost last). Only the topmost responds to Escape, so a
 // dialog opened inside another (e.g. the weight sheet inside the task editor)
@@ -78,6 +90,6 @@ export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
                 {children}
             </div>
         </div>,
-        document.body,
+        portalTarget(),
     );
 }

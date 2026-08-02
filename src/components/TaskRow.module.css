@@ -145,8 +145,11 @@
 
 /* touch devices (no hover) OR narrow phone widths — reveal the affordances that
    are otherwise shown on row hover, so everything is reachable without a pointer.
-   Placed AFTER the base .grip rule so it wins at equal specificity. */
-@media (hover: none), (max-width: 640px) {
+   Placed AFTER the base .grip rule so it wins at equal specificity.
+   Two at-rules rather than one comma-joined query because only one half is a
+   width: pointer capability belongs to the device, so it stays a media query,
+   while the width asks the app's own container. */
+@media (hover: none) {
     .grip {
         opacity: 0.55;
     }
@@ -154,4 +157,13 @@
         opacity: 1;
     }
     /* no arrow on touch — the "assign days" label alone reads fine without hover */
+}
+
+@container app (max-width: 640px) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
 }

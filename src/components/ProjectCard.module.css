@@ -177,8 +177,20 @@
 }
 
 /* touch devices (no hover) OR narrow phone widths — reveal the grip + action
-   buttons so they're reachable without a pointer. */
-@media (hover: none), (max-width: 640px) {
+   buttons so they're reachable without a pointer.
+   Two at-rules rather than one comma-joined query because only one half is a
+   width: pointer capability belongs to the device, so it stays a media query,
+   while the width asks the app's own container. */
+@media (hover: none) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
+}
+
+@container app (max-width: 640px) {
     .grip {
         opacity: 0.55;
     }

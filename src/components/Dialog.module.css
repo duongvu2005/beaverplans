@@ -44,7 +44,7 @@
     overflow-y: hidden;
 }
 
-@media (min-width: 640px) {
+@container app (min-width: 640px) {
     .scrim {
         align-items: center; /* centered -> modal */
     }

@@ -1,5 +1,5 @@
-import type { Archive, DayOfWeek } from '../core/types';
-import { todayKey, weekRangeLabel, weekStartOf } from '../core/dates';
+import type { Archive, DateKey, DayOfWeek } from '../core/types';
+import { todayKey, weekStartOf } from '../core/dates';
 import { percentOf } from '../core/math';
 import {
     bestWeek,
@@ -13,9 +13,10 @@ import {
 import { WeekSpark } from './WeekSpark';
 import { weekdayColumns } from './sparkColumns';
 import { WeekTrend } from './WeekTrend';
+import { WeekRef } from './WeekRef';
 import { Heatmap, HeatmapLegend } from './Heatmap';
 import { heatColumns } from './heatColumns';
-import { useMediaQuery } from './useMediaQuery';
+import { useContainerWidth } from './useContainerWidth';
 import styles from './StatsBoard.module.css';
 
 /** A week counts toward the streak at half its planned weight or better. */
@@ -37,6 +38,8 @@ const DAY_NAME: Record<DayOfWeek, string> = {
 
 type StatsBoardProps = {
     archive: Archive;
+    /** show the named week on the Plan tab; the caller switches tabs too */
+    onOpenWeek: (weekStart: DateKey) => void;
 };
 
 /**
@@ -46,13 +49,16 @@ type StatsBoardProps = {
  * Derived entirely from the archive — the live week has not been measured yet
  * and never appears here.
  */
-export function StatsBoard({ archive }: StatsBoardProps) {
-    const wide = useMediaQuery('(min-width: 641px)');
+export function StatsBoard({ archive, onOpenWeek }: StatsBoardProps) {
+    // Same box and same number as the stylesheet's `@container app (min-width:
+    // 641px)`, so the trend's item count and the CSS layout switch together.
+    const [boardRef, containerWidth] = useContainerWidth<HTMLDivElement>();
+    const wide = containerWidth !== null && containerWidth >= 641;
     const history = weekHistory(archive);
 
     if (history.length === 0) {
         return (
-            <div className={styles.board}>
+            <div className={styles.board} ref={boardRef}>
                 <div className={styles.empty}>
                     <p className={styles.emptyTitle}>Nothing to measure yet</p>
                     <p className={styles.emptyText}>
@@ -124,15 +130,19 @@ export function StatsBoard({ archive }: StatsBoardProps) {
     }));
 
     return (
-        <div className={styles.board}>
+        <div className={styles.board} ref={boardRef}>
             <div className={styles.stats}>
                 <div className={styles.stat}>
                     <span className={styles.big}>
                         {Math.round(percentOf(pooledDone, pooledTotal))}%
                     </span>
                     <span className={styles.statLabel}>Avg completion</span>
+                    {/* No "done": the card says AVG COMPLETION and 60% right above,
+                        so "29 of 48 task units" can only mean 29 of them are done.
+                        Being the first card read, it is also where "task unit" gets
+                        introduced — hence the term in full here and not just here. */}
                     <span className={styles.statSub}>
-                        {pooledDone} of {pooledTotal} task unit{pooledTotal === 1 ? '' : 's'} done
+                        {pooledDone} of {pooledTotal} task unit{pooledTotal === 1 ? '' : 's'}
                     </span>
                 </div>
                 <div className={styles.stat}>
@@ -142,8 +152,15 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                             : `${Math.round(percentOf(best.progress.done, best.progress.total))}%`}
                     </span>
                     <span className={styles.statLabel}>Best week</span>
+                    {/* The one figure on this pane that names a particular week,
+                        so the one that can be opened. Every other caption here
+                        describes a weekday or a span. */}
                     <span className={styles.statSub}>
-                        {best === undefined ? 'no data' : weekRangeLabel(best.weekStart)}
+                        {best === undefined ? (
+                            'no data'
+                        ) : (
+                            <WeekRef weekStart={best.weekStart} onView={onOpenWeek} />
+                        )}
                     </span>
                 </div>
                 <div className={styles.stat}>
@@ -169,7 +186,7 @@ export function StatsBoard({ archive }: StatsBoardProps) {
                 <p className={styles.note}>
                     Bar height is the week&apos;s workload; the fill is what you completed.
                 </p>
-                <WeekTrend items={items} />
+                <WeekTrend items={items} slots={wide ? TREND_ITEMS_WIDE : TREND_ITEMS_NARROW} />
             </section>
 
             <section className={styles.card}>
