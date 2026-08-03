@@ -1,7 +1,6 @@
-import type { Archive, WeekPlan } from '../core/types';
+import type { Weeks } from '../core/types';
 import type { Backend } from './backend';
-import { weekStartOf } from '../core/dates';
-import { isValidPlan } from '../core/projects';
+import { isValidWeeks } from '../core/weeks';
 
 export const STORAGE_KEY = 'beaverplans.state.v1';
 
@@ -13,7 +12,7 @@ export interface KeyValueStore {
 
 export class LocalBackend implements Backend {
     private readonly storage: KeyValueStore;
-    private cache: { plan: WeekPlan; archive: Archive };
+    private cache: { weeks: Weeks };
 
     public constructor(storage: KeyValueStore) {
         this.storage = storage;
@@ -30,30 +29,15 @@ export class LocalBackend implements Backend {
     /**
      * @inheritdoc
      */
-    public getWeekPlan(): WeekPlan {
-        return this.cache.plan;
+    public getWeeks(): Weeks {
+        return this.cache.weeks;
     }
 
     /**
      * @inheritdoc
      */
-    public getArchive(): Archive {
-        return this.cache.archive;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public setWeekPlan(plan: WeekPlan): void {
-        this.cache.plan = plan;
-        this.write();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public setArchive(archive: Archive): void {
-        this.cache.archive = archive;
+    public setWeeks(weeks: Weeks): void {
+        this.cache.weeks = weeks;
         this.write();
     }
 
@@ -65,21 +49,19 @@ export class LocalBackend implements Backend {
         this.write();
     }
 
-    private emptyState(): { plan: WeekPlan; archive: Archive } {
-        return { plan: { weekStart: weekStartOf(new Date()), projects: [] }, archive: [] };
+    private emptyState(): { weeks: Weeks } {
+        return { weeks: [] };
     }
 
-    private read(): { plan: WeekPlan; archive: Archive } {
+    private read(): { weeks: Weeks } {
         const storageJSON = this.storage.getItem(STORAGE_KEY);
         if (!storageJSON) {
             return this.emptyState();
         }
         try {
-            const parsed = JSON.parse(storageJSON) as { plan: WeekPlan; archive: Archive };
-            if (!isValidPlan(parsed.plan)) return this.emptyState();
-            if (!Array.isArray(parsed.archive) || !parsed.archive.every(isValidPlan))
-                return this.emptyState();
-            return { plan: parsed.plan, archive: parsed.archive };
+            const parsed = JSON.parse(storageJSON) as { weeks: Weeks };
+            if (!isValidWeeks(parsed.weeks)) return this.emptyState();
+            return { weeks: parsed.weeks };
         } catch {
             return this.emptyState();
         }
