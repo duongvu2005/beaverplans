@@ -6,6 +6,7 @@ import { overallProgress } from './core/progress';
 import { earliestActiveWeek, endedWeeks, isValidWeeks, putWeek } from './core/weeks';
 import { sampleWeek } from './fixtures/sampleWeek';
 import { sampleArchive } from './fixtures/sampleArchive';
+import { STORAGE_KEY } from './storage/localBackend';
 import type { Weeks } from './core/types';
 
 // The app's state is one collection of weeks, past, present and future alike,
@@ -25,11 +26,29 @@ describe('App under the weeks model', () => {
     beforeEach(() => {
         vi.useFakeTimers({ toFake: ['Date'] });
         vi.setSystemTime(new Date('2026-07-29T12:00:00'));
+        // App now loads from real storage (useWeeks -> Store -> LocalBackend)
+        // instead of seeding from fixtures directly, so the fixtures have to be
+        // seeded into the actual backing store for App to ever see them.
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ weeks: seed }));
     });
 
     afterEach(() => {
         vi.useRealTimers();
+        window.localStorage.clear();
     });
+
+    // useWeeks' load effect resolves asynchronously (store.load() always
+    // returns a real Promise, even though LocalBackend's own read is
+    // synchronous under the hood), so a render() immediately followed by a
+    // synchronous assertion can race ahead of the loaded data. Waiting for a
+    // signal that only appears once the fixtures have actually loaded — the
+    // "is still open" WeekRef, present only when queueHead resolves to
+    // sampleWeek's real week — settles that race for every test that needs
+    // the fixtures to be visible.
+    async function renderLoaded() {
+        render(<App />);
+        await screen.findByRole('button', { name: /^Go to Jul 20/ });
+    }
 
     it('seeding the fixtures through putWeek sorts them and satisfies the rep invariant', () => {
         expect(isValidWeeks(seed)).toBe(true);
@@ -62,7 +81,7 @@ describe('App under the weeks model', () => {
     // to name the week the nudge points at.
     it('earliestActiveWeek finds the earliest open week in the fixtures', () => {
         expect(earliestActiveWeek(seed, '2026-08-31')).toBe('2026-07-20');
-        expect(earliestActiveWeek(seed, '2026-07-13')).toBe('2026-07-13');
+        expect(earliestActiveWeek(seed, '2026-07-13')).toBeUndefined();
     });
 
     it('renders the plan pane', () => {
@@ -75,20 +94,19 @@ describe('App under the weeks model', () => {
     // pinned clock), untouched by the fixtures and so empty. End week and Move
     // are dead on an empty week, and the note points at sampleWeek's week,
     // which is still open one week behind it.
-    it('lands on the current week; when empty, the note points at the earlier open week', () => {
-        render(<App />);
+    it('lands on the current week; when empty, the note points at the earlier open week', async () => {
+        await renderLoaded();
         expect(screen.getByRole('button', { name: /^End week/ }).hasAttribute('disabled')).toBe(
             true,
         );
         const move = screen.getByRole('button', { name: /work/i });
         expect(move.hasAttribute('disabled')).toBe(true);
-        expect(screen.getByRole('button', { name: /^Go to Jul 20/ })).toBeTruthy();
         expect(screen.getByText(/is still open/)).toBeTruthy();
     });
 
     it('stepping back onto the earlier open week makes End week and Move live', async () => {
         const user = userEvent.setup();
-        render(<App />);
+        await renderLoaded();
         await user.click(screen.getByLabelText('Previous week'));
 
         expect(screen.getByRole('button', { name: /^End week/ }).hasAttribute('disabled')).toBe(
@@ -100,7 +118,7 @@ describe('App under the weeks model', () => {
 
     it('an ended week offers no editing controls, but the day picker still works', async () => {
         const user = userEvent.setup();
-        render(<App />);
+        await renderLoaded();
         await user.click(screen.getByLabelText('Previous week')); // onto sampleWeek's week
         await user.click(screen.getByRole('button', { name: /^End week/ }));
         await user.click(screen.getByRole('button', { name: 'Clear all' }));
@@ -148,7 +166,7 @@ describe('App under the weeks model', () => {
     // switching tabs would leave the click looking like it did nothing.
     it('opening the best week from Stats switches tab and week together', async () => {
         const user = userEvent.setup();
-        render(<App />);
+        await renderLoaded();
 
         await user.click(screen.getByRole('button', { name: 'stats' }));
         const ref = screen.getByRole('button', { name: /^Go to / });
@@ -164,7 +182,7 @@ describe('App under the weeks model', () => {
 
     it('ending a week with carry-forward archives it whole and moves the view on', async () => {
         const user = userEvent.setup();
-        render(<App />);
+        await renderLoaded();
 
         await user.click(screen.getByLabelText('Previous week')); // onto sampleWeek's week
         await user.click(screen.getByRole('button', { name: /^End week/ }));

@@ -74,7 +74,10 @@ export function endedWeeks(weeks: Weeks): Weeks {
 }
 
 /**
- * The week the app should open on: the oldest week still waiting to be ended.
+ * The oldest week still waiting to be ended, if any. NOT the week the app
+ * opens on — the app always opens on the literal current week regardless of
+ * this function's answer; this is what the header note nudges you toward
+ * when that queue head isn't the week already on screen.
  *
  * Ending weeks is a queue worked oldest first, and a week that was never touched
  * has no entry, so it cannot block the queue.
@@ -82,13 +85,13 @@ export function endedWeeks(weeks: Weeks): Weeks {
  * @param weeks any Weeks
  * @param currentWeek the week-start of the week containing today, a Monday
  * @returns the weekStart of the earliest active (not ended) entry that is not in
- *          the future, or currentWeek when there is none — because every entry is
+ *          the future, or undefined when there is none — because every entry is
  *          ended, every active entry is still to come, or nothing is stored
  */
-export function earliestActiveWeek(weeks: Weeks, currentWeek: DateKey): DateKey {
+export function earliestActiveWeek(weeks: Weeks, currentWeek: DateKey): DateKey | undefined {
     // weeks is sorted ascending, so the first match is the earliest.
     const waiting = weeks.find((week) => !isEnded(week) && week.weekStart <= currentWeek);
-    return waiting?.weekStart ?? currentWeek;
+    return waiting?.weekStart;
 }
 
 /**
@@ -285,12 +288,7 @@ export function endWeek(weeks: Weeks, weekStart: DateKey, currentWeek: DateKey):
  *          week-start, is not strictly later than from, or is ended, and when from
  *          has no unfinished work to carry.
  */
-export function carryForward(
-    weeks: Weeks,
-    from: DateKey,
-    to: DateKey,
-    newId: () => string,
-): Weeks {
+export function carryForward(weeks: Weeks, from: DateKey, to: DateKey, newId: () => string): Weeks {
     const destination = weekAt(weeks, to);
     if (!isValidWeekStart(to) || to <= from || isEnded(destination)) {
         return weeks;

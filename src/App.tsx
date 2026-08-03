@@ -23,8 +23,6 @@ import {
 } from './core/weeks';
 import { newId } from './utils/newId';
 import { overallProgress } from './core/progress';
-import { sampleWeek } from './fixtures/sampleWeek';
-import { sampleArchive } from './fixtures/sampleArchive';
 import { WeekBoard } from './components/WeekBoard';
 import { ArchiveBoard } from './components/ArchiveBoard';
 import { StatsBoard } from './components/StatsBoard';
@@ -35,10 +33,6 @@ import { TopBar, type View } from './components/TopBar';
 import shell from './components/dialogShell.module.css';
 import './App.css';
 import { useWeeks } from './components/useWeeks';
-
-// The fixtures are hand-listed in reading order; folding putWeek over them sorts
-// them and enforces the collection's invariants from the first render.
-const _seedWeeks: Weeks = [sampleWeek, ...sampleArchive].reduce<Weeks>(putWeek, []);
 
 export default function App() {
     const [view, setView] = useState<View>('plan');
@@ -85,7 +79,7 @@ export default function App() {
         <>
             This week is over. <b>End it</b> to file it in your archive and start the next one.
         </>
-    ) : queueHead < viewing ? (
+    ) : queueHead !== undefined && queueHead < viewing ? (
         <>
             <WeekRef weekStart={queueHead} onView={setViewing} /> is still open.
         </>
@@ -146,9 +140,7 @@ export default function App() {
     function handleConfirmEndWeek(keepUnfinished: boolean) {
         setWeeks((current) => {
             const ended = endWeek(current, viewing, currentWeek);
-            return keepUnfinished
-                ? carryForward(ended, viewing, carryDestination, newId)
-                : ended;
+            return keepUnfinished ? carryForward(ended, viewing, carryDestination, newId) : ended;
         });
         setViewing(carryDestination);
         setConfirmingEndWeek(false);
@@ -196,12 +188,17 @@ export default function App() {
                         },
                         ...(carryBlocked
                             ? []
-                            : [{ label: 'Carry forward', onAction: () => handleConfirmEndWeek(true) }]),
+                            : [
+                                  {
+                                      label: 'Carry forward',
+                                      onAction: () => handleConfirmEndWeek(true),
+                                  },
+                              ]),
                     ]}
                 >
                     <p className={shell.text}>
                         {carryBlocked
-                            ? "This records the week in your archive. Next week is already ended, so unfinished tasks will be cleared along with everything else."
+                            ? 'This records the week in your archive. Next week is already ended, so unfinished tasks will be cleared along with everything else.'
                             : 'This records the week in your archive. Unfinished tasks can carry forward into next week, or be cleared along with everything else.'}
                     </p>
                 </ConfirmDialog>

@@ -217,8 +217,8 @@ describe('endedWeeks', () => {
 });
 
 describe('earliestActiveWeek', () => {
-    it('empty collection: the current week', () => {
-        expect(earliestActiveWeek([], JUL20)).toBe(JUL20);
+    it('empty collection: nothing waiting', () => {
+        expect(earliestActiveWeek([], JUL20)).toBeUndefined();
     });
 
     it('the earliest active week, when it is in the past', () => {
@@ -231,14 +231,14 @@ describe('earliestActiveWeek', () => {
         expect(earliestActiveWeek(weeks, JUL20)).toBe(JUL13);
     });
 
-    it('every week ended: the current week', () => {
+    it('every week ended: nothing waiting', () => {
         const weeks: Weeks = [week(JUN29, 'a', true), week(JUL06, 'b', true)];
-        expect(earliestActiveWeek(weeks, JUL20)).toBe(JUL20);
+        expect(earliestActiveWeek(weeks, JUL20)).toBeUndefined();
     });
 
-    it('the only active weeks are in the future: the current week', () => {
+    it('the only active weeks are in the future: nothing waiting', () => {
         const weeks: Weeks = [week(JUL06, 'a', true), week(JUL27, 'b')];
-        expect(earliestActiveWeek(weeks, JUL20)).toBe(JUL20);
+        expect(earliestActiveWeek(weeks, JUL20)).toBeUndefined();
     });
 
     it('an active current week is itself the answer', () => {
@@ -248,6 +248,10 @@ describe('earliestActiveWeek', () => {
     it('finds an active week even when it sits before an ended one (interleaved)', () => {
         const weeks: Weeks = [week(JUL06, 'a'), week(JUL13, 'b', true)];
         expect(earliestActiveWeek(weeks, JUL20)).toBe(JUL06);
+    });
+
+    it('the current week itself is already ended, nothing earlier: nothing waiting', () => {
+        expect(earliestActiveWeek([week(JUL20, 'a', true)], JUL20)).toBeUndefined();
     });
 });
 
@@ -278,11 +282,9 @@ describe('moveWeek', () => {
 
     it('pushing a stale week forward clears the end-week queue behind it', () => {
         const before: Weeks = [week(JUL06, 'a', true), week(JUL13, 'b')];
-        // JUL13 is the head of the queue while it sits there...
         expect(earliestActiveWeek(before, JUL20)).toBe(JUL13);
-        // ...and moving it out leaves nothing waiting.
         const weeks = moveWeek(before, JUL13, JUL27);
-        expect(earliestActiveWeek(weeks, JUL20)).toBe(JUL20);
+        expect(earliestActiveWeek(weeks, JUL20)).toBeUndefined(); // was toBe(JUL20)
         expect(isValidWeeks(weeks)).toBe(true);
     });
 
