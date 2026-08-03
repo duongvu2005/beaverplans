@@ -1,4 +1,4 @@
-import type { Archive, WeekPlan } from '../core/types';
+import type { Weeks } from '../core/types';
 import type { Backend } from './backend';
 import type { LocalBackend } from './localBackend';
 
@@ -26,29 +26,15 @@ export class Store implements Backend {
     /**
      * @inheritdoc
      */
-    public getWeekPlan(): WeekPlan {
-        return this.active.getWeekPlan();
+    public getWeeks(): Weeks {
+        return this.active.getWeeks();
     }
 
     /**
      * @inheritdoc
      */
-    public getArchive(): Archive {
-        return this.active.getArchive();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public setWeekPlan(plan: WeekPlan): void {
-        this.active.setWeekPlan(plan);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public setArchive(archive: Archive): void {
-        this.active.setArchive(archive);
+    public setWeeks(weeks: Weeks): void {
+        this.active.setWeeks(weeks);
     }
 
     /**
