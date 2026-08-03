@@ -1,4 +1,4 @@
-import type { WeekPlan, Archive } from '../core/types';
+import type { Weeks } from '../core/types';
 
 export interface Backend {
     /**
@@ -12,32 +12,22 @@ export interface Backend {
     load(): Promise<void>;
 
     /**
-     * @returns the current WeekPlan: the one most recently passed to setWeekPlan,
-     *          or an empty plan for the current week if none has been set or loaded.
+     * @returns the current Weeks: the one most recently passed to setWeeks,
+     *          or an empty collection if none has been set or loaded. An
+     *          untouched week has no entry (see isEmptyWeek in weeks.ts) —
+     *          this never synthesizes one to fill the gap.
      */
-    getWeekPlan(): WeekPlan;
+    getWeeks(): Weeks;
 
     /**
-     * @returns the current Archive: the one most recently passed to setArchive,
-     *          or an empty archive if none has been set or loaded.
-     */
-    getArchive(): Archive;
-
-    /**
-     * Makes plan the current WeekPlan and persists it, so that a later getWeekPlan
-     * returns plan.
+     * Makes weeks the current Weeks and persists it, so that a later getWeeks
+     * returns weeks.
      *
-     * @param plan any valid WeekPlan.
+     * @param weeks any valid Weeks (isValidWeeks(weeks)) — trusted as a
+     *        precondition, not defended; validation happens on the read path
+     *        instead (untrusted JSON, not an in-memory typed value).
      */
-    setWeekPlan(plan: WeekPlan): void;
-
-    /**
-     * Makes archive the current Archive and persists it, so that a later getArchive
-     * returns archive.
-     *
-     * @param archive any valid WeekPlan.
-     */
-    setArchive(archive: Archive): void;
+    setWeeks(weeks: Weeks): void;
 
     /**
      * Returns all of the backend's stored state to its empty default, so that
