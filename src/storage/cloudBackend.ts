@@ -1,4 +1,4 @@
-import type { Archive, WeekPlan } from '../core/types';
+import type { Weeks } from '../core/types';
 import type { Backend } from './backend';
 
 export class CloudBackend implements Backend {
@@ -9,19 +9,11 @@ export class CloudBackend implements Backend {
         throw new Error('unimplemented');
     }
 
-    public getWeekPlan(): WeekPlan {
+    public getWeeks(): Weeks {
         throw new Error('unimplemented');
     }
 
-    public getArchive(): Archive {
-        throw new Error('unimplemented');
-    }
-
-    public setWeekPlan(_plan: WeekPlan): void {
-        throw new Error('unimplemented');
-    }
-
-    public setArchive(_archive: Archive): void {
+    public setWeeks(_weeks: Weeks): void {
         throw new Error('unimplemented');
     }
 
