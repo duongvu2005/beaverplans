@@ -38,8 +38,9 @@
  * ignored (slots never had one), which guarantees the uniqueness RI.
  */
 
-import type { Subtask, Task, Project, WeekPlan, Archive, DateKey, DayOfWeek } from '../core/types';
+import type { Subtask, Task, Project, WeekPlan, DateKey, DayOfWeek, Weeks } from '../core/types';
 import { toDateKey } from '../core/dates';
+import { putWeek } from '../core/weeks';
 
 // can be mapped to a Subtask in beaverplans
 export type LegacySlot = {
@@ -202,20 +203,21 @@ export function activeToWeekPlan(
  * @param newId supplies a fresh id for every node in the resulting plan
  *              (each project, task, and subtask). See module doc.
  * @returns a WeekPlan with:
- *          - weekStart: weekStart: weekStartFromIso(archive.start)
+ *          - weekStart: weekStartFromIso(archive.start)
+ *          - ended: true (every archive entry is a past, ended week)
  *          - projects: snapshot with each task converted to a project
  */
 export function archiveToWeekPlan(archive: LegacyArchive, newId: () => string): WeekPlan {
     return {
         weekStart: weekStartFromIso(archive.start),
         projects: archive.snapshot.map((task) => toProject(task, newId)),
+        ended: true,
     };
 }
 
 // --- top-level entry (impure: mints ids) ---
 /**
- * Convert one persisted old-planner row (see module doc) into the new format:
- * the live week as a WeekPlan and the past weeks as an Archive.
+ * Convert one persisted old-planner row (see module doc) into the new format (a Weeks object).
  *
  * Not deterministic unless newId is supplied — the default mints random UUIDs.
  *
@@ -223,19 +225,17 @@ export function archiveToWeekPlan(archive: LegacyArchive, newId: () => string): 
  * @param newId  id source for every node produced — the live plan and every
  *               archived week. Defaults to crypto.randomUUID; pass a
  *               deterministic generator to test. See module doc.
- * @returns { plan, archive } where
- *          - plan    = the live week (row.tasks + row.week_start)
- *          - archive = row.archives, each converted to a WeekPlan, in order
+ * @returns the plan as a Weeks object
  */
 export function importLegacy(
     row: LegacyRow,
     newId?: () => string,
-): { plan: WeekPlan; archive: Archive } {
+): Weeks {
     if (!newId) {
         newId = () => crypto.randomUUID();
     }
-    return {
-        plan: activeToWeekPlan(row.tasks, row.week_start, newId),
-        archive: row.archives.map((archive) => archiveToWeekPlan(archive, newId)),
-    };
+    return [
+            activeToWeekPlan(row.tasks, row.week_start, newId),
+            ...row.archives.map(archive => archiveToWeekPlan(archive, newId))
+    ].reduce(putWeek, []);
 }

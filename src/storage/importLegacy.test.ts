@@ -11,8 +11,8 @@ import {
     type LegacyRow,
 } from './importLegacy';
 import type { Task, Project, WeekPlan } from '../core/types';
-import { isValidPlan } from '../core/projects';
 import { overallProgress, progressByDay } from '../core/progress';
+import { isValidWeeks } from '../core/weeks';
 
 describe('toSubtask', () => {
     /*
@@ -375,6 +375,7 @@ describe('archiveToWeekPlan', () => {
      *   partition on archive.start's local weekday: Monday | Sunday
      *     (both must yield the correct Monday DateKey via weekStartFromIso)
      *   projects: snapshot mapped via toProject
+     *   ended: true is always set (every archive entry is a past, ended week)
      * Deep conversion + the full weekday range are covered by
      * toProject/toSubtask/weekStartFromIso; here we check start -> weekStart and delegation.
      */
@@ -406,6 +407,7 @@ describe('archiveToWeekPlan', () => {
     ];
     const expected = {
         weekStart: '2026-07-06',
+        ended: true,
         projects: [
             {
                 id: undefined,
@@ -416,14 +418,12 @@ describe('archiveToWeekPlan', () => {
     };
 
     it('covers Sunday-reading start (real archive) -> correct Monday', () => {
-        // 2026-07-05T17:00Z reads as Sunday in the NY-pinned runner
         expect(
             stripIds(archiveToWeekPlan({ start: '2026-07-05T17:00:00.000Z', snapshot }, counter())),
         ).toEqual(expected);
     });
 
     it('covers Monday-reading start -> that Monday', () => {
-        // 2026-07-06T13:00Z reads as Monday in the NY-pinned runner
         expect(
             stripIds(archiveToWeekPlan({ start: '2026-07-06T13:00:00.000Z', snapshot }, counter())),
         ).toEqual(expected);
@@ -433,8 +433,13 @@ describe('archiveToWeekPlan', () => {
 describe('importLegacy', () => {
     /*
      * Testing strategy
-     *   wiring: plan <- tasks + week_start; archive <- archives (in order)
-     *   newId: injected (deterministic wiring check) | default (produces valid plans)
+     *   wiring: active week <- tasks + week_start (no ended flag); archived
+     *     weeks <- archives, each already tagged ended: true by archiveToWeekPlan
+     *   result is folded through putWeek, so it comes back SORTED ascending by
+     *     weekStart, not in input order — and an archive with no projects is
+     *     silently dropped (see caveat above)
+     *   newId: injected (deterministic wiring check) | default (produces a
+     *     valid Weeks collection)
      * Node conversion + weekStart recovery are covered by the converter tests;
      * here we check composition and that the whole result is valid.
      */
@@ -477,7 +482,7 @@ describe('importLegacy', () => {
         ],
         archives: [
             {
-                start: '2026-07-05T17:00:00.000Z',
+                start: '2026-07-05T17:00:00.000Z', // -> weekStart '2026-07-06'
                 snapshot: [
                     {
                         id: 'ap1',
@@ -496,41 +501,17 @@ describe('importLegacy', () => {
                     },
                 ],
             },
-            { start: '2025-09-07T17:00:00.000Z', snapshot: [] },
+            { start: '2025-09-07T17:00:00.000Z', snapshot: [] }, // -> '2025-09-08', empty: dropped
         ],
     };
 
-    it('covers wiring: plan from tasks/week_start, archive from archives in order', () => {
+    it('covers wiring: active week unflagged, archive tagged ended, result sorted, empty archive dropped', () => {
         const result = importLegacy(row, counter());
 
-        expect(stripIds(result.plan)).toEqual({
-            weekStart: '2026-07-13',
-            projects: [
-                {
-                    id: undefined,
-                    name: 'Coursework',
-                    tasks: [
-                        {
-                            id: undefined,
-                            name: 'Errand',
-                            subtasks: [
-                                {
-                                    id: undefined,
-                                    assignedDay: 'mon',
-                                    isDone: true,
-                                    weight: 1,
-                                    missedDays: [],
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        });
-
-        expect(result.archive.map(stripIds)).toEqual([
+        expect(result.map(stripIds)).toEqual([
             {
                 weekStart: '2026-07-06',
+                ended: true,
                 projects: [
                     {
                         id: undefined,
@@ -539,54 +520,82 @@ describe('importLegacy', () => {
                     },
                 ],
             },
-            { weekStart: '2025-09-08', projects: [] },
+            {
+                weekStart: '2026-07-13',
+                projects: [
+                    {
+                        id: undefined,
+                        name: 'Coursework',
+                        tasks: [
+                            {
+                                id: undefined,
+                                name: 'Errand',
+                                subtasks: [
+                                    {
+                                        id: undefined,
+                                        assignedDay: 'mon',
+                                        isDone: true,
+                                        weight: 1,
+                                        missedDays: [],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
         ]);
     });
 
-    it('covers default newId: every produced WeekPlan is valid (imports clean)', () => {
-        const { plan, archive } = importLegacy(row); // real crypto.randomUUID
-        expect(isValidPlan(plan)).toBe(true);
-        for (const weekPlan of archive) {
-            expect(isValidPlan(weekPlan)).toBe(true);
-        }
+    it('covers default newId: the whole result is a valid Weeks collection', () => {
+        const weeks = importLegacy(row); // real crypto.randomUUID
+        expect(isValidWeeks(weeks)).toBe(true);
     });
 });
 
 describe('importLegacy — real export from a fake account', () => {
     // `fixture` keeps the full JSON shape (incl. the old stored stats used as an oracle);
     // importLegacy only reads the LegacyRow subset.
-    const { plan, archive } = importLegacy(fixture as LegacyRow);
+    const weeks = importLegacy(fixture as LegacyRow);
+    const activeWeek = weeks.find((w) => w.weekStart === fixture.week_start);
+    const archivedWeeks = weeks.filter((w) => w.ended);
 
-    it('every produced WeekPlan is valid', () => {
-        expect(isValidPlan(plan)).toBe(true);
-        for (const wp of archive) {
-            expect(isValidPlan(wp)).toBe(true);
-        }
+    it('the whole result is a valid Weeks collection', () => {
+        expect(isValidWeeks(weeks)).toBe(true);
     });
 
-    it('conserves counts: projects / tasks / subtasks / archives', () => {
+    it('conserves counts: projects / tasks / subtasks for the active week', () => {
+        expect(activeWeek).toBeDefined();
+        if (!activeWeek) return; // guard for noUncheckedIndexedAccess
+
         const subs = fixture.tasks.reduce((n, t) => n + t.subs.length, 0);
         const slots = fixture.tasks.reduce(
             (n, t) => n + t.subs.reduce((m, s) => m + s.slots.length, 0),
             0,
         );
-        const outTasks = plan.projects.reduce((n, p) => n + p.tasks.length, 0);
-        const outSubtasks = plan.projects.reduce(
+        const outTasks = activeWeek.projects.reduce((n, p) => n + p.tasks.length, 0);
+        const outSubtasks = activeWeek.projects.reduce(
             (n, p) => n + p.tasks.reduce((m, t) => m + t.subtasks.length, 0),
             0,
         );
 
-        expect(plan.projects.length).toBe(fixture.tasks.length);
+        expect(activeWeek.projects.length).toBe(fixture.tasks.length);
         expect(outTasks).toBe(subs);
         expect(outSubtasks).toBe(slots);
-        expect(archive.length).toBe(fixture.archives.length);
     });
 
-    it("reproduces each archive's old stored stats (oracle)", () => {
-        for (let i = 0; i < archive.length; i++) {
-            const wp = archive[i];
-            const old = fixture.archives[i];
-            if (!wp || !old) continue; // lengths equal; guard for noUncheckedIndexedAccess
+    it('archive count: every non-empty old archive survives, empties are dropped', () => {
+        const nonEmptyCount = fixture.archives.filter((a) => a.snapshot.length > 0).length;
+        expect(archivedWeeks.length).toBe(nonEmptyCount);
+    });
+
+    it("reproduces each non-empty archive's old stored stats (oracle), matched by weekStart", () => {
+        for (const old of fixture.archives) {
+            if (old.snapshot.length === 0) continue; // dropped: Weeks forbids empty entries
+            const weekStart = weekStartFromIso(old.start);
+            const wp = archivedWeeks.find((w) => w.weekStart === weekStart);
+            expect(wp, `no entry for ${weekStart}`).toBeDefined();
+            if (!wp) continue; // guard for noUncheckedIndexedAccess
 
             const { done, total } = overallProgress(wp.projects);
             expect(done).toBe(old.doneCount);
