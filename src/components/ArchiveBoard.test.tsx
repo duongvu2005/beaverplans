@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ArchiveBoard } from './ArchiveBoard';
-import type { Archive, WeekPlan } from '../core/types';
+import type { Weeks, WeekPlan } from '../core/types';
 
 /*
  * Testing strategy
@@ -10,7 +10,9 @@ import type { Archive, WeekPlan } from '../core/types';
  *     partition on year span: single year | crossing a year boundary
  *     partition on destructive action: delete one | clear all
  *     partition on dialog outcome: confirmed | dismissed (nothing changes)
- *     property: rows render newest-first regardless of stored order
+ *     property: rows render newest-first. archive is a Weeks value, so its rep
+ *     invariant already guarantees ascending order (e.g. via endedWeeks) —
+ *     fixtures below are built in that order, not shuffled.
  */
 
 function week(weekStart: string): WeekPlan {
@@ -25,7 +27,13 @@ function week(weekStart: string): WeekPlan {
                         id: `t-${weekStart}`,
                         name: 'Task',
                         subtasks: [
-                            { id: `s-${weekStart}`, isDone: true, assignedDay: 'mon', missedDays: [], weight: 1 },
+                            {
+                                id: `s-${weekStart}`,
+                                isDone: true,
+                                assignedDay: 'mon',
+                                missedDays: [],
+                                weight: 1,
+                            },
                         ],
                     },
                 ],
@@ -35,11 +43,11 @@ function week(weekStart: string): WeekPlan {
 }
 
 // The archive state App owns, updated the same way React would apply the updater.
-function renderBoard(archive: Archive) {
+function renderBoard(archive: Weeks) {
     const onChange = vi.fn();
     const result = render(<ArchiveBoard archive={archive} onChange={onChange} />);
     const applied = () => {
-        const updater = onChange.mock.calls.at(-1)?.[0] as (c: Archive) => Archive;
+        const updater = onChange.mock.calls.at(-1)?.[0] as (c: Weeks) => Weeks;
         return updater(archive);
     };
     return { ...result, onChange, applied };
@@ -66,8 +74,8 @@ describe('ArchiveBoard', () => {
         expect(screen.getByRole('heading', { name: '2026' })).toBeInTheDocument();
     });
 
-    it('covers many in one year: plural count, rows newest-first despite stored order', () => {
-        renderBoard([week('2026-06-29'), week('2026-07-13'), week('2026-07-06')]);
+    it('covers many in one year: plural count, rows rendered newest-first', () => {
+        renderBoard([week('2026-06-29'), week('2026-07-06'), week('2026-07-13')]);
         expect(screen.getByText('3 weeks')).toBeInTheDocument();
         expect(rowLabels()).toEqual(['Jul 13 – Jul 19', 'Jul 06 – Jul 12', 'Jun 29 – Jul 05']);
         expect(screen.getAllByRole('heading')).toHaveLength(1);
@@ -75,7 +83,7 @@ describe('ArchiveBoard', () => {
 
     it('covers crossing a year boundary: one heading per year, newest year first', () => {
         // Mon Dec 28 2026 straddles New Year but files under 2026, its Monday's year.
-        renderBoard([week('2026-12-28'), week('2027-01-04'), week('2026-12-21')]);
+        renderBoard([week('2026-12-21'), week('2026-12-28'), week('2027-01-04')]);
         expect(screen.getAllByRole('heading').map((h) => h.textContent)).toEqual(['2027', '2026']);
         expect(rowLabels()).toEqual(['Jan 04 – Jan 10', 'Dec 28 – Jan 03', 'Dec 21 – Dec 27']);
     });

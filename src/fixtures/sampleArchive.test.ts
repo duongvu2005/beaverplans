@@ -18,7 +18,7 @@ describe('sampleArchive fixture', () => {
         }
     });
 
-    it('no weekStart appears twice (archiveWeek requires it, and it is the identity)', () => {
+    it('no weekStart appears twice (Weeks requires it, and it is the identity)', () => {
         const weekStarts = sampleArchive.map((entry) => entry.weekStart);
         expect(new Set(weekStarts).size).toBe(weekStarts.length);
     });

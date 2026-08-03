@@ -1,4 +1,4 @@
-import type { Archive, DateKey, DayOfWeek } from '../core/types';
+import type { DateKey, DayOfWeek, Weeks } from '../core/types';
 import { todayKey, weekStartOf } from '../core/dates';
 import { percentOf } from '../core/math';
 import {
@@ -9,7 +9,7 @@ import {
     weekHistory,
     weekTrend,
     weekdayHistory,
-} from '../core/archiveStats';
+} from '../core/weekStats';
 import { WeekSpark } from './WeekSpark';
 import { weekdayColumns } from './sparkColumns';
 import { WeekTrend } from './WeekTrend';
@@ -37,7 +37,7 @@ const DAY_NAME: Record<DayOfWeek, string> = {
 };
 
 type StatsBoardProps = {
-    archive: Archive;
+    archive: Weeks;
     /** show the named week on the Plan tab; the caller switches tabs too */
     onOpenWeek: (weekStart: DateKey) => void;
 };

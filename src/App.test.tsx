@@ -8,16 +8,17 @@ import { sampleWeek } from './fixtures/sampleWeek';
 import { sampleArchive } from './fixtures/sampleArchive';
 import type { Weeks } from './core/types';
 
-// The app's state is one collection of weeks (see plan/week-model.md). These
-// cover the seeding and the derivations App does on it, plus a render smoke
-// check; the operations themselves are tested in core/weeks.test.ts.
+// The app's state is one collection of weeks, past, present and future alike,
+// active and ended together (see the Weeks ADT in core/types.ts). These cover
+// the seeding and the derivations App does on it, plus a render smoke check;
+// the operations themselves are tested in core/weeks.test.ts.
 //
 // "Today" is pinned to 2026-07-29 (a Wednesday, week-start 2026-07-27) — one
 // week after sampleWeek's own week (2026-07-20). That gap is deliberate: App
-// now always lands on the literal current week (see plan/fast-track-log.md),
-// so pinning it a week past the fixtures' only active week is what exercises
-// the landing-week nudge (queueHead < viewing) instead of landing on that week
-// by coincidence.
+// always lands on the literal current week, whatever state it's in, so pinning
+// it a week past the fixtures' only active week is what exercises the
+// landing-week nudge (queueHead < viewing) instead of landing on that week by
+// coincidence.
 describe('App under the weeks model', () => {
     const seed: Weeks = [sampleWeek, ...sampleArchive].reduce<Weeks>(putWeek, []);
 
@@ -117,9 +118,11 @@ describe('App under the weeks model', () => {
         expect(screen.getByText(/Focusing/)).toBeTruthy();
     });
 
-    // Weeks may now interleave (plan/fast-track-log.md): a free week that sits
-    // before an ended one is no longer frozen. This is the direct opposite of
-    // what this test used to assert.
+    // Ended and active weeks may interleave in any order — an ended week's
+    // position carries no meaning beyond its own weekStart, so a free week
+    // that sits before one that's already ended is not frozen by that alone.
+    // This is the direct opposite of what this test used to assert, back when
+    // ended weeks were required to precede every active one.
     it('a free week inside the archive is editable, not frozen (weeks interleave)', async () => {
         const user = userEvent.setup();
         render(<App />);

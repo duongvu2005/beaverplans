@@ -2,7 +2,7 @@ import { dateKeyForDay, weeksBetween } from './dates';
 import { percentOf } from './math';
 import { overallProgress, progressByDay } from './progress';
 import type { Progress, DayProgress } from './progress';
-import type { Archive, DateKey, DayOfWeek } from './types';
+import type { DateKey, DayOfWeek, Weeks } from './types';
 import { WEEK } from './types';
 
 /**
@@ -14,16 +14,16 @@ import { WEEK } from './types';
  * progress.ts's progressByDay — a leaf task's own isDone contributes
  * nothing here; it has no date to be credited to.
  *
- * @param archives any Archive
+ * @param weeks the archived weeks (e.g. endedWeeks(...) — see weeks.ts)
  * @returns a map from DateKey (a real calendar date, derived from an entry's
  *          weekStart plus the weekday a subtask was assigned to) to the
  *          total weighted effort completed on that date, summed across
- *          every archive entry whose week contains it. A date with nothing
+ *          every entry whose week contains it. A date with nothing
  *          completed is absent from the map, not present with 0.
  */
-export function dailyCompletions(archives: Archive): Map<DateKey, number> {
+export function dailyCompletions(weeks: Weeks): Map<DateKey, number> {
     const totals = new Map<DateKey, number>();
-    for (const { weekStart, projects } of archives) {
+    for (const { weekStart, projects } of weeks) {
         const subtasks = projects.flatMap((p) => p.tasks.flatMap((t) => t.subtasks));
         for (const subtask of subtasks) {
             if (!subtask.isDone) {
@@ -44,32 +44,35 @@ export type WeekProgress = {
 /**
  * The overall progress of every archived week, one entry per week.
  *
- * @param archives any Archive
- * @returns a list with one entry per entry in archives, each pairing that
+ * @param weeks the archived weeks, sorted ascending by weekStart (e.g.
+ *        endedWeeks(...) — see weeks.ts, whose result inherits Weeks' own
+ *        sorted rep invariant)
+ * @returns a list with one entry per entry in weeks, each pairing that
  *          entry's weekStart with overallProgress(projects) computed fresh
- *          on its snapshot, sorted chronologically by weekStart (ascending,
- *          oldest first)
+ *          on its snapshot, in the same order as weeks (so chronological,
+ *          oldest first, given the precondition above)
  */
-export function weekHistory(archives: Archive): ReadonlyArray<WeekProgress> {
-    return archives
-        .map(({ weekStart, projects }) => ({ weekStart, progress: overallProgress(projects) }))
-        .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+export function weekHistory(weeks: Weeks): ReadonlyArray<WeekProgress> {
+    return weeks.map(({ weekStart, projects }) => ({
+        weekStart,
+        progress: overallProgress(projects),
+    }));
 }
 
 /**
  * The progress of each weekday slot (mon-sun), summed across every
  * archived week. Distinct from progress.ts's progressByDay, which is
  * per-day within a single week; this aggregates that same slot (e.g.
- * every archived Wednesday) across all of archives.
+ * every archived Wednesday) across all of weeks.
  *
- * @param archives any Archive
+ * @param weeks the archived weeks (e.g. endedWeeks(...) — see weeks.ts)
  * @returns a list of DayProgress, one per weekday, ordered Monday first
  *          through Sunday last (length 7). For each, assigned and done
  *          are the sum of that weekday's assigned/done (per
  *          progress.ts's progressByDay, computed fresh per entry) across
- *          every entry in archives.
+ *          every entry in weeks.
  */
-export function weekdayHistory(archives: Archive): ReadonlyArray<DayProgress> {
+export function weekdayHistory(weeks: Weeks): ReadonlyArray<DayProgress> {
     const totals: Record<DayOfWeek, { assigned: number; done: number }> = {
         mon: { assigned: 0, done: 0 },
         tue: { assigned: 0, done: 0 },
@@ -79,7 +82,7 @@ export function weekdayHistory(archives: Archive): ReadonlyArray<DayProgress> {
         sat: { assigned: 0, done: 0 },
         sun: { assigned: 0, done: 0 },
     };
-    for (const { projects } of archives) {
+    for (const { projects } of weeks) {
         for (const dayProgress of progressByDay(projects)) {
             totals[dayProgress.day].assigned += dayProgress.assigned;
             totals[dayProgress.day].done += dayProgress.done;

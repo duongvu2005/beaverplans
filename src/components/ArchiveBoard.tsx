@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Archive, DateKey, Project, WeekPlan } from '../core/types';
-import { archiveNewestFirst, removeArchived } from '../core/archive';
+import type { DateKey, Project, WeekPlan, Weeks } from '../core/types';
+import { removeWeek } from '../core/weeks';
 import { weekRangeLabel } from '../core/dates';
 import { ArchiveRow } from './ArchiveRow';
 import { ArchiveQuickLook } from './ArchiveQuickLook';
@@ -16,8 +16,8 @@ function yearOf(weekStart: DateKey): string {
 }
 
 type ArchiveBoardProps = {
-    archive: Archive;
-    onChange: (updater: (current: Archive) => Archive) => void;
+    archive: Weeks;
+    onChange: (updater: (current: Weeks) => Weeks) => void;
 };
 
 export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
@@ -28,7 +28,9 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
 
     // Every year gets a heading, not only the ones after a change: labels carry
     // no year of their own, so an unlabelled first group would be undated.
-    const sorted = archiveNewestFirst(archive);
+    // archive is already sorted ascending (Weeks' rep invariant), so newest-first
+    // display is a plain reverse, not a sort.
+    const sorted = [...archive].reverse();
     const rows = sorted.map((entry, i) => {
         const year = yearOf(entry.weekStart);
         const previous = sorted[i - 1];
@@ -42,7 +44,7 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
     function handleConfirmDelete() {
         if (!removing) return;
         const { weekStart } = removing;
-        onChange((current) => removeArchived(current, weekStart));
+        onChange((current) => removeWeek(current, weekStart));
         setRemoving(null);
     }
 

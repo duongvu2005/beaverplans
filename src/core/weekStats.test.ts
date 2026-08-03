@@ -7,10 +7,10 @@ import {
     currentStreak,
     longestStreak,
     weekTrend,
-} from './archiveStats';
-import type { WeekProgress } from './archiveStats';
+} from './weekStats';
+import type { WeekProgress } from './weekStats';
 import { WEEK } from './types';
-import type { WeekPlan, Project, Task, Subtask, DayOfWeek, Archive } from './types';
+import type { WeekPlan, Project, Task, Subtask, DayOfWeek, Weeks } from './types';
 import { sampleArchive } from '../fixtures/sampleArchive';
 
 function wp(weekStart: string, done: number, total: number): WeekProgress {
@@ -61,7 +61,7 @@ describe('dailyCompletions', () => {
     });
 
     it('covers one entry with no done subtasks', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [taskWithSubtasks('t1', [subtask('s1', 'wed', false)])]),
             ]),
@@ -70,7 +70,7 @@ describe('dailyCompletions', () => {
     });
 
     it('covers one done subtask, default weight', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [taskWithSubtasks('t1', [subtask('s1', 'wed', true)])]),
             ]),
@@ -80,7 +80,7 @@ describe('dailyCompletions', () => {
     });
 
     it('covers a done subtask with weight > 1', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [taskWithSubtasks('t1', [subtask('s1', 'wed', true, 3)])]),
             ]),
@@ -89,7 +89,7 @@ describe('dailyCompletions', () => {
     });
 
     it('covers an undone subtask with a recorded miss (excluded entirely)', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [taskWithSubtasks('t1', [subtask('s1', 'thu', false, 1, ['wed'])])]),
             ]),
@@ -98,7 +98,7 @@ describe('dailyCompletions', () => {
     });
 
     it('covers multiple done subtasks resolving to the same date (weights sum)', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [
                     taskWithSubtasks('t1', [subtask('s1', 'wed', true, 2)]),
@@ -111,12 +111,12 @@ describe('dailyCompletions', () => {
     });
 
     it('covers a leaf task (no subtasks): contributes nothing even if done', () => {
-        const archive: Archive = [plan('2026-07-06', [project('p1', [leafTask('t1', true)])])];
+        const archive: Weeks = [plan('2026-07-06', [project('p1', [leafTask('t1', true)])])];
         expect(dailyCompletions(archive)).toEqual(new Map());
     });
 
     it('covers multiple archive entries, each keyed off its own weekStart', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [taskWithSubtasks('t1', [subtask('s1', 'mon', true)])]),
             ]),
@@ -137,10 +137,11 @@ describe('weekHistory', () => {
     /**
      * Testing strategy:
      *      - partition on archives: empty | one entry | multiple entries
-     *      - partition on stored order vs chronological order: same | reversed
-     *        (sort must not just trust input order)
      *      - partition on a week's progress: no projects (0/0) | partially done |
      *        fully done
+     *      - property: output order matches input order (weekHistory requires its
+     *        argument sorted ascending and does not re-sort — see endedWeeks in
+     *        weeks.ts, whose result already satisfies this)
      */
 
     it('covers an empty archive', () => {
@@ -148,14 +149,14 @@ describe('weekHistory', () => {
     });
 
     it('covers one entry with no projects', () => {
-        const archive: Archive = [plan('2026-07-06', [])];
+        const archive: Weeks = [plan('2026-07-06', [])];
         expect(weekHistory(archive)).toEqual([
             { weekStart: '2026-07-06', progress: { done: 0, total: 0 } },
         ]);
     });
 
     it('covers one entry, partially done', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [
                     taskWithSubtasks('t1', [
@@ -170,12 +171,12 @@ describe('weekHistory', () => {
         ]);
     });
 
-    it('covers multiple entries stored out of chronological order', () => {
+    it('covers multiple entries, output order matching input order', () => {
+        const earlier = plan('2026-07-06', [project('p1', [leafTask('t1', true)])]);
         const later = plan('2026-07-13', [
             project('p1', [taskWithSubtasks('t1', [subtask('s1', 'mon', true)])]),
         ]);
-        const earlier = plan('2026-07-06', [project('p1', [leafTask('t1', true)])]);
-        const archive: Archive = [later, earlier];
+        const archive: Weeks = [earlier, later];
 
         expect(weekHistory(archive)).toEqual([
             { weekStart: '2026-07-06', progress: { done: 1, total: 1 } },
@@ -203,7 +204,7 @@ describe('weekdayHistory', () => {
     });
 
     it('covers one entry with a recorded miss', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [taskWithSubtasks('t1', [subtask('s1', 'thu', false, 2, ['wed'])])]),
             ]),
@@ -215,7 +216,7 @@ describe('weekdayHistory', () => {
     });
 
     it('covers multiple entries summing the SAME weekday', () => {
-        const archive: Archive = [
+        const archive: Weeks = [
             plan('2026-07-06', [
                 project('p1', [taskWithSubtasks('t1', [subtask('s1', 'mon', true, 1)])]),
             ]),
@@ -439,7 +440,10 @@ describe('weekTrend', () => {
     });
 
     it('covers the real fixture: 7 items, both amendments idle', () => {
-        const items = weekTrend(weekHistory(sampleArchive), 8);
+        // sampleArchive is authored newest-first (see its own doc comment);
+        // weekHistory now requires ascending input, same as endedWeeks' real output.
+        const ascending = [...sampleArchive].sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+        const items = weekTrend(weekHistory(ascending), 8);
         expect(items.map((i) => (i.kind === 'gap' ? `gap ${i.weeks}` : i.week.weekStart))).toEqual([
             '2025-12-15',
             '2025-12-22',
