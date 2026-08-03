@@ -34,14 +34,15 @@ import { WeekRef } from './components/WeekRef';
 import { TopBar, type View } from './components/TopBar';
 import shell from './components/dialogShell.module.css';
 import './App.css';
+import { useWeeks } from './components/useWeeks';
 
 // The fixtures are hand-listed in reading order; folding putWeek over them sorts
 // them and enforces the collection's invariants from the first render.
-const seedWeeks: Weeks = [sampleWeek, ...sampleArchive].reduce<Weeks>(putWeek, []);
+const _seedWeeks: Weeks = [sampleWeek, ...sampleArchive].reduce<Weeks>(putWeek, []);
 
 export default function App() {
     const [view, setView] = useState<View>('plan');
-    const [weeks, setWeeks] = useState<Weeks>(seedWeeks);
+    const [weeks, setWeeks] = useWeeks();
     const currentWeek = weekStartOf(new Date());
     // Always the literal current week, whether it holds work, is empty, or has
     // already been ended — weeks may interleave now, so there is no archive
