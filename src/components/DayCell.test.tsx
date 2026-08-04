@@ -107,7 +107,13 @@ describe('DayCell', () => {
     });
 
     it('covers isOverdue true: past assigned day, current week, not done -> overdue tag + Move button', () => {
-        render(<DayCell {...baseProps({ entry: makeEntry({ subtask: makeSubtask({ assignedDay: 'mon' }) }) })} />);
+        render(
+            <DayCell
+                {...baseProps({
+                    entry: makeEntry({ subtask: makeSubtask({ assignedDay: 'mon' }) }),
+                })}
+            />,
+        );
         expect(screen.getByText(/overdue/)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Move to another day' })).toBeInTheDocument();
     });
@@ -116,7 +122,9 @@ describe('DayCell', () => {
         render(
             <DayCell
                 {...baseProps({
-                    entry: makeEntry({ subtask: makeSubtask({ assignedDay: 'mon', isDone: true }) }),
+                    entry: makeEntry({
+                        subtask: makeSubtask({ assignedDay: 'mon', isDone: true }),
+                    }),
                 })}
             />,
         );
@@ -153,7 +161,9 @@ describe('DayCell', () => {
             <DayCell
                 {...baseProps({
                     isMissed: true,
-                    entry: makeEntry({ subtask: makeSubtask({ assignedDay: 'wed', isDone: true }) }),
+                    entry: makeEntry({
+                        subtask: makeSubtask({ assignedDay: 'wed', isDone: true }),
+                    }),
                 })}
             />,
         );
@@ -167,9 +177,9 @@ describe('DayCell', () => {
     it('covers compact true: short "missed" label, no "Clear" text on the button', () => {
         render(<DayCell {...baseProps({ isMissed: true, compact: true })} />);
         expect(screen.getByText('missed')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Clear this missed mark' })).not.toHaveTextContent(
-            'Clear',
-        );
+        expect(
+            screen.getByRole('button', { name: 'Clear this missed mark' }),
+        ).not.toHaveTextContent('Clear');
     });
 
     it('covers compact false: full "missed · now on <Day>" text, "Clear" label on the button', () => {
@@ -217,7 +227,15 @@ describe('DayCell', () => {
     it('covers clicking the body: calls onEditSubtask(subtask.id)', async () => {
         const user = userEvent.setup();
         const onEditSubtask = vi.fn();
-        render(<DayCell {...baseProps({ day: 'wed', entry: makeEntry({ subtask: makeSubtask({ assignedDay: 'wed' }) }), onEditSubtask })} />);
+        render(
+            <DayCell
+                {...baseProps({
+                    day: 'wed',
+                    entry: makeEntry({ subtask: makeSubtask({ assignedDay: 'wed' }) }),
+                    onEditSubtask,
+                })}
+            />,
+        );
 
         await user.click(screen.getByText('Write essay'));
 

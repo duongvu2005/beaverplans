@@ -101,8 +101,14 @@ describe('LocalBackend', () => {
         const storage = new FakeStorage();
         // Each entry alone passes isValidPlan (valid weekStart, unique within itself) —
         // only isValidWeeks' cross-entry id check catches the collision.
-        const first: WeekPlan = { weekStart: '2026-07-06', projects: [{ id: 'dup', name: 'A', tasks: [] }] };
-        const second: WeekPlan = { weekStart: '2026-07-13', projects: [{ id: 'dup', name: 'B', tasks: [] }] };
+        const first: WeekPlan = {
+            weekStart: '2026-07-06',
+            projects: [{ id: 'dup', name: 'A', tasks: [] }],
+        };
+        const second: WeekPlan = {
+            weekStart: '2026-07-13',
+            projects: [{ id: 'dup', name: 'B', tasks: [] }],
+        };
         storage.setItem(STORAGE_KEY, JSON.stringify({ weeks: [first, second] }));
         const backend = new LocalBackend(storage);
         await backend.load();

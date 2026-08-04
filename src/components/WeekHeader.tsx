@@ -79,8 +79,7 @@ export function WeekHeader({
     // Only a real, off-source destination can be blocked — aimedAtSource has
     // its own message below, and the source itself is never the problem
     // (canMove already gated whether arming was possible at all).
-    const blockedReason =
-        armed && !aimedAtSource ? destinationBlockedReason(shown) : undefined;
+    const blockedReason = armed && !aimedAtSource ? destinationBlockedReason(shown) : undefined;
 
     function step(delta: number) {
         const next = addWeeks(shown, delta);
@@ -139,10 +138,7 @@ export function WeekHeader({
                         <ChevronIcon dir="left" />
                     </button>
                     <span className={styles.read}>
-                        <span
-                            className={styles.name}
-                            data-now={!armed && shown === currentWeek}
-                        >
+                        <span className={styles.name} data-now={!armed && shown === currentWeek}>
                             {armed ? 'Move to' : relativeWeekName(shown, today)}
                         </span>
                         <span className={styles.date}>{weekRangeLabel(shown)}</span>

@@ -447,7 +447,12 @@ describe('carryForward', () => {
     });
 
     it('appends after the work already on the destination, never merging by name', () => {
-        const weeks = carryForward([detailedWeek(JUL13), week(JUL20, 'b')], JUL13, JUL20, counter());
+        const weeks = carryForward(
+            [detailedWeek(JUL13), week(JUL20, 'b')],
+            JUL13,
+            JUL20,
+            counter(),
+        );
         expect(weekAt(weeks, JUL20).projects.map((p) => p.name)).toEqual(['b-p', 'proj']);
     });
 

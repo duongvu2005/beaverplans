@@ -40,16 +40,10 @@ export function WeekActionsSheet({
                 </h3>
             </div>
             <div className={styles.items}>
-                <button
-                    type="button"
-                    className={styles.item}
-                    disabled={!canMove}
-                    onClick={onMove}
-                >
+                <button type="button" className={styles.item} disabled={!canMove} onClick={onMove}>
                     <b>Move this week&rsquo;s work</b>
                     <span>
-                        Relabel the whole plan onto a different week. Nothing is finished or
-                        lost.
+                        Relabel the whole plan onto a different week. Nothing is finished or lost.
                     </span>
                 </button>
                 <button type="button" className={styles.item} disabled={!canEnd} onClick={onEnd}>

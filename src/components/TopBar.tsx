@@ -79,7 +79,9 @@ export function TopBar({ view, onView }: TopBarProps) {
                         title={themeLabel}
                     >
                         <span className={styles.half} aria-hidden="true" />
-                        <span className={styles.themeLabel}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
+                        <span className={styles.themeLabel}>
+                            {theme === 'dark' ? 'Dark' : 'Light'}
+                        </span>
                     </button>
 
                     <span className={styles.rule} aria-hidden="true" />

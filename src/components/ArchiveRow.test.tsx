@@ -24,8 +24,20 @@ function samplePlan(): WeekPlan {
                         id: 't1',
                         name: 'Task',
                         subtasks: [
-                            { id: 's1', isDone: true, assignedDay: 'mon', missedDays: [], weight: 2 },
-                            { id: 's2', isDone: false, assignedDay: 'tue', missedDays: [], weight: 1 },
+                            {
+                                id: 's1',
+                                isDone: true,
+                                assignedDay: 'mon',
+                                missedDays: [],
+                                weight: 2,
+                            },
+                            {
+                                id: 's2',
+                                isDone: false,
+                                assignedDay: 'tue',
+                                missedDays: [],
+                                weight: 1,
+                            },
                         ],
                     },
                 ],

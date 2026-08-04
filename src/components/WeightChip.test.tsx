@@ -20,7 +20,7 @@ describe('WeightChip', () => {
      *         and never opens the sheet
      */
 
-    it('covers weight drives the chip\'s accessible label', () => {
+    it("covers weight drives the chip's accessible label", () => {
         render(<WeightChip weight={2} onChange={() => {}} />);
         expect(screen.getByRole('button', { name: 'Weight: Medium' })).toBeInTheDocument();
     });

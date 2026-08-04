@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import type { Weeks } from "../core/types";
-import { store } from "../storage/instance";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import type { Weeks } from '../core/types';
+import { store } from '../storage/instance';
 
 export function useWeeks(): [Weeks, Dispatch<SetStateAction<Weeks>>] {
     const [weeks, setWeeks] = useState<Weeks>([]);

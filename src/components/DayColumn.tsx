@@ -43,7 +43,11 @@ export function DayColumn({
                 title="Focus this day"
             >
                 <span className={styles.dayName}>{daySchedule.day}</span>
-                <PointsStat done={progress?.done ?? 0} total={progress?.assigned ?? 0} showPoint={true} />
+                <PointsStat
+                    done={progress?.done ?? 0}
+                    total={progress?.assigned ?? 0}
+                    showPoint={true}
+                />
             </button>
             {/* inert on the list only, not the day button above: viewing which
                 day has what is navigation, not an edit, and should still work

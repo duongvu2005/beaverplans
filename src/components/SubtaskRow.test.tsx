@@ -50,7 +50,12 @@ describe('SubtaskRow', () => {
     it('covers description absent: note input empty, sheet heading has no label', async () => {
         const user = userEvent.setup();
         render(
-            <SubtaskRow subtask={makeSubtask()} onSetWeight={noop} onSetNote={noop} onRemove={noop} />,
+            <SubtaskRow
+                subtask={makeSubtask()}
+                onSetWeight={noop}
+                onSetNote={noop}
+                onRemove={noop}
+            />,
         );
         expect(screen.getByPlaceholderText('add a note (optional)')).toHaveValue('');
 
@@ -63,7 +68,12 @@ describe('SubtaskRow', () => {
         const user = userEvent.setup();
         const onSetNote = vi.fn();
         render(
-            <SubtaskRow subtask={makeSubtask()} onSetWeight={noop} onSetNote={onSetNote} onRemove={noop} />,
+            <SubtaskRow
+                subtask={makeSubtask()}
+                onSetWeight={noop}
+                onSetNote={onSetNote}
+                onRemove={noop}
+            />,
         );
 
         await user.type(screen.getByPlaceholderText('add a note (optional)'), 'x');
@@ -75,7 +85,12 @@ describe('SubtaskRow', () => {
         const user = userEvent.setup();
         const onRemove = vi.fn();
         render(
-            <SubtaskRow subtask={makeSubtask()} onSetWeight={noop} onSetNote={noop} onRemove={onRemove} />,
+            <SubtaskRow
+                subtask={makeSubtask()}
+                onSetWeight={noop}
+                onSetNote={noop}
+                onRemove={onRemove}
+            />,
         );
 
         await user.click(screen.getByRole('button', { name: 'Remove subtask' }));

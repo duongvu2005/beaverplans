@@ -227,15 +227,12 @@ export function archiveToWeekPlan(archive: LegacyArchive, newId: () => string): 
  *               deterministic generator to test. See module doc.
  * @returns the plan as a Weeks object
  */
-export function importLegacy(
-    row: LegacyRow,
-    newId?: () => string,
-): Weeks {
+export function importLegacy(row: LegacyRow, newId?: () => string): Weeks {
     if (!newId) {
         newId = () => crypto.randomUUID();
     }
     return [
-            activeToWeekPlan(row.tasks, row.week_start, newId),
-            ...row.archives.map(archive => archiveToWeekPlan(archive, newId))
+        activeToWeekPlan(row.tasks, row.week_start, newId),
+        ...row.archives.map((archive) => archiveToWeekPlan(archive, newId)),
     ].reduce(putWeek, []);
 }

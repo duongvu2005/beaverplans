@@ -99,7 +99,8 @@ export function DayCell({
                 {showsMissed ? (
                     <div className={styles.tagRow}>
                         <span className={`${styles.cellTag} ${styles.missTag}`}>
-                            missed{!compact && isMissed && ` · now on ${SHORT[subtask.assignedDay]}`}
+                            missed
+                            {!compact && isMissed && ` · now on ${SHORT[subtask.assignedDay]}`}
                         </span>
                         {isMissed && (
                             <button

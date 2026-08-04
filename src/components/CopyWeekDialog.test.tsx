@@ -34,12 +34,7 @@ function renderDialog(entry: WeekPlan = week) {
     const onCopy = vi.fn();
     const onClose = vi.fn();
     render(
-        <CopyWeekDialog
-            entry={entry}
-            label="Jul 06 – Jul 12"
-            onClose={onClose}
-            onCopy={onCopy}
-        />,
+        <CopyWeekDialog entry={entry} label="Jul 06 – Jul 12" onClose={onClose} onCopy={onCopy} />,
     );
     return { onCopy, onClose };
 }
