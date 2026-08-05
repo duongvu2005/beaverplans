@@ -71,8 +71,8 @@ export type Subtask = {
 export type WeekPlan = {
     readonly weekStart: DateKey;
     readonly projects: ReadonlyArray<Project>;
-    /** whether this week has been ended; absent means it has not */
-    readonly ended?: boolean;
+    /** whether this week has been ended */
+    readonly ended: boolean;
 };
 
 /**

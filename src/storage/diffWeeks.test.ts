@@ -14,9 +14,9 @@ describe('diffWeeks', () => {
      *   partition on call shape: single-change | mixed (several changes at once)
      */
 
-    const week1: WeekPlan = { weekStart: '2026-07-06', projects: [] };
-    const week2: WeekPlan = { weekStart: '2026-07-13', projects: [] };
-    const week3: WeekPlan = { weekStart: '2026-07-20', projects: [] };
+    const week1: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [] };
+    const week2: WeekPlan = { weekStart: '2026-07-13', ended: false, projects: [] };
+    const week3: WeekPlan = { weekStart: '2026-07-20', ended: false, projects: [] };
 
     it('covers previous empty, next empty: no upserts, no deletes', () => {
         expect(diffWeeks([], [])).toEqual({ upserts: [], deletes: [] });
@@ -43,7 +43,7 @@ describe('diffWeeks', () => {
 
     it('covers a shared weekStart with a different reference: in upserts', () => {
         const previous: Weeks = [week1];
-        const editedWeek1: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const editedWeek1: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [] };
         const next: Weeks = [editedWeek1];
         expect(diffWeeks(previous, next)).toEqual({ upserts: [editedWeek1], deletes: [] });
     });
@@ -61,8 +61,8 @@ describe('diffWeeks', () => {
     });
 
     it('covers a mixed call: one untouched, one edited, one added, one removed', () => {
-        const editedWeek2: WeekPlan = { weekStart: '2026-07-13', projects: [] };
-        const addedWeek: WeekPlan = { weekStart: '2026-07-27', projects: [] };
+        const editedWeek2: WeekPlan = { weekStart: '2026-07-13', ended: false, projects: [] };
+        const addedWeek: WeekPlan = { weekStart: '2026-07-27', ended: false, projects: [] };
         const previous: Weeks = [week1, week2, week3];
         const next: Weeks = [week1, editedWeek2, addedWeek];
         expect(diffWeeks(previous, next)).toEqual({

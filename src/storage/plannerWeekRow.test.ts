@@ -68,12 +68,13 @@ describe('rowToWeekPlan', () => {
 describe('weekPlanToRow', () => {
     /*
      * Testing strategy
-     *   partition on plan.ended: true | false | absent
+     *   partition on plan.ended: true | false
      *   partition on checked field: user_id | updated_at absence
      */
 
     const basePlan: WeekPlan = {
         weekStart: '2026-07-13',
+        ended: false,
         projects: [{ id: 'p1', name: 'Essays', tasks: [] }],
     };
 
@@ -90,15 +91,6 @@ describe('weekPlanToRow', () => {
     it('covers a plan with ended false explicit: row.ended is false', () => {
         const plan: WeekPlan = { ...basePlan, ended: false };
         expect(weekPlanToRow('user-1', plan)).toEqual({
-            user_id: 'user-1',
-            week_start: '2026-07-13',
-            ended: false,
-            projects: basePlan.projects,
-        });
-    });
-
-    it('covers a plan with ended absent: row.ended defaults to false', () => {
-        expect(weekPlanToRow('user-1', basePlan)).toEqual({
             user_id: 'user-1',
             week_start: '2026-07-13',
             ended: false,

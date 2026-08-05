@@ -27,6 +27,7 @@ function project(id: string, name: string, taskCount: number): Project {
 
 const week: WeekPlan = {
     weekStart: '2026-07-06',
+    ended: true,
     projects: [project('p1', 'software construction', 2), project('p2', 'beaverplans', 1)],
 };
 
@@ -108,7 +109,7 @@ describe('CopyWeekDialog', () => {
     });
 
     it('covers no projects: explains there is nothing to copy and disables Copy', () => {
-        renderDialog({ weekStart: '2026-07-06', projects: [] });
+        renderDialog({ weekStart: '2026-07-06', ended: true, projects: [] });
 
         expect(screen.getByText('This week has no projects to copy.')).toBeInTheDocument();
         expect(screen.queryAllByRole('checkbox')).toHaveLength(0);

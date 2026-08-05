@@ -40,7 +40,7 @@ function project(id: string, tasks: Task[]): Project {
 }
 
 function plan(weekStart: string, projects: Project[]): WeekPlan {
-    return { weekStart, projects };
+    return { weekStart, ended: false, projects };
 }
 
 describe('dailyCompletions', () => {

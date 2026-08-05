@@ -5,6 +5,7 @@ import type { WeekPlan } from '../core/types';
  *  weekdays, done/undone mix, recorded misses, weights 1..3, descriptions. */
 export const sampleWeek: WeekPlan = {
     weekStart: '2026-07-20', // a Monday
+    ended: false,
     projects: [
         {
             id: 'p1',

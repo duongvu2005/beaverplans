@@ -18,6 +18,7 @@ import type { Weeks, WeekPlan } from '../core/types';
 function week(weekStart: string): WeekPlan {
     return {
         weekStart,
+        ended: true,
         projects: [
             {
                 id: `p-${weekStart}`,

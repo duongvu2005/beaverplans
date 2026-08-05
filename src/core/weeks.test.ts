@@ -37,16 +37,16 @@ function project(id: string, tasks: Task[]): Project {
 
 // A one-project week whose every id is prefixed, so two weeks built with
 // different prefixes satisfy collection-wide id uniqueness.
-function week(weekStart: DateKey, prefix: string, ended?: boolean): WeekPlan {
+function week(weekStart: DateKey, prefix: string, ended: boolean = false): WeekPlan {
     return {
         weekStart,
+        ended,
         projects: [project(`${prefix}-p`, [leafTask(`${prefix}-t`, false)])],
-        ...(ended === undefined ? {} : { ended }),
     };
 }
 
 function emptyWeek(weekStart: DateKey): WeekPlan {
-    return { weekStart, projects: [] };
+    return { weekStart, ended: false, projects: [] };
 }
 
 // One project holding a half-finished task (one subtask done, one missed and
@@ -55,6 +55,7 @@ function emptyWeek(weekStart: DateKey): WeekPlan {
 function detailedWeek(weekStart: DateKey): WeekPlan {
     return {
         weekStart,
+        ended: false,
         projects: [
             {
                 id: 'd-p',
@@ -82,7 +83,9 @@ describe('isEmptyWeek', () => {
     });
 
     it('a project with no tasks: NOT empty (you made a thing, it stays)', () => {
-        expect(isEmptyWeek({ weekStart: JUL06, projects: [project('p', [])] })).toBe(false);
+        expect(isEmptyWeek({ weekStart: JUL06, ended: false, projects: [project('p', [])] })).toBe(
+            false,
+        );
     });
 
     it('a project with work: not empty', () => {
@@ -111,12 +114,16 @@ describe('weekAt', () => {
     });
 
     it('absent: an empty, un-ended plan for that week', () => {
-        expect(weekAt([week(JUL13, 'b')], JUL06)).toEqual({ weekStart: JUL06, projects: [] });
+        expect(weekAt([week(JUL13, 'b')], JUL06)).toEqual({
+            weekStart: JUL06,
+            ended: false,
+            projects: [],
+        });
         expect(isEnded(weekAt([week(JUL13, 'b')], JUL06))).toBe(false);
     });
 
     it('empty collection: an empty plan', () => {
-        expect(weekAt([], JUL06)).toEqual({ weekStart: JUL06, projects: [] });
+        expect(weekAt([], JUL06)).toEqual({ weekStart: JUL06, ended: false, projects: [] });
     });
 });
 
@@ -259,6 +266,7 @@ describe('moveWeek', () => {
     // A week with done work and a recorded miss, to prove a relabel keeps both.
     const detailed: WeekPlan = {
         weekStart: JUL13,
+        ended: false,
         projects: [
             project('d-p', [{ id: 'd-t', name: 'd-t', subtasks: [subtask('d-s', true, ['mon'])] }]),
         ],
@@ -464,6 +472,7 @@ describe('carryForward', () => {
     it('a fully finished week carries nothing: unchanged', () => {
         const done: WeekPlan = {
             weekStart: JUL13,
+            ended: false,
             projects: [project('p', [leafTask('t', true)])],
         };
         expect(carryForward([done], JUL13, JUL20, counter())).toEqual([done]);
@@ -536,6 +545,7 @@ describe('isValidWeeks', () => {
     it('an id repeated WITHIN one entry: invalid', () => {
         const clash: WeekPlan = {
             weekStart: JUL06,
+            ended: false,
             projects: [project('p', [leafTask('x', false)]), project('p2', [leafTask('x', false)])],
         };
         expect(isValidWeeks([clash])).toBe(false);

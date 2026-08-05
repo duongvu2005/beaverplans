@@ -15,6 +15,7 @@ import type { WeekPlan } from '../core/types';
 function samplePlan(): WeekPlan {
     return {
         weekStart: '2026-07-13',
+        ended: true,
         projects: [
             {
                 id: 'p1',

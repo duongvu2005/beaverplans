@@ -95,7 +95,7 @@ describe('ArchiveQuickLook', () => {
     it('covers no projects: shows the empty note instead of a rollup', () => {
         render(
             <ArchiveQuickLook
-                entry={{ weekStart: '2026-05-04', projects: [] }}
+                entry={{ weekStart: '2026-05-04', ended: true, projects: [] }}
                 label="May 04 – May 10"
                 onClose={() => {}}
                 onEdit={() => {}}

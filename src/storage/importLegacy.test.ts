@@ -344,6 +344,7 @@ describe('activeToWeekPlan', () => {
 
         expect(stripIds(plan)).toEqual({
             weekStart: '2026-07-13',
+            ended: false,
             projects: [
                 {
                     id: undefined,
@@ -364,6 +365,7 @@ describe('activeToWeekPlan', () => {
     it('covers empty tasks: no projects', () => {
         expect(activeToWeekPlan([], '2026-07-13', counter())).toEqual({
             weekStart: '2026-07-13',
+            ended: false,
             projects: [],
         });
     });
@@ -522,6 +524,7 @@ describe('importLegacy', () => {
             },
             {
                 weekStart: '2026-07-13',
+                ended: false,
                 projects: [
                     {
                         id: undefined,

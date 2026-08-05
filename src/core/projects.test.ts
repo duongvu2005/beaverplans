@@ -74,7 +74,7 @@ describe('addProject', () => {
      */
 
     it('covers empty plan: new blank project is the only project', () => {
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [] };
         const result = addProject(plan, 'p1');
         expect(isValidPlan(result)).toBe(true);
 
@@ -90,7 +90,7 @@ describe('addProject', () => {
     it('covers non-empty plan: new project appended last, existing unchanged', () => {
         const a = makeProject('a');
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = addProject(plan, 'pNew');
         expect(isValidPlan(result)).toBe(true);
 
@@ -104,7 +104,7 @@ describe('addProject', () => {
 
     it('covers non-empty plan: input plan is not mutated', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addProject(plan, 'pNew');
         expect(isValidPlan(result)).toBe(true);
 
@@ -132,7 +132,7 @@ describe('addTask', () => {
     it('covers found, target empty, >1 project: adds first task to the right project only', () => {
         const a = makeProject('a'); // target
         const b = makeProject('b'); // sibling, must stay the same instance
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = addTask(plan, 'a', 't1');
         expect(isValidPlan(result)).toBe(true);
 
@@ -148,7 +148,7 @@ describe('addTask', () => {
     it('covers found, target non-empty: appends the new task after existing ones', () => {
         const existing = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [existing] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addTask(plan, 'a', 't1');
         expect(isValidPlan(result)).toBe(true);
 
@@ -161,7 +161,7 @@ describe('addTask', () => {
 
     it('covers not found: projects unchanged, no task added', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addTask(plan, 'nope', 't1');
         expect(isValidPlan(result)).toBe(true);
 
@@ -172,7 +172,7 @@ describe('addTask', () => {
 
     it('covers found: does not mutate the input plan', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addTask(plan, 'a', 't1');
         expect(isValidPlan(result)).toBe(true);
 
@@ -201,7 +201,7 @@ describe('addSubtask', () => {
     it('covers found, target task is a leaf: adds first subtask and strips isDone', () => {
         const leaf = makeTask('t0'); // has isDone, no subtasks
         const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addSubtask(plan, 't0', 's1', 'mon');
         expect(isValidPlan(result)).toBe(true);
 
@@ -219,7 +219,7 @@ describe('addSubtask', () => {
         // a task with a subtask carries no isDone (A-careful invariant)
         const parent: Task = { id: 't0', name: 't0', subtasks: [existing] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addSubtask(plan, 't0', 's1', 'tue');
         expect(isValidPlan(result)).toBe(true);
 
@@ -242,7 +242,7 @@ describe('addSubtask', () => {
         const siblingTask = makeTask('t1');
         const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = addSubtask(plan, 't0', 's1', 'wed');
         expect(isValidPlan(result)).toBe(true);
 
@@ -259,7 +259,7 @@ describe('addSubtask', () => {
     it('covers not found: projects unchanged, no subtask added', () => {
         const leaf = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addSubtask(plan, 'nope', 's1', 'mon');
         expect(isValidPlan(result)).toBe(true);
 
@@ -270,7 +270,7 @@ describe('addSubtask', () => {
     it('covers found: does not mutate the input plan', () => {
         const leaf = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addSubtask(plan, 't0', 's1', 'mon');
         expect(isValidPlan(result)).toBe(true);
 
@@ -297,7 +297,7 @@ describe('removeProject', () => {
 
     it('covers 1 project: removing it leaves no projects', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeProject(plan, 'a');
         expect(isValidPlan(result)).toBe(true);
 
@@ -309,7 +309,7 @@ describe('removeProject', () => {
         const a = makeProject('a');
         const b = makeProject('b');
         const c = makeProject('c');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b, c] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b, c] };
         const result = removeProject(plan, 'a');
         expect(isValidPlan(result)).toBe(true);
 
@@ -322,7 +322,7 @@ describe('removeProject', () => {
         const a = makeProject('a');
         const b = makeProject('b');
         const c = makeProject('c');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b, c] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b, c] };
         const result = removeProject(plan, 'b');
         expect(isValidPlan(result)).toBe(true);
 
@@ -335,7 +335,7 @@ describe('removeProject', () => {
         const a = makeProject('a');
         const b = makeProject('b');
         const c = makeProject('c');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b, c] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b, c] };
         const result = removeProject(plan, 'c');
         expect(isValidPlan(result)).toBe(true);
 
@@ -347,7 +347,7 @@ describe('removeProject', () => {
     it('covers not found on non-empty plan: projects unchanged (same instances)', () => {
         const a = makeProject('a');
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = removeProject(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -357,7 +357,7 @@ describe('removeProject', () => {
     });
 
     it('covers not found on empty plan: still no projects', () => {
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [] };
         const result = removeProject(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -367,7 +367,7 @@ describe('removeProject', () => {
     it('covers remove: does not mutate the input plan', () => {
         const a = makeProject('a');
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = removeProject(plan, 'a');
         expect(isValidPlan(result)).toBe(true);
 
@@ -396,7 +396,7 @@ describe('removeTask', () => {
     it('covers 1 project, 1 task: removing it leaves that project with no tasks', () => {
         const t = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [t] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -409,7 +409,7 @@ describe('removeTask', () => {
         const t1 = makeTask('t1');
         const t2 = makeTask('t2');
         const a: Project = { id: 'a', name: 'a', tasks: [t0, t1, t2] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -423,7 +423,7 @@ describe('removeTask', () => {
         const t1 = makeTask('t1');
         const t2 = makeTask('t2');
         const a: Project = { id: 'a', name: 'a', tasks: [t0, t1, t2] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeTask(plan, 't1');
         expect(isValidPlan(result)).toBe(true);
 
@@ -437,7 +437,7 @@ describe('removeTask', () => {
         const t1 = makeTask('t1');
         const t2 = makeTask('t2');
         const a: Project = { id: 'a', name: 'a', tasks: [t0, t1, t2] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeTask(plan, 't2');
         expect(isValidPlan(result)).toBe(true);
 
@@ -451,7 +451,7 @@ describe('removeTask', () => {
         const a: Project = { id: 'a', name: 'a', tasks: [t] };
         const b = makeProject('b');
         const c = makeProject('c');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a, c] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [b, a, c] };
         const result = removeTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -467,7 +467,7 @@ describe('removeTask', () => {
         const t = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [t] };
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = removeTask(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -476,7 +476,7 @@ describe('removeTask', () => {
     });
 
     it('covers not found on empty plan: still no projects', () => {
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [] };
         const result = removeTask(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -487,7 +487,7 @@ describe('removeTask', () => {
         const t0 = makeTask('t0');
         const t1 = makeTask('t1');
         const a: Project = { id: 'a', name: 'a', tasks: [t0, t1] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -518,7 +518,7 @@ describe('removeSubtask', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] }; // no isDone (has a subtask)
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -534,7 +534,7 @@ describe('removeSubtask', () => {
         const s2 = makeSubtask('s2', 'wed');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1, s2] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -551,7 +551,7 @@ describe('removeSubtask', () => {
         const s2 = makeSubtask('s2', 'wed');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1, s2] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeSubtask(plan, 's1');
         expect(isValidPlan(result)).toBe(true);
 
@@ -568,7 +568,7 @@ describe('removeSubtask', () => {
         const s2 = makeSubtask('s2', 'wed');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1, s2] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeSubtask(plan, 's2');
         expect(isValidPlan(result)).toBe(true);
 
@@ -586,7 +586,7 @@ describe('removeSubtask', () => {
         const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
         const b = makeProject('b');
         const c = makeProject('c');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a, c] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [b, a, c] };
         const result = removeSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -604,7 +604,7 @@ describe('removeSubtask', () => {
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = removeSubtask(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -613,7 +613,7 @@ describe('removeSubtask', () => {
     });
 
     it('covers not found on empty plan: still no projects', () => {
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [] };
         const result = removeSubtask(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -624,7 +624,7 @@ describe('removeSubtask', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -653,7 +653,7 @@ describe('replaceTask', () => {
         const t1 = makeTask('t1'); // sibling, must stay the same instance
         const a: Project = { id: 'a', name: 'a', tasks: [t0, t1] };
         const b = makeProject('b'); // other project, must stay the same instance
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [b, a] };
         const next: Task = { id: 't0', name: 'renamed', subtasks: [], isDone: true };
         const result = replaceTask(plan, 't0', next);
         expect(isValidPlan(result)).toBe(true);
@@ -668,7 +668,7 @@ describe('replaceTask', () => {
     it('covers replacement adds subtasks (leaf -> parent): whole node swapped', () => {
         const t0 = makeTask('t0'); // leaf, isDone: false
         const a: Project = { id: 'a', name: 'a', tasks: [t0] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const next: Task = { id: 't0', name: 't0', subtasks: [makeSubtask('s0', 'mon')] };
         const result = replaceTask(plan, 't0', next);
         expect(isValidPlan(result)).toBe(true);
@@ -679,7 +679,7 @@ describe('replaceTask', () => {
     it('covers replacement removes subtasks (parent -> leaf): whole node swapped', () => {
         const parent: Task = { id: 't0', name: 't0', subtasks: [makeSubtask('s0', 'mon')] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const next: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
         const result = replaceTask(plan, 't0', next);
         expect(isValidPlan(result)).toBe(true);
@@ -690,7 +690,7 @@ describe('replaceTask', () => {
     it('covers taskId not found: projects unchanged (same instances)', () => {
         const t0 = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [t0] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const next: Task = { id: 'nope', name: 'x', subtasks: [], isDone: false };
         const result = replaceTask(plan, 'nope', next);
         expect(isValidPlan(result)).toBe(true);
@@ -700,7 +700,7 @@ describe('replaceTask', () => {
     it('covers nextTask.id !== taskId: projects unchanged (no-op)', () => {
         const t0 = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [t0] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const mismatched: Task = { id: 'other', name: 'x', subtasks: [], isDone: false };
         const result = replaceTask(plan, 't0', mismatched);
         expect(isValidPlan(result)).toBe(true);
@@ -710,7 +710,7 @@ describe('replaceTask', () => {
     it('covers replaced: does not mutate the input plan', () => {
         const t0 = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [t0] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const next: Task = { id: 't0', name: 'renamed', subtasks: [], isDone: false };
         replaceTask(plan, 't0', next);
         expect(plan.projects[0]?.tasks[0]).toBe(t0);
@@ -732,7 +732,7 @@ describe('setProjectName', () => {
     it('covers found among siblings: sets name, other projects shared', () => {
         const a = makeProject('a');
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = setProjectName(plan, 'a', 'Renamed');
         expect(isValidPlan(result)).toBe(true);
 
@@ -744,7 +744,7 @@ describe('setProjectName', () => {
 
     it('covers not found: projects unchanged (same instances)', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setProjectName(plan, 'nope', 'Renamed');
         expect(isValidPlan(result)).toBe(true);
 
@@ -753,7 +753,7 @@ describe('setProjectName', () => {
 
     it('covers found: does not mutate the input plan', () => {
         const a = makeProject('a'); // makeProject sets name = id = 'a'
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setProjectName(plan, 'a', 'Renamed');
         expect(isValidPlan(result)).toBe(true);
 
@@ -778,7 +778,7 @@ describe('setProjectDeadline', () => {
     it('covers found, valid date-only: deadline set, other projects shared', () => {
         const a = makeProject('a');
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = setProjectDeadline(plan, 'a', '2026-08-01');
         expect(isValidPlan(result)).toBe(true);
 
@@ -790,7 +790,7 @@ describe('setProjectDeadline', () => {
 
     it('covers found, valid date-time: stored as given, including the time', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setProjectDeadline(plan, 'a', '2026-08-01T14:30');
         expect(isValidPlan(result)).toBe(true);
 
@@ -799,7 +799,7 @@ describe('setProjectDeadline', () => {
 
     it('covers found, invalid format: no deadline stored', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setProjectDeadline(plan, 'a', 'not-a-date');
         expect(isValidPlan(result)).toBe(true);
 
@@ -808,7 +808,7 @@ describe('setProjectDeadline', () => {
 
     it('covers found, undefined: clears an existing deadline', () => {
         const a = { ...makeProject('a'), deadline: '2026-08-01' };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setProjectDeadline(plan, 'a', undefined);
         expect(isValidPlan(result)).toBe(true);
 
@@ -817,7 +817,7 @@ describe('setProjectDeadline', () => {
 
     it('covers not found: projects unchanged (same instances)', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setProjectDeadline(plan, 'nope', '2026-08-01');
         expect(isValidPlan(result)).toBe(true);
 
@@ -826,7 +826,7 @@ describe('setProjectDeadline', () => {
 
     it('covers found: does not mutate the input plan', () => {
         const a = makeProject('a');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setProjectDeadline(plan, 'a', '2026-08-01');
         expect(isValidPlan(result)).toBe(true);
 
@@ -857,7 +857,7 @@ describe('setTaskName', () => {
         const siblingTask = makeTask('t1');
         const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = setTaskName(plan, 't0', 'Renamed');
         expect(isValidPlan(result)).toBe(true);
 
@@ -876,7 +876,7 @@ describe('setTaskName', () => {
     it('covers not found: projects unchanged (same instances)', () => {
         const target = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [target] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setTaskName(plan, 'nope', 'Renamed');
         expect(isValidPlan(result)).toBe(true);
 
@@ -886,7 +886,7 @@ describe('setTaskName', () => {
     it('covers found: does not mutate the input plan', () => {
         const target = makeTask('t0'); // name = 't0'
         const a: Project = { id: 'a', name: 'a', tasks: [target] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setTaskName(plan, 't0', 'Renamed');
         expect(isValidPlan(result)).toBe(true);
 
@@ -909,7 +909,7 @@ describe('setTaskDescription', () => {
         const target = makeTask('t0');
         const siblingTask = makeTask('t1');
         const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setTaskDescription(plan, 't0', 'some notes');
         expect(isValidPlan(result)).toBe(true);
 
@@ -921,7 +921,7 @@ describe('setTaskDescription', () => {
     it('covers not found: projects unchanged (same instances)', () => {
         const target = makeTask('t0');
         const a: Project = { id: 'a', name: 'a', tasks: [target] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setTaskDescription(plan, 'nope', 'some notes');
         expect(isValidPlan(result)).toBe(true);
 
@@ -931,7 +931,7 @@ describe('setTaskDescription', () => {
     it('covers found: does not mutate the input plan', () => {
         const target = makeTask('t0'); // no description
         const a: Project = { id: 'a', name: 'a', tasks: [target] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setTaskDescription(plan, 't0', 'some notes');
         expect(isValidPlan(result)).toBe(true);
 
@@ -956,7 +956,7 @@ describe('setSubtaskDescription', () => {
         const s1 = makeSubtask('s1', 'tue');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskDescription(plan, 's0', 'notes');
         expect(isValidPlan(result)).toBe(true);
 
@@ -970,7 +970,7 @@ describe('setSubtaskDescription', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskDescription(plan, 's0', '');
         expect(isValidPlan(result)).toBe(true);
 
@@ -981,7 +981,7 @@ describe('setSubtaskDescription', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskDescription(plan, 'nope', 'notes');
         expect(isValidPlan(result)).toBe(true);
 
@@ -992,7 +992,7 @@ describe('setSubtaskDescription', () => {
         const s0 = makeSubtask('s0', 'mon'); // no description
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskDescription(plan, 's0', 'notes');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1018,7 +1018,7 @@ describe('setSubtaskWeight', () => {
         const s1 = makeSubtask('s1', 'tue');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskWeight(plan, 's0', 3);
         expect(isValidPlan(result)).toBe(true);
 
@@ -1033,7 +1033,7 @@ describe('setSubtaskWeight', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskWeight(plan, 's0', 2);
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.weight).toBe(2);
@@ -1043,7 +1043,7 @@ describe('setSubtaskWeight', () => {
         const s0 = makeSubtask('s0', 'mon'); // weight 1
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskWeight(plan, 's0', 1);
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.weight).toBe(1);
@@ -1053,7 +1053,7 @@ describe('setSubtaskWeight', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = setSubtaskWeight(plan, 'nope', 3);
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
@@ -1063,7 +1063,7 @@ describe('setSubtaskWeight', () => {
         const s0 = makeSubtask('s0', 'mon'); // weight 1
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         setSubtaskWeight(plan, 's0', 3);
         expect(s0.weight).toBe(1); // input subtask untouched
     });
@@ -1086,7 +1086,7 @@ describe('toggleSubtask', () => {
         const s1 = makeSubtask('s1', 'tue');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1107,7 +1107,7 @@ describe('toggleSubtask', () => {
         };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1120,7 +1120,7 @@ describe('toggleSubtask', () => {
         const siblingTask = makeTask('t1');
         const a: Project = { id: 'a', name: 'a', tasks: [target, siblingTask] };
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [b, a] };
         const result = toggleSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1133,7 +1133,7 @@ describe('toggleSubtask', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleSubtask(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1144,7 +1144,7 @@ describe('toggleSubtask', () => {
         const s0 = makeSubtask('s0', 'mon'); // isDone: false
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleSubtask(plan, 's0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1172,7 +1172,7 @@ describe('toggleTask', () => {
     it('covers leaf, currently undone: flips isDone to true', () => {
         const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
         const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1183,7 +1183,7 @@ describe('toggleTask', () => {
     it('covers leaf, currently done: flips isDone to false', () => {
         const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: true };
         const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1207,7 +1207,7 @@ describe('toggleTask', () => {
         };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1220,7 +1220,7 @@ describe('toggleTask', () => {
         const s1 = makeSubtask('s1', 'tue');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1239,7 +1239,7 @@ describe('toggleTask', () => {
         const s1 = makeSubtask('s1', 'tue'); // isDone: false
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1253,7 +1253,7 @@ describe('toggleTask', () => {
         const siblingTask = makeTask('t1');
         const a: Project = { id: 'a', name: 'a', tasks: [leaf, siblingTask] };
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [b, a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [b, a] };
         const result = toggleTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1265,7 +1265,7 @@ describe('toggleTask', () => {
     it('covers not found: projects unchanged (same instances)', () => {
         const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
         const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleTask(plan, 'nope');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1275,7 +1275,7 @@ describe('toggleTask', () => {
     it('covers leaf: does not mutate the input plan', () => {
         const leaf: Task = { id: 't0', name: 't0', subtasks: [], isDone: false };
         const a: Project = { id: 'a', name: 'a', tasks: [leaf] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = toggleTask(plan, 't0');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1300,7 +1300,7 @@ describe('moveSubtask', () => {
         const s1 = makeSubtask('s1', 'tue');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0, s1] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = moveSubtask(plan, 's0', 'fri');
         expect(isValidPlan(result)).toBe(true);
         const task = result.projects[0]?.tasks[0];
@@ -1314,7 +1314,7 @@ describe('moveSubtask', () => {
         const s0 = { ...makeSubtask('s0', 'thu'), missedDays: ['tue'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = moveSubtask(plan, 's0', 'sat');
         expect(isValidPlan(result)).toBe(true);
         const moved = result.projects[0]?.tasks[0]?.subtasks[0];
@@ -1326,7 +1326,7 @@ describe('moveSubtask', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = moveSubtask(plan, 's0', 'mon');
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.assignedDay).toBe('mon');
@@ -1336,7 +1336,7 @@ describe('moveSubtask', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = moveSubtask(plan, 'nope', 'fri');
         expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
     });
@@ -1345,7 +1345,7 @@ describe('moveSubtask', () => {
         const s0 = makeSubtask('s0', 'mon');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         moveSubtask(plan, 's0', 'fri');
         expect(s0.assignedDay).toBe('mon');
     });
@@ -1407,7 +1407,7 @@ describe('addMissedDay', () => {
         const s0 = makeSubtask('s0', 'fri');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addMissedDay(plan, 's0', 'wed');
         expect(isValidPlan(result)).toBe(true);
         const s = result.projects[0]?.tasks[0]?.subtasks[0];
@@ -1419,7 +1419,7 @@ describe('addMissedDay', () => {
         const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['mon'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addMissedDay(plan, 's0', 'wed');
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['mon', 'wed']);
@@ -1429,7 +1429,7 @@ describe('addMissedDay', () => {
         const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addMissedDay(plan, 's0', 'wed');
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['wed']);
@@ -1439,7 +1439,7 @@ describe('addMissedDay', () => {
         const s0 = makeSubtask('s0', 'fri');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = addMissedDay(plan, 'nope', 'wed');
         expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
     });
@@ -1448,7 +1448,7 @@ describe('addMissedDay', () => {
         const s0 = makeSubtask('s0', 'fri');
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         addMissedDay(plan, 's0', 'wed');
         expect(s0.missedDays).toEqual([]);
     });
@@ -1470,7 +1470,7 @@ describe('removeMissedDay', () => {
         const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['mon', 'wed'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeMissedDay(plan, 's0', 'mon');
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['wed']);
@@ -1480,7 +1480,7 @@ describe('removeMissedDay', () => {
         const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeMissedDay(plan, 's0', 'wed');
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual([]);
@@ -1490,7 +1490,7 @@ describe('removeMissedDay', () => {
         const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeMissedDay(plan, 's0', 'mon');
         expect(isValidPlan(result)).toBe(true);
         expect(result.projects[0]?.tasks[0]?.subtasks[0]?.missedDays).toEqual(['wed']);
@@ -1500,7 +1500,7 @@ describe('removeMissedDay', () => {
         const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         const result = removeMissedDay(plan, 'nope', 'wed');
         expect(result.projects[0]?.tasks[0]?.subtasks[0]).toBe(s0);
     });
@@ -1509,7 +1509,7 @@ describe('removeMissedDay', () => {
         const s0 = { ...makeSubtask('s0', 'fri'), missedDays: ['wed'] as DayOfWeek[] };
         const parent: Task = { id: 't0', name: 't0', subtasks: [s0] };
         const a: Project = { id: 'a', name: 'a', tasks: [parent] };
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a] };
         removeMissedDay(plan, 's0', 'wed');
         expect(s0.missedDays).toEqual(['wed']);
     });
@@ -1534,7 +1534,7 @@ describe('reorderProject', () => {
         const a = makeProject('a');
         const b = makeProject('b');
         const c = makeProject('c');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b, c] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b, c] };
         const result = reorderProject(plan, 'c', 'b');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1546,6 +1546,7 @@ describe('reorderProject', () => {
     it('covers found, beforeProjectId in plan, moves forward', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [makeProject('a'), makeProject('b'), makeProject('c')],
         };
         const result = reorderProject(plan, 'a', 'c');
@@ -1557,6 +1558,7 @@ describe('reorderProject', () => {
     it('covers found, beforeProjectId null: moves to the end', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [makeProject('a'), makeProject('b'), makeProject('c')],
         };
         const result = reorderProject(plan, 'a', null);
@@ -1570,6 +1572,7 @@ describe('reorderProject', () => {
         const withTasks: Project = { id: 'b', name: 'b', tasks: [task] };
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [makeProject('a'), withTasks],
         };
         const result = reorderProject(plan, 'b', 'a');
@@ -1582,7 +1585,7 @@ describe('reorderProject', () => {
     it('covers projectId not found: order unchanged, projects shared', () => {
         const a = makeProject('a');
         const b = makeProject('b');
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [a, b] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [a, b] };
         const result = reorderProject(plan, 'nope', 'a');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1594,6 +1597,7 @@ describe('reorderProject', () => {
     it('covers beforeProjectId not in plan: order unchanged', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [makeProject('a'), makeProject('b')],
         };
         const result = reorderProject(plan, 'b', 'nope');
@@ -1605,6 +1609,7 @@ describe('reorderProject', () => {
     it('covers beforeProjectId same as projectId: order unchanged', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [makeProject('a'), makeProject('b')],
         };
         const result = reorderProject(plan, 'a', 'a');
@@ -1616,6 +1621,7 @@ describe('reorderProject', () => {
     it('covers the input plan is not mutated', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [makeProject('a'), makeProject('b'), makeProject('c')],
         };
         reorderProject(plan, 'c', 'a');
@@ -1649,6 +1655,7 @@ describe('reorderTask', () => {
     it('covers same project, beforeTaskId in destination, moves backward', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
         };
         const result = reorderTask(plan, 'c', 'p', 'b');
@@ -1661,6 +1668,7 @@ describe('reorderTask', () => {
     it('covers same project, beforeTaskId in destination, moves forward', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
         };
         const result = reorderTask(plan, 'a', 'p', 'c');
@@ -1672,6 +1680,7 @@ describe('reorderTask', () => {
     it('covers same project, beforeTaskId null: moves to the end', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
         };
         const result = reorderTask(plan, 'a', 'p', null);
@@ -1683,6 +1692,7 @@ describe('reorderTask', () => {
     it('covers same project, already in place: order is restored', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
         };
         const result = reorderTask(plan, 'a', 'p', 'b');
@@ -1694,6 +1704,7 @@ describe('reorderTask', () => {
     it('covers different project, beforeTaskId in destination', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [
                 projectWith('p1', [makeTask('a'), makeTask('b')]),
                 projectWith('p2', [makeTask('x'), makeTask('y')]),
@@ -1709,6 +1720,7 @@ describe('reorderTask', () => {
     it('covers different project, beforeTaskId null: appends to the destination', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [
                 projectWith('p1', [makeTask('a'), makeTask('b')]),
                 projectWith('p2', [makeTask('x')]),
@@ -1724,6 +1736,7 @@ describe('reorderTask', () => {
     it('covers different project with no tasks: becomes its only task', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p1', [makeTask('a'), makeTask('b')]), makeProject('p2')],
         };
         const result = reorderTask(plan, 'a', 'p2', null);
@@ -1737,6 +1750,7 @@ describe('reorderTask', () => {
         const moved: Task = { id: 'a', name: 'a', subtasks: [makeSubtask('s', 'mon')] };
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p1', [moved]), makeProject('p2')],
         };
         const result = reorderTask(plan, 'a', 'p2', null);
@@ -1749,6 +1763,7 @@ describe('reorderTask', () => {
         const other = projectWith('p3', [makeTask('z')]);
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p1', [makeTask('a')]), makeProject('p2'), other],
         };
         const result = reorderTask(plan, 'a', 'p2', null);
@@ -1759,7 +1774,7 @@ describe('reorderTask', () => {
 
     it('covers taskId not found: projects unchanged', () => {
         const p = projectWith('p', [makeTask('a'), makeTask('b')]);
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [p] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [p] };
         const result = reorderTask(plan, 'nope', 'p', 'a');
         expect(isValidPlan(result)).toBe(true);
 
@@ -1768,7 +1783,7 @@ describe('reorderTask', () => {
 
     it('covers destProjectId not found: projects unchanged', () => {
         const p = projectWith('p', [makeTask('a'), makeTask('b')]);
-        const plan: WeekPlan = { weekStart: '2026-07-06', projects: [p] };
+        const plan: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [p] };
         const result = reorderTask(plan, 'a', 'nope', null);
         expect(isValidPlan(result)).toBe(true);
 
@@ -1778,6 +1793,7 @@ describe('reorderTask', () => {
     it('covers beforeTaskId same as taskId: order unchanged', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p', [makeTask('a'), makeTask('b'), makeTask('c')])],
         };
         const result = reorderTask(plan, 'b', 'p', 'b');
@@ -1789,6 +1805,7 @@ describe('reorderTask', () => {
     it('covers beforeTaskId naming a task in another project: order unchanged', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [
                 projectWith('p1', [makeTask('a'), makeTask('b')]),
                 projectWith('p2', [makeTask('x')]),
@@ -1804,6 +1821,7 @@ describe('reorderTask', () => {
     it('covers beforeTaskId not in the plan at all: order unchanged', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [projectWith('p', [makeTask('a'), makeTask('b')])],
         };
         const result = reorderTask(plan, 'b', 'p', 'nope');
@@ -1815,6 +1833,7 @@ describe('reorderTask', () => {
     it('covers the input plan is not mutated', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [
                 projectWith('p1', [makeTask('a'), makeTask('b')]),
                 projectWith('p2', [makeTask('x')]),
@@ -2050,6 +2069,7 @@ describe('isValidPlan', () => {
     const parentTask = (id: string, subs: Subtask[]): Task => ({ id, name: id, subtasks: subs });
     const validPlan: WeekPlan = {
         weekStart: '2026-07-06',
+        ended: false,
         projects: [
             { id: 'p1', name: 'p1', tasks: [parentTask('t1', [makeSubtask('s1', 'mon')])] },
             { id: 'p2', name: 'p2', tasks: [makeTask('t2')] },
@@ -2057,7 +2077,7 @@ describe('isValidPlan', () => {
     };
 
     it('empty plan (no projects) is valid', () => {
-        expect(isValidPlan({ weekStart: '2026-07-06', projects: [] })).toBe(true);
+        expect(isValidPlan({ weekStart: '2026-07-06', ended: false, projects: [] })).toBe(true);
     });
     it('all projects valid and all ids unique is valid', () => {
         expect(isValidPlan(validPlan)).toBe(true);
@@ -2076,6 +2096,7 @@ describe('isValidPlan', () => {
     it('duplicate id across two projects is invalid', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [makeProject('dup'), makeProject('dup')],
         };
         expect(isValidPlan(plan)).toBe(false);
@@ -2083,6 +2104,7 @@ describe('isValidPlan', () => {
     it('project id colliding with a task id is invalid', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [{ id: 'x', name: 'x', tasks: [makeTask('x')] }],
         };
         expect(isValidPlan(plan)).toBe(false);
@@ -2090,6 +2112,7 @@ describe('isValidPlan', () => {
     it('project id colliding with a subtask id is invalid', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [{ id: 'x', name: 'x', tasks: [parentTask('t', [makeSubtask('x', 'mon')])] }],
         };
         expect(isValidPlan(plan)).toBe(false);
@@ -2097,6 +2120,7 @@ describe('isValidPlan', () => {
     it('task id colliding with a subtask id is invalid', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [{ id: 'p', name: 'p', tasks: [parentTask('t', [makeSubtask('t', 'mon')])] }],
         };
         expect(isValidPlan(plan)).toBe(false);
@@ -2104,6 +2128,7 @@ describe('isValidPlan', () => {
     it('duplicate id across two subtasks is invalid', () => {
         const plan: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [
                 {
                     id: 'p',
@@ -2115,9 +2140,9 @@ describe('isValidPlan', () => {
         expect(isValidPlan(plan)).toBe(false);
     });
     it('a plan whose weekStart is not a Monday is invalid', () => {
-        expect(isValidPlan({ weekStart: '2026-07-07', projects: [] })).toBe(false); // Tuesday
+        expect(isValidPlan({ weekStart: '2026-07-07', ended: false, projects: [] })).toBe(false); // Tuesday
     });
     it('a plan whose weekStart is malformed is invalid', () => {
-        expect(isValidPlan({ weekStart: '2026-7-6', projects: [] })).toBe(false); // unpadded
+        expect(isValidPlan({ weekStart: '2026-7-6', ended: false, projects: [] })).toBe(false); // unpadded
     });
 });

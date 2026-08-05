@@ -183,6 +183,7 @@ export function weekStartFromIso(iso: string): DateKey {
  *               (each project, task, and subtask). See module doc.
  * @returns a WeekPlan with:
  *          - weekStart: weekStart,
+ *          - ended: false (the active plan is never itself an ended week)
  *          - projects: tasks with each task converted to a project
  */
 export function activeToWeekPlan(
@@ -192,6 +193,7 @@ export function activeToWeekPlan(
 ): WeekPlan {
     return {
         weekStart,
+        ended: false,
         projects: tasks.map((task) => toProject(task, newId)),
     };
 }

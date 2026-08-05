@@ -43,10 +43,10 @@ export function isEmptyWeek(plan: WeekPlan): boolean {
  * Whether a week has been ended, and so belongs to the archive.
  *
  * @param plan any plan
- * @returns true iff the plan's ended is true; false when it is false or absent
+ * @returns plan.ended
  */
 export function isEnded(plan: WeekPlan): boolean {
-    return plan.ended === true;
+    return plan.ended;
 }
 
 /**
@@ -59,7 +59,13 @@ export function isEnded(plan: WeekPlan): boolean {
  *          missing, so this never fails to answer.
  */
 export function weekAt(weeks: Weeks, weekStart: DateKey): WeekPlan {
-    return weeks.find((week) => week.weekStart === weekStart) ?? { weekStart, projects: [] };
+    return (
+        weeks.find((week) => week.weekStart === weekStart) ?? {
+            weekStart,
+            ended: false,
+            projects: [],
+        }
+    );
 }
 
 /**

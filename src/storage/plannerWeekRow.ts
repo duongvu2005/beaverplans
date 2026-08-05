@@ -50,7 +50,7 @@ export function rowToWeekPlan(row: PlannerWeekRow): WeekPlan {
  * @param userId the owning user's id, trusted from the caller's session
  * @param plan any valid WeekPlan (isValidPlan(plan))
  * @returns {user_id: userId, week_start: plan.weekStart,
- *           ended: plan.ended ?? false, projects: plan.projects}.
+ *           ended: plan.ended, projects: plan.projects}.
  *          Does not set updated_at — the database trigger overwrites it on
  *          every insert/update regardless of what's sent.
  */
@@ -61,7 +61,7 @@ export function weekPlanToRow(
     return {
         user_id: userId,
         week_start: plan.weekStart,
-        ended: plan.ended ?? false,
+        ended: plan.ended,
         projects: plan.projects,
     };
 }

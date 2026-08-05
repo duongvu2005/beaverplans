@@ -141,8 +141,12 @@ export function ProjectList({
         const overId = overData.type === 'task' ? String(over.id) : null;
         const before = beforeIdForDrop(destIds, activeId, overId);
         setPreview(
-            reorderTask({ weekStart: '', projects: base }, activeId, destProjectId, before)
-                .projects,
+            reorderTask(
+                { weekStart: '', ended: false, projects: base },
+                activeId,
+                destProjectId,
+                before,
+            ).projects,
         );
     }
 

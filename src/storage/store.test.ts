@@ -50,13 +50,21 @@ class SpyBackend implements Backend {
 
 // --- fixtures ---
 const localWeeks: Weeks = [
-    { weekStart: '2026-07-13', projects: [{ id: 'local-p', name: 'Local', tasks: [] }] },
+    {
+        weekStart: '2026-07-13',
+        ended: false,
+        projects: [{ id: 'local-p', name: 'Local', tasks: [] }],
+    },
 ];
 const cloudWeeks: Weeks = [
-    { weekStart: '2026-07-20', projects: [{ id: 'cloud-p', name: 'Cloud', tasks: [] }] },
+    {
+        weekStart: '2026-07-20',
+        ended: false,
+        projects: [{ id: 'cloud-p', name: 'Cloud', tasks: [] }],
+    },
 ];
 const newWeeks: Weeks = [
-    { weekStart: '2026-07-13', projects: [{ id: 'new-p', name: 'New', tasks: [] }] },
+    { weekStart: '2026-07-13', ended: false, projects: [{ id: 'new-p', name: 'New', tasks: [] }] },
 ];
 
 // A store wired with a real, seeded LocalBackend and an observable spy cloud.
