@@ -1,0 +1,477 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { CloudBackend, type CloudClient } from './cloudBackend';
+import { LocalBackend, type KeyValueStore } from './localBackend';
+import type { WeekPlan, Weeks } from '../core/types';
+
+const DEBOUNCE_MS = 500;
+const CURRENT_KEY = 'beaverplans.cloudCache.current.v1';
+const SYNCED_KEY = 'beaverplans.cloudCache.synced.v1';
+
+// --- fakes ---
+class FakeStorage implements KeyValueStore {
+    private readonly data: Record<string, string> = {};
+    public getItem(key: string): string | null {
+        const value = this.data[key];
+        return value === undefined ? null : value;
+    }
+    public setItem(key: string, value: string): void {
+        this.data[key] = value;
+    }
+    public removeItem(key: string): void {
+        delete this.data[key];
+    }
+}
+
+type Row = { user_id: string; week_start: string; ended: boolean; projects: unknown };
+
+class FakeClient implements CloudClient {
+    public session: { user: { id: string } } | null = { user: { id: 'u1' } };
+    public rows: ReadonlyArray<Row> = [];
+    public selectError: unknown = null;
+    public upsertError: unknown = null;
+    public deleteError: unknown = null;
+    public upsertCalls: Array<ReadonlyArray<Row>> = [];
+    public deleteCalls: Array<ReadonlyArray<string>> = [];
+    public holdUpserts = false;
+    private pendingUpsertResolvers: Array<() => void> = [];
+
+    public auth = {
+        getSession: async () => ({ data: { session: this.session } }),
+    };
+
+    public from(_table: string) {
+        return {
+            select: async (_columns: string) => {
+                if (this.selectError) return { data: null, error: this.selectError };
+                return { data: this.rows, error: null };
+            },
+            upsert: (rows: ReadonlyArray<unknown>) => {
+                this.upsertCalls.push(rows as ReadonlyArray<Row>);
+                if (this.holdUpserts) {
+                    return new Promise<{ error: unknown }>((resolve) => {
+                        this.pendingUpsertResolvers.push(() =>
+                            resolve({ error: this.upsertError }),
+                        );
+                    });
+                }
+                return Promise.resolve({ error: this.upsertError });
+            },
+            delete: () => ({
+                in: async (_column: string, values: ReadonlyArray<string>) => {
+                    this.deleteCalls.push(values);
+                    return { error: this.deleteError };
+                },
+            }),
+        };
+    }
+
+    public resolveNextUpsert(): void {
+        this.pendingUpsertResolvers.shift()?.();
+    }
+}
+
+// --- fixtures ---
+// Non-empty projects are load-bearing here, not decoration: an empty-projects
+// entry is invalid per Weeks' "no entry is empty" rule (isValidWeeks/putWeek),
+// so anything that round-trips through LocalBackend or putWeek would silently
+// drop an empty fixture.
+const week1: WeekPlan = {
+    weekStart: '2026-07-06',
+    ended: false,
+    projects: [{ id: 'p1', name: 'A', tasks: [] }],
+};
+const week2: WeekPlan = {
+    weekStart: '2026-07-13',
+    ended: false,
+    projects: [{ id: 'p2', name: 'B', tasks: [] }],
+};
+const week3: WeekPlan = {
+    weekStart: '2026-07-20',
+    ended: false,
+    projects: [{ id: 'p3', name: 'C', tasks: [] }],
+};
+
+function rowOf(plan: WeekPlan, userId = 'u1'): Row {
+    return {
+        user_id: userId,
+        week_start: plan.weekStart,
+        ended: plan.ended ?? false,
+        projects: plan.projects,
+    };
+}
+
+function makeBackend(client: FakeClient = new FakeClient()) {
+    const storage = new FakeStorage();
+    const backend = new CloudBackend(client, storage);
+    return { backend, storage, client };
+}
+
+async function readDurable(storage: FakeStorage, key: string): Promise<Weeks> {
+    const reader = new LocalBackend(storage, key);
+    await reader.load();
+    return reader.getWeeks();
+}
+
+beforeEach(() => {
+    vi.useFakeTimers();
+});
+afterEach(() => {
+    vi.useRealTimers();
+});
+
+describe('CloudBackend', () => {
+    /*
+     * Testing strategy
+     *   partition on load() reachability: server reachable, no pending local
+     *     changes | server reachable, pending local changes with the server
+     *     untouched | server reachable, pending local changes where the
+     *     server ALSO changed the same week (conflict — local still wins,
+     *     per the policy deferred to piece 4) | server unreachable | no
+     *     session
+     *   partition on load()'s merge granularity: a single call covering one
+     *     pending-untouched week, one conflicting week, and one week new on
+     *     the server but absent locally, all at once (proves the merge is
+     *     per-week, not per-array) | after a load() with pending changes,
+     *     assert a push is actually scheduled rather than inferring it
+     *   partition on setWeeks: effect on cache | effect on the durable
+     *     local copy | does NOT touch lastSynced or its durable copy | two
+     *     rapid calls before the timer fires — the eventual push reflects
+     *     the FINAL cache value, not the intermediate one
+     *   partition on push (the debounce firing): nothing changed since
+     *     lastSynced (no network call at all) | upserts only | deletes only
+     *     | both | session guard fails: no session | session guard fails:
+     *     different user | partial failure, upsert succeeds delete fails |
+     *     partial failure, delete succeeds upsert fails | two overlapping
+     *     push() calls — the second defers instead of running concurrently
+     *   partition on the write-time race specifically: setWeeks is called,
+     *     then the session changes (or clears) before the debounce fires
+     *   partition on reset: with pending changes | already empty | a timer
+     *     armed before reset does not fire after it | userId forgotten
+     *   partition on cancelScheduledPush: pending timer exists | no timer to cancel
+     */
+
+    describe('load', () => {
+        it('covers server reachable, no pending local changes: getWeeks reflects the server', async () => {
+            const { backend, client } = makeBackend();
+            client.rows = [rowOf(week1)];
+            await backend.load();
+            expect(backend.getWeeks()).toEqual([week1]);
+        });
+
+        it('covers server reachable, pending local changes with the server untouched: local copy wins', async () => {
+            const { backend, storage, client } = makeBackend();
+            new LocalBackend(storage, CURRENT_KEY).setWeeks([week1]); // pending, never synced
+            client.rows = []; // server has nothing for week1
+
+            await backend.load();
+            expect(backend.getWeeks()).toEqual([week1]);
+        });
+
+        it('covers server reachable, pending local changes where the server also changed the same week: local still wins', async () => {
+            const { backend, storage, client } = makeBackend();
+            const origWeek1: WeekPlan = {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [{ id: 'p0', name: 'Original', tasks: [] }],
+            };
+            const editedWeek1: WeekPlan = {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [{ id: 'p1', name: 'Local edit', tasks: [] }],
+            };
+            const serverWeek1: WeekPlan = {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [{ id: 'p2', name: 'Server edit', tasks: [] }],
+            };
+
+            new LocalBackend(storage, SYNCED_KEY).setWeeks([origWeek1]);
+            new LocalBackend(storage, CURRENT_KEY).setWeeks([editedWeek1]);
+            client.rows = [rowOf(serverWeek1)];
+
+            await backend.load();
+            expect(backend.getWeeks()).toEqual([editedWeek1]);
+        });
+
+        it('covers server unreachable: falls back to the durable local copy unchanged', async () => {
+            const { backend, storage, client } = makeBackend();
+            new LocalBackend(storage, CURRENT_KEY).setWeeks([week1]);
+            new LocalBackend(storage, SYNCED_KEY).setWeeks([week1]);
+            client.selectError = 'network error';
+
+            await backend.load();
+            expect(backend.getWeeks()).toEqual([week1]);
+        });
+
+        it('covers no session: falls back to the durable local copy unchanged', async () => {
+            const { backend, storage, client } = makeBackend();
+            new LocalBackend(storage, CURRENT_KEY).setWeeks([week1]);
+            new LocalBackend(storage, SYNCED_KEY).setWeeks([week1]);
+            client.session = null;
+
+            await backend.load();
+            expect(backend.getWeeks()).toEqual([week1]);
+        });
+
+        it('covers a mixed call: pending-untouched, conflicting, and server-only weeks merged per-week', async () => {
+            const { backend, storage, client } = makeBackend();
+            const localOnlyA: WeekPlan = {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [{ id: 'p0', name: 'LocalOnly', tasks: [] }],
+            };
+            const origB: WeekPlan = {
+                weekStart: '2026-07-13',
+                ended: false,
+                projects: [{ id: 'p0', name: 'Orig', tasks: [] }],
+            };
+            const localEditedB: WeekPlan = {
+                weekStart: '2026-07-13',
+                ended: false,
+                projects: [{ id: 'p1', name: 'Local', tasks: [] }],
+            };
+            const serverEditedB: WeekPlan = {
+                weekStart: '2026-07-13',
+                ended: false,
+                projects: [{ id: 'p2', name: 'Server', tasks: [] }],
+            };
+            const serverOnlyC: WeekPlan = {
+                weekStart: '2026-07-20',
+                ended: false,
+                projects: [{ id: 'p3', name: 'ServerOnly', tasks: [] }],
+            };
+
+            new LocalBackend(storage, SYNCED_KEY).setWeeks([origB]);
+            new LocalBackend(storage, CURRENT_KEY).setWeeks([localOnlyA, localEditedB]);
+            client.rows = [rowOf(serverEditedB), rowOf(serverOnlyC)];
+
+            await backend.load();
+            expect(backend.getWeeks()).toEqual([localOnlyA, localEditedB, serverOnlyC]);
+        });
+
+        it('covers pending changes after load: a push is actually scheduled, not just inferred from state', async () => {
+            const { backend, storage, client } = makeBackend();
+            new LocalBackend(storage, CURRENT_KEY).setWeeks([week1]);
+            client.rows = [];
+
+            await backend.load();
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(client.upsertCalls).toEqual([[rowOf(week1)]]);
+        });
+    });
+
+    describe('setWeeks', () => {
+        it('covers the effect on cache', () => {
+            const { backend } = makeBackend();
+            backend.setWeeks([week1]);
+            expect(backend.getWeeks()).toEqual([week1]);
+        });
+
+        it('covers the effect on the durable local copy', async () => {
+            const { backend, storage } = makeBackend();
+            backend.setWeeks([week1]);
+            expect(await readDurable(storage, CURRENT_KEY)).toEqual([week1]);
+        });
+
+        it('covers that it does not touch lastSynced or its durable copy', async () => {
+            const { backend, storage } = makeBackend();
+            backend.setWeeks([week1]);
+            expect(await readDurable(storage, SYNCED_KEY)).toEqual([]);
+        });
+
+        it('covers two rapid calls: the eventual push reflects the final cache value, not the intermediate one', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+            backend.setWeeks([week1]);
+            backend.setWeeks([week1, week2]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(client.upsertCalls).toEqual([[rowOf(week1), rowOf(week2)]]);
+        });
+    });
+
+    describe('push', () => {
+        it('covers nothing changed since lastSynced: no network call at all', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+            backend.setWeeks([]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.upsertCalls).toEqual([]);
+            expect(client.deleteCalls).toEqual([]);
+        });
+
+        it('covers upserts only', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+            backend.setWeeks([week1]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.upsertCalls).toEqual([[rowOf(week1)]]);
+            expect(client.deleteCalls).toEqual([]);
+        });
+
+        it('covers deletes only', async () => {
+            const { backend, client } = makeBackend();
+            client.rows = [rowOf(week1)];
+            await backend.load();
+            backend.setWeeks([]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.deleteCalls).toEqual([['2026-07-06']]);
+            expect(client.upsertCalls).toEqual([]);
+        });
+
+        it('covers both upserts and deletes in one push', async () => {
+            const { backend, client } = makeBackend();
+            client.rows = [rowOf(week1)];
+            await backend.load();
+            backend.setWeeks([week2]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.upsertCalls).toEqual([[rowOf(week2)]]);
+            expect(client.deleteCalls).toEqual([['2026-07-06']]);
+        });
+
+        it('covers the session guard failing due to no session: no network call', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+            client.session = null;
+            backend.setWeeks([week1]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.upsertCalls).toEqual([]);
+        });
+
+        it('covers the session guard failing due to a different user: no network call', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+            client.session = { user: { id: 'someone-else' } };
+            backend.setWeeks([week1]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.upsertCalls).toEqual([]);
+        });
+
+        it('covers a partial failure (upsert succeeds, delete fails): lastSynced does not advance', async () => {
+            const { backend, storage, client } = makeBackend();
+            client.rows = [rowOf(week1), rowOf(week2)];
+            await backend.load();
+            client.deleteError = 'boom';
+            backend.setWeeks([week3]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(client.upsertCalls).toEqual([[rowOf(week3)]]);
+            expect(await readDurable(storage, SYNCED_KEY)).toEqual([week1, week2]);
+        });
+
+        it('covers a partial failure (delete succeeds, upsert fails): lastSynced does not advance', async () => {
+            const { backend, storage, client } = makeBackend();
+            client.rows = [rowOf(week1), rowOf(week2)];
+            await backend.load();
+            client.upsertError = 'boom';
+            backend.setWeeks([week3]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(client.deleteCalls).toEqual([['2026-07-06', '2026-07-13']]);
+            expect(await readDurable(storage, SYNCED_KEY)).toEqual([week1, week2]);
+        });
+
+        it('covers two overlapping push calls: the second defers instead of running concurrently, then catches up', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+            client.holdUpserts = true;
+
+            backend.setWeeks([week1]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS); // push #1 starts, upsert in flight
+            expect(client.upsertCalls.length).toBe(1);
+
+            backend.setWeeks([week1, week2]); // arms a second timer while push #1 is in flight
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS); // second timer fires
+            expect(client.upsertCalls.length).toBe(1); // deferred, not a second concurrent call
+
+            client.resolveNextUpsert(); // push #1 completes
+            await vi.advanceTimersByTimeAsync(0); // let the deferred push run
+
+            expect(client.upsertCalls.length).toBe(2);
+            expect(client.upsertCalls[1]).toEqual([rowOf(week2)]); // diffed against the now-advanced lastSynced
+        });
+    });
+
+    describe('the write-time race', () => {
+        it('covers arming a save, then the session changing before the debounce fires: no write happens', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+
+            backend.setWeeks([week1]);
+            client.session = { user: { id: 'u2' } };
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(client.upsertCalls).toEqual([]);
+            expect(client.deleteCalls).toEqual([]);
+        });
+
+        it('covers arming a save, then signing out entirely before the debounce fires: no write happens', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+
+            backend.setWeeks([week1]);
+            client.session = null;
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(client.upsertCalls).toEqual([]);
+        });
+    });
+
+    describe('reset', () => {
+        it('covers reset with pending changes: cache/lastSynced/durable copies all clear, timer cancelled', async () => {
+            const { backend, storage, client } = makeBackend();
+            await backend.load();
+            backend.setWeeks([week1]);
+
+            backend.reset();
+
+            expect(backend.getWeeks()).toEqual([]);
+            expect(await readDurable(storage, CURRENT_KEY)).toEqual([]);
+            expect(await readDurable(storage, SYNCED_KEY)).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.upsertCalls).toEqual([]);
+        });
+
+        it('covers reset on an already-empty backend: still empty afterward', () => {
+            const { backend } = makeBackend();
+            backend.reset();
+            expect(backend.getWeeks()).toEqual([]);
+        });
+
+        it('covers userId being forgotten: a subsequent push no-ops on the guard even with a valid session', async () => {
+            const { backend, client } = makeBackend();
+            await backend.load();
+            backend.reset();
+
+            client.session = { user: { id: 'u1' } };
+            backend.setWeeks([week1]);
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(client.upsertCalls).toEqual([]);
+        });
+    });
+
+    describe('cancelScheduledPush', () => {
+        it('covers a pending timer: cancels it, leaves cache/lastSynced/both durable copies unchanged', async () => {
+            const { backend, storage, client } = makeBackend();
+            await backend.load();
+            backend.setWeeks([week1]);
+
+            backend.cancelScheduledPush();
+
+            expect(backend.getWeeks()).toEqual([week1]);
+            expect(await readDurable(storage, CURRENT_KEY)).toEqual([week1]);
+            expect(await readDurable(storage, SYNCED_KEY)).toEqual([]);
+
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+            expect(client.upsertCalls).toEqual([]);
+        });
+
+        it('covers no timer to cancel: no-op, does not throw', () => {
+            const { backend } = makeBackend();
+            expect(() => backend.cancelScheduledPush()).not.toThrow();
+        });
+    });
+});
