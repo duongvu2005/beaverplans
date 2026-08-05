@@ -12,10 +12,12 @@ export interface KeyValueStore {
 
 export class LocalBackend implements Backend {
     private readonly storage: KeyValueStore;
+    private readonly storageKey: string;
     private cache: { weeks: Weeks };
 
-    public constructor(storage: KeyValueStore) {
+    public constructor(storage: KeyValueStore, storageKey: string = STORAGE_KEY) {
         this.storage = storage;
+        this.storageKey = storageKey;
         this.cache = this.emptyState();
     }
 
@@ -54,7 +56,7 @@ export class LocalBackend implements Backend {
     }
 
     private read(): { weeks: Weeks } {
-        const storageJSON = this.storage.getItem(STORAGE_KEY);
+        const storageJSON = this.storage.getItem(this.storageKey);
         if (!storageJSON) {
             return this.emptyState();
         }
@@ -69,7 +71,7 @@ export class LocalBackend implements Backend {
 
     private write(): void {
         try {
-            this.storage.setItem(STORAGE_KEY, JSON.stringify(this.cache));
+            this.storage.setItem(this.storageKey, JSON.stringify(this.cache));
         } catch {
             // failed write, nothing for now
         }

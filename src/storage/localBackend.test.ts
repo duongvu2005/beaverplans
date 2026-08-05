@@ -25,6 +25,7 @@ class ThrowingStorage extends FakeStorage {
 // --- fixtures ---
 const activeWeek: WeekPlan = {
     weekStart: '2026-07-13',
+    ended: false,
     projects: [
         {
             id: 'p1',
@@ -103,10 +104,12 @@ describe('LocalBackend', () => {
         // only isValidWeeks' cross-entry id check catches the collision.
         const first: WeekPlan = {
             weekStart: '2026-07-06',
+            ended: false,
             projects: [{ id: 'dup', name: 'A', tasks: [] }],
         };
         const second: WeekPlan = {
             weekStart: '2026-07-13',
+            ended: false,
             projects: [{ id: 'dup', name: 'B', tasks: [] }],
         };
         storage.setItem(STORAGE_KEY, JSON.stringify({ weeks: [first, second] }));
@@ -119,7 +122,7 @@ describe('LocalBackend', () => {
         const storage = new FakeStorage();
         // Valid weekStart, unique id, zero projects — isValidPlan doesn't check
         // emptiness at all, only isValidWeeks' isEmptyWeek does.
-        const emptyEntry: WeekPlan = { weekStart: '2026-07-06', projects: [] };
+        const emptyEntry: WeekPlan = { weekStart: '2026-07-06', ended: false, projects: [] };
         storage.setItem(STORAGE_KEY, JSON.stringify({ weeks: [emptyEntry, activeWeek] }));
         const backend = new LocalBackend(storage);
         await backend.load();
@@ -153,5 +156,22 @@ describe('LocalBackend', () => {
         const backend = new LocalBackend(new FakeStorage());
         backend.reset();
         expect(backend.getWeeks()).toEqual([]);
+    });
+
+    it('covers two backends sharing one store with different storage keys: no collision', async () => {
+        const storage = new FakeStorage();
+        const guest = new LocalBackend(storage); // default key
+        const cloudCache = new LocalBackend(storage, 'beaverplans.cloudCache.v1');
+
+        guest.setWeeks(sampleWeeks);
+        cloudCache.setWeeks([activeWeek]);
+
+        const freshGuest = new LocalBackend(storage);
+        await freshGuest.load();
+        expect(freshGuest.getWeeks()).toEqual(sampleWeeks);
+
+        const freshCloudCache = new LocalBackend(storage, 'beaverplans.cloudCache.v1');
+        await freshCloudCache.load();
+        expect(freshCloudCache.getWeeks()).toEqual([activeWeek]);
     });
 });
