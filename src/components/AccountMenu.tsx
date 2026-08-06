@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import type { Theme } from '../hooks/useTheme';
 import styles from './AccountMenu.module.css';
 
 function LockIcon() {
@@ -41,36 +42,48 @@ type AccountMenuProps = {
     trigger: ReactNode;
     open: boolean;
     onClose: () => void;
-    onChangePassword: () => void;
-    onSignOut: () => void;
+    theme: Theme;
+    onToggleTheme: () => void;
+    /** omitted for a guest trigger: there is no account yet for these two to act on */
+    accountActions?: {
+        onChangePassword: () => void;
+        onSignOut: () => void;
+    };
     /** goes on the anchor, so the bar can hide the whole thing on a phone */
     className?: string;
 };
 
 /**
- * The desktop account dropdown: what the email chip in the top bar opens.
+ * The account dropdown: what the email chip (or, signed out, the Guest chip)
+ * opens.
  *
- * Only two rows, because the desktop bar already carries the rest — Support and
- * the theme toggle are a click away in the open, so putting them in here too
- * would make the menu longer without making anything more reachable. The
- * phone's AccountSheet still holds all four: there is no bar there to carry
- * them. Nor does the panel name the account: the chip it hangs off is the
- * address, directly above, and repeating it is a whole row that tells you
- * something you are already looking at.
+ * Light/Dark lives here rather than beside the tabs because it is a
+ * preference about whoever is looking at the app, and that is exactly what
+ * this menu is already the home for. It stays even for a guest — the trigger
+ * just drops the two rows below it, since there is no account yet for
+ * Change password or Sign out to act on. Support stays out in the bar: it
+ * does not belong to any one account, signed in or not, so it has no reason
+ * to be reachable only from this menu. The phone's AccountSheet still holds
+ * everything: there is no bar there to carry it. Signed in, the panel also
+ * doesn't name the account: the chip it hangs off is the address, directly
+ * above, and repeating it is a whole row that tells you something you are
+ * already looking at.
  *
  * Takes its trigger as a child rather than positioning against a ref the parent
  * hands over: the anchor and the panel have to share a positioning context for
  * `top: 100%` to mean anything, so owning both is what makes that true by
  * construction. Outside-click and Escape both close, and the click that closes
  * is not swallowed — dismissing a menu should not also cost you the click you
- * meant for whatever is underneath.
+ * meant for whatever is underneath. Picking a theme deliberately does not
+ * close the menu, so light and dark can be compared in place before you move on.
  */
 export function AccountMenu({
     trigger,
     open,
     onClose,
-    onChangePassword,
-    onSignOut,
+    theme,
+    onToggleTheme,
+    accountActions,
     className,
 }: AccountMenuProps) {
     const anchorRef = useRef<HTMLDivElement>(null);
@@ -110,26 +123,68 @@ export function AccountMenu({
         >
             {trigger}
             {open && (
-                <div className={styles.menu} role="menu">
-                    <button
-                        type="button"
-                        role="menuitem"
-                        className={styles.item}
-                        onClick={onChangePassword}
-                    >
-                        <LockIcon />
-                        Change password
-                    </button>
-                    <div className={styles.sep} role="separator" />
-                    <button
-                        type="button"
-                        role="menuitem"
-                        className={`${styles.item} ${styles.danger}`}
-                        onClick={onSignOut}
-                    >
-                        <SignOutIcon />
-                        Sign out
-                    </button>
+                <div
+                    className={
+                        accountActions
+                            ? styles.menu
+                            : `${styles.menu} ${styles.menuCompact}`
+                    }
+                    role="menu"
+                >
+                    <div className={styles.themeRow} role="group" aria-label="Theme">
+                        <button
+                            type="button"
+                            className={
+                                theme === 'light'
+                                    ? `${styles.themeBtn} ${styles.themeOn}`
+                                    : styles.themeBtn
+                            }
+                            aria-pressed={theme === 'light'}
+                            onClick={() => {
+                                if (theme !== 'light') onToggleTheme();
+                            }}
+                        >
+                            Light
+                        </button>
+                        <button
+                            type="button"
+                            className={
+                                theme === 'dark'
+                                    ? `${styles.themeBtn} ${styles.themeOn}`
+                                    : styles.themeBtn
+                            }
+                            aria-pressed={theme === 'dark'}
+                            onClick={() => {
+                                if (theme !== 'dark') onToggleTheme();
+                            }}
+                        >
+                            Dark
+                        </button>
+                    </div>
+                    {accountActions && (
+                        <>
+                            <div className={styles.sep} role="separator" />
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className={styles.item}
+                                onClick={accountActions.onChangePassword}
+                            >
+                                <LockIcon />
+                                Change password
+                            </button>
+                            <div className={styles.sep} role="separator" />
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className={`${styles.item} ${styles.danger}`}
+                                onClick={accountActions.onSignOut}
+                            >
+                                <SignOutIcon />
+                                Sign out
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
         </div>

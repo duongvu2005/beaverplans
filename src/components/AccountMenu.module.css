@@ -28,6 +28,13 @@
     animation: pop 0.13s ease;
 }
 
+/* Guest: no Change password/Sign out rows to hold the 200px floor up for, so
+   the panel shrinks to the theme row's own width instead of overhanging a
+   trigger that's just the word "Guest". */
+.menuCompact {
+    min-width: 0;
+}
+
 @keyframes pop {
     from {
         opacity: 0;
@@ -45,19 +52,59 @@
     background: var(--line);
 }
 
-/* Icon + label on one line, left-aligned so the labels share a reading edge.
+/* Light/Dark as one bordered, centered row rather than a left-aligned item:
+   this is a pair of equally-weighted options, not a list, the same shape the
+   old app's Appearance control used. */
+.themeRow {
+    display: flex;
+    margin: 2px 3px 4px;
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.themeBtn {
+    flex: 1;
+    padding: 6px 16px;
+    border: 0;
+    background: none;
+    text-align: center;
+    font: 500 var(--fs-body) var(--sans);
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: 0.12s;
+}
+
+.themeBtn + .themeBtn {
+    border-left: 1px solid var(--line);
+}
+
+.themeBtn:hover {
+    color: var(--ink);
+    background: var(--hover-neutral);
+}
+
+.themeOn,
+.themeOn:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+/* Icon + label on one line, centered as a group — matches the theme row
+   above it rather than reading as a left edge the theme row then breaks.
    Sans sentence case: these change something, they do not move you somewhere
    (see docs/conventions.md). */
 .item {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 9px;
     width: 100%;
     padding: 8px 10px;
     border: 0;
     border-radius: 7px;
     background: none;
-    text-align: left;
+    text-align: center;
     white-space: nowrap;
     font: 500 var(--fs-body) var(--sans);
     color: var(--ink-soft);

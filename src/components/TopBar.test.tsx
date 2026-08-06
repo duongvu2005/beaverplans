@@ -70,10 +70,16 @@ describe('TopBar', () => {
             />,
         );
         expect(document.documentElement.dataset.theme).toBe('light');
-        await user.click(screen.getByRole('button', { name: 'Switch to dark' }));
+        // guest or not, the chip is what opens the theme control now
+        await user.click(screen.getByRole('button', { name: 'Guest' }));
+        await user.click(screen.getByRole('button', { name: 'Dark' }));
         expect(document.documentElement.dataset.theme).toBe('dark');
-        // and the control now offers the way back, rather than repeating itself
-        expect(screen.getByRole('button', { name: 'Switch to light' })).toBeInTheDocument();
+        // and the control now shows Dark as the picked side, rather than
+        // repeating a "switch to" verb the way a single toggle button did
+        expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute(
+            'aria-pressed',
+            'true',
+        );
     });
 
     it('the choice survives a remount, which is the whole point of storing it', async () => {
@@ -88,7 +94,8 @@ describe('TopBar', () => {
                 onSignOut={vi.fn()}
             />,
         );
-        await user.click(screen.getByRole('button', { name: 'Switch to dark' }));
+        await user.click(screen.getByRole('button', { name: 'Guest' }));
+        await user.click(screen.getByRole('button', { name: 'Dark' }));
         unmount();
         render(
             <TopBar
@@ -101,6 +108,26 @@ describe('TopBar', () => {
             />,
         );
         expect(document.documentElement.dataset.theme).toBe('dark');
+    });
+
+    it('the guest chip opens a menu with only the theme in it', async () => {
+        const user = userEvent.setup();
+        render(
+            <TopBar
+                view="plan"
+                onView={vi.fn()}
+                user={null}
+                onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
+                onSignOut={vi.fn()}
+            />,
+        );
+        await user.click(screen.getByRole('button', { name: 'Guest' }));
+        const menu = screen.getByRole('menu');
+        expect(within(menu).getByRole('button', { name: 'Light' })).toBeInTheDocument();
+        expect(within(menu).getByRole('button', { name: 'Dark' })).toBeInTheDocument();
+        // nothing to change the password of or sign out of as a guest
+        expect(within(menu).queryByRole('menuitem')).toBeNull();
     });
 
     it('the account slot opens the sheet the phone folds the right cluster into', async () => {

@@ -50,7 +50,6 @@ export function TopBar({
     // slot on a desktop, so these never race each other.
     const [sheetOpen, setSheetOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const themeLabel = theme === 'dark' ? 'Switch to light' : 'Switch to dark';
 
     return (
         <>
@@ -89,73 +88,76 @@ export function TopBar({
                         <HeartIcon />
                         <span className={styles.utilLabel}>Support</span>
                     </a>
-                    <button
-                        type="button"
-                        className={styles.iconBtn}
-                        onClick={toggleTheme}
-                        aria-label={themeLabel}
-                        title={themeLabel}
-                    >
-                        <span className={styles.half} aria-hidden="true" />
-                        <span className={styles.themeLabel}>
-                            {theme === 'dark' ? 'Dark' : 'Light'}
-                        </span>
-                    </button>
-
                     <span className={styles.rule} aria-hidden="true" />
 
-                    {/* Signed out this is a status readout, not a control — one
-                        word for where your weeks are kept, with Sign in beside
-                        it as the actual thing to do. The same slot carries
-                        Saved / Saving… / Offline once there is a cloud to be
-                        out of sync with.
-
-                        Signed in the chip becomes the account menu's trigger and
-                        the pair collapses to one control: your address is the
-                        most specific label a menu about your account could
-                        have, and signing out moves inside it. What drops down
-                        is a dropdown — see AccountMenu — not the phone's sheet:
-                        a scrim over the whole board is far too much weight for
-                        two rows when there is a chip to hang them under. */}
-                    {user === null ? (
-                        <>
-                            <span className={styles.guest}>
+                    {/* One chip either way, so the bar never grows or shrinks
+                        by a control's worth of width across signing in and
+                        out. Signed out it reads "Guest" and opens a menu with
+                        only Light/Dark in it (there is no account yet for
+                        Change password or Sign out to act on) — Sign in sits
+                        beside it as the actual thing to do. Signed in the
+                        chip's label becomes the address and the same menu
+                        gains those two rows. What drops down is a dropdown —
+                        see AccountMenu — not the phone's sheet: a scrim over
+                        the whole board is far too much weight for a chip's
+                        worth of menu. */}
+                    <AccountMenu
+                        className={styles.acct}
+                        open={menuOpen}
+                        onClose={() => setMenuOpen(false)}
+                        theme={theme}
+                        onToggleTheme={toggleTheme}
+                        accountActions={
+                            user === null
+                                ? undefined
+                                : {
+                                      onChangePassword: () => {
+                                          setMenuOpen(false);
+                                          onChangePassword();
+                                      },
+                                      onSignOut: () => {
+                                          setMenuOpen(false);
+                                          onSignOut();
+                                      },
+                                  }
+                        }
+                        trigger={
+                            <button
+                                type="button"
+                                className={
+                                    // Signed in, the chip is the bar's last control, so
+                                    // .acctSolo drops the margin .guest otherwise keeps
+                                    // tight against the Sign in button that follows a
+                                    // guest's chip instead.
+                                    user === null
+                                        ? `${styles.guest} ${styles.account}`
+                                        : `${styles.guest} ${styles.account} ${styles.acctSolo}`
+                                }
+                                onClick={() => setMenuOpen((shown) => !shown)}
+                                aria-haspopup="menu"
+                                aria-expanded={menuOpen}
+                            >
                                 <i aria-hidden="true" />
-                                <span className={styles.guestLabel}>Guest</span>
-                            </span>
-                            <button type="button" className={styles.btn} onClick={onOpenAuth}>
-                                Sign in
-                            </button>
-                        </>
-                    ) : (
-                        <AccountMenu
-                            className={styles.acct}
-                            open={menuOpen}
-                            onClose={() => setMenuOpen(false)}
-                            onChangePassword={() => {
-                                setMenuOpen(false);
-                                onChangePassword();
-                            }}
-                            onSignOut={() => {
-                                setMenuOpen(false);
-                                onSignOut();
-                            }}
-                            trigger={
-                                <button
-                                    type="button"
-                                    className={`${styles.guest} ${styles.account}`}
-                                    onClick={() => setMenuOpen((shown) => !shown)}
-                                    aria-haspopup="menu"
-                                    aria-expanded={menuOpen}
+                                <span
+                                    className={
+                                        // "Guest" is the one static caps-and-tracked word
+                                        // .guestLabel was built for; an email address isn't,
+                                        // so only that case drops the uppercase treatment.
+                                        user === null
+                                            ? styles.guestLabel
+                                            : `${styles.guestLabel} ${styles.guestEmail}`
+                                    }
                                 >
-                                    <i aria-hidden="true" />
-                                    <span className={`${styles.guestLabel} ${styles.guestEmail}`}>
-                                        {user.email ?? 'Account'}
-                                    </span>
-                                    <ChevronIcon dir="down" />
-                                </button>
-                            }
-                        />
+                                    {user === null ? 'Guest' : user.email ?? 'Account'}
+                                </span>
+                                <ChevronIcon dir="down" />
+                            </button>
+                        }
+                    />
+                    {user === null && (
+                        <button type="button" className={styles.btn} onClick={onOpenAuth}>
+                            Sign in
+                        </button>
                     )}
 
                     {/* Phone only: the fourth slot in the floating pill, which is

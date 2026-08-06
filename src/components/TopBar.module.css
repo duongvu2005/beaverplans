@@ -140,49 +140,6 @@
     }
 }
 
-.iconBtn {
-    flex: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px 5px 8px;
-    border: 0;
-    border-radius: var(--r-chip);
-    background: none;
-    color: var(--ink-faint);
-    cursor: pointer;
-    transition: 0.15s;
-}
-
-.iconBtn:hover {
-    background: var(--hover-neutral);
-    color: var(--ink);
-}
-
-/* Tighten the air before the account pair — .inner's gap is uniform, so this
-   is the one place that needs a nudge back. */
-.iconBtn + .rule {
-    margin-right: 4px;
-}
-
-/* The theme control draws the thing it does rather than a sun or a moon: half
-   the disc filled, so it reads the same whichever theme you are in. */
-.half {
-    flex: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 1.5px solid currentColor;
-    background: linear-gradient(90deg, transparent 50%, currentColor 50%);
-}
-
-/* Reads the current mode, like Guest does — a status readout, not the
-   destination the click takes you to (that's the aria-label/title). */
-.themeLabel {
-    font: 500 var(--fs-body) var(--sans);
-    color: var(--ink-soft);
-}
-
 /* --- where your weeks are kept -------------------------------------------- */
 
 /* Same box-height as .btn: they're a status + action pair, not two unrelated
@@ -226,17 +183,22 @@
     letter-spacing: normal;
 }
 
-/* The same chip, once it is the account menu's trigger: signed out it is a
-   readout and stays flat. The negative margin .guest carries is for the Sign in
-   button that used to follow it; here the chip is the end of the bar, so it
-   goes. The caret is the whole affordance — a chip that opens something has to
+/* The same chip, now a trigger either way: a chip that opens something has to
    look different from one that just reports, and at this size a hover state
-   alone does not do it. */
+   alone does not do it — hence the caret and the extra breathing room before
+   it. */
 .account {
     padding-right: 7px;
-    margin-right: 0;
     cursor: pointer;
     transition: 0.15s;
+}
+
+/* Signed in, the chip is the last thing in the bar, so the negative margin
+   .guest carries — there to tighten the air before a following Sign in
+   button — has nothing left to tighten against and goes. Signed out, Sign in
+   still follows the chip, so that margin stays in effect. */
+.acctSolo {
+    margin-right: 0;
 }
 
 /* AccountMenu's anchor. Carries what the chip inside it would otherwise carry,
@@ -342,7 +304,6 @@
     .rule,
     .grow,
     .util,
-    .iconBtn,
     .guest,
     .acct,
     .btn {
