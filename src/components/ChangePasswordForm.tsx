@@ -40,10 +40,11 @@ type Stage = 'form' | 'changed' | 'sent';
  * Two things make it more than a form. First, the change is gated on the
  * CURRENT password (see useAuth's verifyPassword) — a live session only proves
  * the browser was left signed in. Second, someone who cannot produce that
- * password is not stuck: the footnote under the field emails them a reset link,
- * exactly where sign-in puts its own "Forgot password?". Both paths end on a
- * panel that says what happened, because a screen that just closes leaves you
- * wondering whether it did anything.
+ * password is not stuck: a link in the foot, beside Cancel, emails them a
+ * reset link instead — under the fields rather than under the one field it
+ * concerns, so the three password rows keep an even rhythm. Both paths end on
+ * a panel that says what happened, because a screen that just closes leaves
+ * you wondering whether it did anything.
  *
  * The captcha is not ceremony. This project enforces captcha protection on the
  * password grant and on password recovery alike — verified against the live
@@ -249,21 +250,7 @@ export function ChangePasswordForm({
                                     undefined,
                                     current,
                                     setCurrent,
-                                    {
-                                        autoFocus: true,
-                                        // Where sign-in puts the same escape
-                                        // hatch, under the field it is about.
-                                        extra: (
-                                            <button
-                                                type="button"
-                                                className={`${styles.link} ${styles.forgot}`}
-                                                onClick={() => void handleSendReset()}
-                                                disabled={busy}
-                                            >
-                                                Forgot your current password?
-                                            </button>
-                                        ),
-                                    },
+                                    { autoFocus: true },
                                 )}
                                 {passwordField(
                                     'new-password',
@@ -308,6 +295,18 @@ export function ChangePasswordForm({
                     )}
 
                     <div className={styles.foot}>
+                        {stage === 'form' && (
+                            <p className={styles.switch}>
+                                <button
+                                    type="button"
+                                    className={styles.link}
+                                    onClick={() => void handleSendReset()}
+                                    disabled={busy}
+                                >
+                                    Forgot your current password?
+                                </button>
+                            </p>
+                        )}
                         <button type="button" className={styles.guest} onClick={onClose}>
                             {stage === 'form' ? 'Cancel' : 'Back to your week'}
                         </button>
