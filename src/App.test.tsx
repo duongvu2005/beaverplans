@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import { overallProgress } from './core/progress';
@@ -8,12 +8,18 @@ import { sampleWeek } from './fixtures/sampleWeek';
 import { sampleArchive } from './fixtures/sampleArchive';
 import { STORAGE_KEY } from './storage/localBackend';
 import type { Weeks } from './core/types';
+import { supabase } from './storage/supabaseClient';
 
 // App now calls useAuth, which talks to the real Supabase client — these
 // tests must stay hermetic (no real network, no timing dependent on it).
 // onAuthStateChange's mock fires its callback synchronously (unlike the real
 // one) specifically so `loading` resolves to false within the same render()
 // call, matching every existing test's synchronous assertions below.
+//
+// signInWithPassword/signUp are vi.fn() (not inline arrows) so individual
+// tests can override one call's resolved value with mockResolvedValueOnce —
+// in particular, signup's session-established-vs-not distinction, which
+// AuthForm/App branch on.
 vi.mock('./storage/supabaseClient', () => ({
     supabase: {
         auth: {
@@ -22,13 +28,23 @@ vi.mock('./storage/supabaseClient', () => ({
                 callback('INITIAL_SESSION', null);
                 return { data: { subscription: { unsubscribe: () => {} } } };
             },
-            signInWithPassword: () => Promise.resolve({ error: null }),
-            signUp: () => Promise.resolve({ error: null }),
+            signInWithPassword: vi.fn(() => Promise.resolve({ error: null })),
+            signUp: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
             resetPasswordForEmail: () => Promise.resolve({ error: null }),
             updateUser: () => Promise.resolve({ error: null }),
             signOut: () => Promise.resolve({ error: null }),
         },
     },
+}));
+
+// The real widget loads a script from hCaptcha and renders in an iframe,
+// which jsdom cannot do — see ChangePasswordForm.test.tsx for the same stand-in.
+vi.mock('@hcaptcha/react-hcaptcha', () => ({
+    default: ({ onVerify }: { onVerify: (token: string) => void }) => (
+        <button type="button" onClick={() => onVerify('captcha-token')}>
+            solve captcha
+        </button>
+    ),
 }));
 
 // The app's state is one collection of weeks, past, present and future alike,
@@ -106,8 +122,8 @@ describe('App under the weeks model', () => {
         expect(earliestActiveWeek(seed, '2026-07-13')).toBeUndefined();
     });
 
-    it('renders the plan pane', () => {
-        render(<App />);
+    it('renders the plan pane', async () => {
+        await renderLoaded();
         expect(screen.getByLabelText('Previous week')).toBeTruthy();
         expect(screen.getByRole('button', { name: 'plan' })).toBeTruthy();
     });
@@ -165,7 +181,7 @@ describe('App under the weeks model', () => {
     // ended weeks were required to precede every active one.
     it('a free week inside the archive is editable, not frozen (weeks interleave)', async () => {
         const user = userEvent.setup();
-        render(<App />);
+        await renderLoaded();
 
         // Landing is 2026-07-27; step back nine times into the fixtures' hole.
         // 2026-05-25 has no entry and sits before the last ended week
@@ -224,5 +240,132 @@ describe('App under the weeks model', () => {
         const { done, total } = overallProgress(sampleWeek.projects);
         expect(done).toBeLessThan(total); // the fixture has to be partial for this to bite
         expect(screen.getByText(`${done}/${total} done`)).toBeTruthy();
+    });
+
+    // handleAuthSubmit's job: close the dialog when it's safe to (signin
+    // always; signup only once a session actually exists), and otherwise
+    // leave AuthForm mounted to show whatever non-committal state it owns
+    // (its "check your email" screen for a pending signup, its existing
+    // notice for reset). Two "Sign in"-labelled buttons are on screen at
+    // once here — the top bar's trigger and the form's own submit button —
+    // so queries are scoped to the open dialog via `within`.
+    describe('sign-up email confirmation', () => {
+        async function openAuthDialog(user: ReturnType<typeof userEvent.setup>) {
+            await user.click(screen.getByRole('button', { name: 'Sign in' }));
+            return within(screen.getByRole('dialog'));
+        }
+
+        it('signup that establishes no session keeps the dialog open on a pending-confirmation message', async () => {
+            const user = userEvent.setup();
+            await renderLoaded();
+            const dialog = await openAuthDialog(user);
+
+            await user.click(dialog.getByRole('button', { name: 'Create one' }));
+            await user.type(dialog.getByLabelText('Email'), 'new@example.com');
+            await user.type(dialog.getByLabelText('Password'), 'password123');
+            await user.type(dialog.getByLabelText('Confirm password'), 'password123');
+            await user.click(dialog.getByText('solve captcha'));
+            await user.click(dialog.getByRole('button', { name: 'Create account' }));
+
+            expect(await dialog.findByText('Check your email')).toBeTruthy();
+            expect(dialog.getByText('new@example.com')).toBeTruthy();
+            expect(
+                dialog.getByText(/Open the link to finish creating your account/),
+            ).toBeTruthy();
+            // Following the confirmation link signs the browser in
+            // automatically — this screen must not offer or imply a manual
+            // sign-in step.
+            expect(dialog.queryByRole('button', { name: /sign in/i })).toBeNull();
+            expect(dialog.queryByText(/come back and sign in/i)).toBeNull();
+            // still escapable — the guest affordance survives into this state
+            expect(dialog.getByText('Keep planning as a guest')).toBeTruthy();
+            expect(screen.getByRole('dialog')).toBeTruthy();
+        });
+
+        it('the pending screen can go back to the form, address intact, to fix a mistyped email', async () => {
+            const user = userEvent.setup();
+            await renderLoaded();
+            const dialog = await openAuthDialog(user);
+
+            await user.click(dialog.getByRole('button', { name: 'Create one' }));
+            await user.type(dialog.getByLabelText('Email'), 'typo@example.com');
+            await user.type(dialog.getByLabelText('Password'), 'password123');
+            await user.type(dialog.getByLabelText('Confirm password'), 'password123');
+            await user.click(dialog.getByText('solve captcha'));
+            await user.click(dialog.getByRole('button', { name: 'Create account' }));
+            await dialog.findByText('Check your email');
+
+            await user.click(dialog.getByRole('button', { name: 'Use a different email' }));
+
+            // Back on the signup form with the address still in the field —
+            // the whole point is correcting a typo, not retyping from scratch.
+            expect(dialog.queryByText('Check your email')).toBeNull();
+            expect(dialog.getByRole('button', { name: 'Create account' })).toBeTruthy();
+            expect(dialog.getByLabelText('Email')).toHaveValue('typo@example.com');
+        });
+
+        it('signup that establishes a session immediately closes the dialog', async () => {
+            vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
+                data: { session: { user: { id: 'u1' } } },
+                error: null,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+            const user = userEvent.setup();
+            await renderLoaded();
+            const dialog = await openAuthDialog(user);
+
+            await user.click(dialog.getByRole('button', { name: 'Create one' }));
+            await user.type(dialog.getByLabelText('Email'), 'new@example.com');
+            await user.type(dialog.getByLabelText('Password'), 'password123');
+            await user.type(dialog.getByLabelText('Confirm password'), 'password123');
+            await user.click(dialog.getByText('solve captcha'));
+            await user.click(dialog.getByRole('button', { name: 'Create account' }));
+
+            expect(screen.queryByRole('dialog')).toBeNull();
+        });
+
+        it('a plain sign-in still closes the dialog on success', async () => {
+            const user = userEvent.setup();
+            await renderLoaded();
+            const dialog = await openAuthDialog(user);
+
+            await user.type(dialog.getByLabelText('Email'), 'you@example.com');
+            await user.type(dialog.getByLabelText('Password'), 'password123');
+            await user.click(dialog.getByText('solve captcha'));
+            await user.click(dialog.getByRole('button', { name: 'Sign in' }));
+
+            expect(screen.queryByRole('dialog')).toBeNull();
+        });
+
+        it('password reset keeps its existing notice and stays open, unaffected by the signup change', async () => {
+            const user = userEvent.setup();
+            await renderLoaded();
+            const dialog = await openAuthDialog(user);
+
+            await user.click(dialog.getByRole('button', { name: 'Forgot password?' }));
+            await user.type(dialog.getByLabelText('Email'), 'you@example.com');
+            await user.click(dialog.getByText('solve captcha'));
+            await user.click(dialog.getByRole('button', { name: 'Send reset link' }));
+
+            expect(
+                await dialog.findByText('If that email has an account, a reset link is on its way.'),
+            ).toBeTruthy();
+            expect(screen.getByRole('dialog')).toBeTruthy();
+        });
+    });
+
+    // AuthForm passes closeOnScrimClick={false} (see Dialog.tsx/AuthForm.tsx)
+    // so a stray click outside the card while typing a password doesn't
+    // discard the form — unlike an ordinary dialog (ConfirmDialog etc.),
+    // which is unaffected and still closes on a scrim click by default.
+    it('clicking outside the sign-in/sign-up dialog does not close it', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+
+        await user.click(screen.getByRole('button', { name: 'Sign in' }));
+        const dialog = screen.getByRole('dialog');
+        await user.click(dialog.parentElement!); // the scrim, outside the panel
+
+        expect(screen.getByRole('dialog')).toBeTruthy();
     });
 });

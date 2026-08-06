@@ -9,6 +9,12 @@ import styles from './AuthForm.module.css';
 
 export type AuthMode = 'signin' | 'signup' | 'reset';
 
+// confirmationRequired is only ever true for a signup that didn't leave the
+// browser with a session (Supabase requires email confirmation, or the
+// address already has a confirmed account — the two are deliberately
+// indistinguishable). signin/reset always resolve it false.
+type AuthOutcome = { confirmationRequired: boolean };
+
 type AuthFormProps = {
     initialMode: AuthMode;
     onCancel: () => void;
@@ -17,7 +23,7 @@ type AuthFormProps = {
         email: string,
         password: string,
         captchaToken: string,
-    ) => Promise<void>;
+    ) => Promise<AuthOutcome>;
 };
 
 const HCAPTCHA_SITEKEY = import.meta.env.VITE_HCAPTCHA_SITEKEY;
@@ -73,6 +79,13 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
+    // Set once a signup succeeds without establishing a session — replaces
+    // the form with a "check your email" notice instead of closing (App
+    // leaves the dialog open in that case; see App.tsx's handleAuthSubmit).
+    // Following the confirmation link signs the browser in automatically
+    // (Supabase's own redirect), so this screen has nothing to hand back to
+    // — no "sign in" affordance, just what to expect and the guest escape.
+    const [signupPending, setSignupPending] = useState(false);
     const captchaRef = useRef<HCaptcha>(null);
     const [wrapRef, containerWidth] = useContainerWidth<HTMLDivElement>();
     const titleId = 'auth-form-title';
@@ -93,6 +106,7 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
         setShowPassword(false);
         setError(null);
         setNotice(null);
+        setSignupPending(false);
         setCaptchaToken(null);
         captchaRef.current?.resetCaptcha();
     }
@@ -129,14 +143,17 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
         setError(null);
         setNotice(null);
         try {
-            await onSubmit(mode, email, password, captchaToken);
+            const outcome = await onSubmit(mode, email, password, captchaToken);
             if (mode === 'reset') {
                 // Deliberately non-committal: confirming or denying that the
                 // address has an account would let this form enumerate them.
                 setNotice('If that email has an account, a reset link is on its way.');
+            } else if (mode === 'signup' && outcome.confirmationRequired) {
+                setSignupPending(true);
             }
-            // signin/signup success closes the whole dialog (see App.tsx), so
-            // there's nothing else to show here for those two modes.
+            // Otherwise (signin, or a signup that established a session
+            // immediately) App closes the whole dialog — nothing else to
+            // show here.
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
         } finally {
@@ -191,7 +208,7 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
     const switchTo = SWITCH[mode];
 
     return (
-        <Dialog open onClose={onCancel} labelledBy={titleId} size="full">
+        <Dialog open onClose={onCancel} labelledBy={titleId} size="full" closeOnScrimClick={false}>
             <div className={shell.body}>
                 <div className={styles.wrap} ref={wrapRef}>
                     <button
@@ -204,93 +221,138 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
                     </button>
                     <div className={styles.head}>
                         <h1 id={titleId} className={styles.title}>
-                            {TITLE[mode]}
+                            {signupPending ? 'Check your email' : TITLE[mode]}
                         </h1>
-                        <p className={styles.subtitle}>{SUBTITLE[mode]}</p>
+                        {!signupPending && <p className={styles.subtitle}>{SUBTITLE[mode]}</p>}
                     </div>
-                    <form id={formId} className={styles.form} onSubmit={handleSubmit} noValidate>
-                        <div className={shell.field}>
-                            <label className={shell.label} htmlFor="auth-email">
-                                Email
-                            </label>
-                            <input
-                                id="auth-email"
-                                className={styles.input}
-                                type="email"
-                                autoComplete="email"
-                                placeholder="you@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                        </div>
-                        {mode !== 'reset' &&
-                            passwordField(
-                                'auth-password',
-                                'Password',
-                                // The rule, stated before you can break it —
-                                // but only where it applies. On sign-in the
-                                // password already exists; the minimum is not
-                                // news, it is just noise in the field.
-                                mode === 'signup' ? 'at least 6 characters' : undefined,
-                                password,
-                                setPassword,
-                                mode === 'signin' ? (
-                                    <button
-                                        type="button"
-                                        className={`${styles.link} ${styles.forgot}`}
-                                        onClick={() => switchMode('reset')}
-                                    >
-                                        Forgot password?
-                                    </button>
-                                ) : undefined,
-                            )}
-                        {mode === 'signup' &&
-                            passwordField(
-                                'auth-confirm',
-                                'Confirm password',
-                                undefined,
-                                confirmPassword,
-                                setConfirmPassword,
-                            )}
-                        <div className={styles.captcha}>
-                            <HCaptcha
-                                ref={captchaRef}
-                                sitekey={HCAPTCHA_SITEKEY}
-                                theme={captchaTheme}
-                                size={compactCaptcha ? 'compact' : 'normal'}
-                                onVerify={(token) => setCaptchaToken(token)}
-                                onExpire={() => setCaptchaToken(null)}
-                            />
-                        </div>
-                        {error !== null && (
-                            <p className={styles.error} role="alert">
-                                {error}
+                    {signupPending ? (
+                        // Its own block rather than borrowing .head's subtitle
+                        // slot: that slot's rhythm is built for a one-line
+                        // tagline sitting tight under the title, and three
+                        // separate thoughts inheriting it read as one clump.
+                        // The address stays out of the sentence above it —
+                        // inline, a long one wrapped mid-word and left an
+                        // awkward gap. role="status" wraps all three lines so a
+                        // screen reader announces the whole message, and it is
+                        // deliberately not the green .notice treatment: nothing
+                        // has succeeded yet, the email still has to be opened.
+                        <div className={styles.pending} role="status">
+                            <p className={styles.pendingLead}>We sent a confirmation link to</p>
+                            <p className={styles.pendingEmail}>{email}</p>
+                            <p className={styles.pendingHint}>
+                                Open the link to finish creating your account. You'll be signed
+                                in automatically.
                             </p>
-                        )}
-                        {notice !== null && (
-                            <p className={styles.notice} role="status">
-                                {notice}
-                            </p>
-                        )}
-                        <button
-                            type="submit"
-                            className={`${shell.btn} ${shell.primary} ${styles.submit}`}
-                            disabled={submitting}
-                        >
-                            {submitting ? 'One moment…' : SUBMIT_LABEL[mode]}
-                        </button>
-                    </form>
-                    <div className={styles.foot}>
-                        <p className={styles.switch}>
-                            {switchTo.prompt}{' '}
+                            {/* The only thing there is to press here — everything
+                                else waits on the inbox. Ghost, not primary: the
+                                emailed link is the real next step, and a filled
+                                CTA would be pointing at the wrong one. Returns to
+                                the form with the address still in it, so a typo
+                                is a correction rather than a retype. */}
                             <button
                                 type="button"
-                                className={styles.link}
-                                onClick={() => switchMode(switchTo.to)}
+                                className={`${shell.btn} ${shell.ghost} ${styles.submit} ${styles.pendingBack}`}
+                                onClick={() => switchMode('signup')}
                             >
-                                {switchTo.action}
+                                Use a different email
                             </button>
-                        </p>
+                        </div>
+                    ) : (
+                        <form
+                            id={formId}
+                            className={styles.form}
+                            onSubmit={handleSubmit}
+                            noValidate
+                        >
+                            <div className={shell.field}>
+                                <label className={shell.label} htmlFor="auth-email">
+                                    Email
+                                </label>
+                                <input
+                                    id="auth-email"
+                                    className={styles.input}
+                                    type="email"
+                                    autoComplete="email"
+                                    placeholder="you@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                            </div>
+                            {mode !== 'reset' &&
+                                passwordField(
+                                    'auth-password',
+                                    'Password',
+                                    // The rule, stated before you can break it —
+                                    // but only where it applies. On sign-in the
+                                    // password already exists; the minimum is not
+                                    // news, it is just noise in the field.
+                                    mode === 'signup' ? 'at least 6 characters' : undefined,
+                                    password,
+                                    setPassword,
+                                    mode === 'signin' ? (
+                                        <button
+                                            type="button"
+                                            className={`${styles.link} ${styles.forgot}`}
+                                            onClick={() => switchMode('reset')}
+                                        >
+                                            Forgot password?
+                                        </button>
+                                    ) : undefined,
+                                )}
+                            {mode === 'signup' &&
+                                passwordField(
+                                    'auth-confirm',
+                                    'Confirm password',
+                                    undefined,
+                                    confirmPassword,
+                                    setConfirmPassword,
+                                )}
+                            <div className={styles.captcha}>
+                                <HCaptcha
+                                    ref={captchaRef}
+                                    sitekey={HCAPTCHA_SITEKEY}
+                                    theme={captchaTheme}
+                                    size={compactCaptcha ? 'compact' : 'normal'}
+                                    onVerify={(token) => setCaptchaToken(token)}
+                                    onExpire={() => setCaptchaToken(null)}
+                                />
+                            </div>
+                            {error !== null && (
+                                <p className={styles.error} role="alert">
+                                    {error}
+                                </p>
+                            )}
+                            {notice !== null && (
+                                <p className={styles.notice} role="status">
+                                    {notice}
+                                </p>
+                            )}
+                            <button
+                                type="submit"
+                                className={`${shell.btn} ${shell.primary} ${styles.submit}`}
+                                disabled={submitting}
+                            >
+                                {submitting ? 'One moment…' : SUBMIT_LABEL[mode]}
+                            </button>
+                        </form>
+                    )}
+                    <div className={styles.foot}>
+                        {/* No "back to sign in" here: opening the confirmation
+                            link signs the browser in automatically (Supabase's
+                            redirect), so there is nothing this screen needs to
+                            hand off to — only the guest escape stays. */}
+                        {!signupPending && (
+                            <p className={styles.switch}>
+                                {switchTo.prompt}{' '}
+                                <button
+                                    type="button"
+                                    className={styles.link}
+                                    onClick={() => switchMode(switchTo.to)}
+                                >
+                                    {switchTo.action}
+                                </button>
+                            </p>
+                        )}
                         <button type="button" className={styles.guest} onClick={onCancel}>
                             Keep planning as a guest
                         </button>

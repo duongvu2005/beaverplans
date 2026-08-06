@@ -43,7 +43,7 @@ export default function App() {
     const [view, setView] = useState<View>('plan');
     const [authOpen, setAuthOpen] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
-    const [weeks, setWeeks] = useWeeks(auth.epoch);
+    const [weeks, setWeeks, weeksLoaded] = useWeeks(auth.epoch);
     const currentWeek = weekStartOf(new Date());
     // Always the literal current week, whether it holds work, is empty, or has
     // already been ended — weeks may interleave now, so there is no archive
@@ -153,22 +153,28 @@ export default function App() {
         setConfirmingEndWeek(false);
     }
 
-    // signin/signup close the dialog on success; reset doesn't (AuthForm shows
-    // its own non-committal notice and stays put) — see AuthForm.tsx.
+    // signin closes the dialog on success; reset doesn't (AuthForm shows its
+    // own non-committal notice and stays put). signup closes it only when
+    // Supabase hands back a live session immediately — when email
+    // confirmation is required instead, the dialog stays open and AuthForm
+    // switches to its own "check your email" state — see AuthForm.tsx.
     async function handleAuthSubmit(
         mode: AuthMode,
         email: string,
         password: string,
         captchaToken: string,
-    ): Promise<void> {
+    ): Promise<{ confirmationRequired: boolean }> {
         if (mode === 'signin') {
             await auth.signIn(email, password, captchaToken);
             setAuthOpen(false);
+            return { confirmationRequired: false };
         } else if (mode === 'signup') {
-            await auth.signUp(email, password, captchaToken);
-            setAuthOpen(false);
+            const sessionEstablished = await auth.signUp(email, password, captchaToken);
+            if (sessionEstablished) setAuthOpen(false);
+            return { confirmationRequired: !sessionEstablished };
         } else {
             await auth.resetPassword(email, captchaToken);
+            return { confirmationRequired: false };
         }
     }
 
@@ -184,6 +190,14 @@ export default function App() {
                 onCancel={auth.cancelRecovery}
             />
         );
+    }
+
+    // Auth resolving only settles which backend is active — a sign-in/out
+    // still has to reload from that backend, and without this extra gate the
+    // outgoing backend's weeks (e.g. guest data, right after signing in)
+    // would render for a moment before the real ones swap in.
+    if (!weeksLoaded) {
+        return null;
     }
 
     return (

@@ -80,7 +80,12 @@ type UseAuthResult = {
     // this to know when to reload.
     epoch: number;
     signIn: (email: string, password: string, captchaToken: string) => Promise<void>;
-    signUp: (email: string, password: string, captchaToken: string) => Promise<void>;
+    // Resolves true when sign-up left the browser with a live session (no
+    // email confirmation required), false when it didn't — which is also
+    // what happens, indistinguishably, for an email that already has a
+    // confirmed account (Supabase deliberately shapes that response the same
+    // way, so as not to leak whether the address is taken).
+    signUp: (email: string, password: string, captchaToken: string) => Promise<boolean>;
     resetPassword: (email: string, captchaToken: string) => Promise<void>;
     updatePassword: (password: string) => Promise<void>;
     verifyPassword: (password: string, captchaToken: string) => Promise<boolean>;
@@ -180,13 +185,14 @@ export function useAuth(): UseAuthResult {
         if (error) throw new Error(error.message);
     }
 
-    async function signUp(email: string, password: string, captchaToken: string): Promise<void> {
-        const { error } = await supabase.auth.signUp({
+    async function signUp(email: string, password: string, captchaToken: string): Promise<boolean> {
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: { captchaToken },
         });
         if (error) throw new Error(error.message);
+        return data.session !== null;
     }
 
     async function resetPassword(email: string, captchaToken: string): Promise<void> {

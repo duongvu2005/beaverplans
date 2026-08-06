@@ -87,6 +87,41 @@
     gap: var(--sp-4);
 }
 
+/* The confirmation-pending message: a lead, the address, and what happens
+   next. Three separate thoughts, so they get section-sized air (--sp-5)
+   between them and from the title above — at the --sp-1 the header rhythm
+   uses they collapsed into one dense clump. The one exception is the lead
+   and the address, which are a single sentence broken across two lines and
+   so stay paired at --sp-2. */
+.pending {
+    margin-top: var(--sp-5);
+}
+
+.pendingLead {
+    margin: 0;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-soft);
+}
+
+/* Out of the sentence above it so a long address wraps on its own line
+   instead of dragging that paragraph's spacing around with it. Plain body
+   text, just bold — not a boxed readout. */
+.pendingEmail {
+    margin: var(--sp-2) 0 0;
+    font: 600 var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Looser than the 1.45 the rest of the screen uses: this is the only
+   multi-line paragraph here, and it is what the card leaves you reading. */
+.pendingHint {
+    margin: var(--sp-5) 0 0;
+    font: var(--fs-body) / 1.6 var(--sans);
+    color: var(--ink-soft);
+}
+
 /* --fs-row rather than --fs-body: one step up for the one screen whose whole
    job is typing, and the same size the archive and focus-day rows already use,
    so it stays inside the app's scale. (--fs-title would have bought immunity
@@ -195,6 +230,14 @@
     padding: var(--sp-3) var(--sp-4);
     font: 500 var(--fs-row) var(--sans);
     text-align: center;
+}
+
+/* The confirmation-pending card's one action, worn over .submit's shape (see
+   AuthForm.tsx) — it borrows the full width but not the .submit margin, which
+   is sized to sit tight under the captcha. Here it closes a --sp-5 block and
+   keeps that rhythm. Must stay after .submit to win the margin. */
+.pendingBack {
+    margin-top: var(--sp-5);
 }
 
 /* margin-top: auto pins this to the bottom on a phone, where the panel has a
