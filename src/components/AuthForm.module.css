@@ -1,0 +1,285 @@
+/* .field / .label / .btn come from dialogShell.module.css (see the "same
+   family" note there); everything below is specific to reading as a login
+   screen rather than a generic dialog — no head or foot bar, one column
+   anchored to the top of the panel instead.
+
+   The column is TOP-ANCHORED, not centered. Centering it meant the free space
+   was split above and below, so the heading slid up and down the screen every
+   time the mode changed (signin -> signup -> reset each have a different form
+   height). Anchoring the header and letting .foot soak up the slack keeps the
+   one fixed landmark on the screen fixed. */
+
+.wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    padding-top: var(--sp-5);
+}
+
+/* The only way out of a full-screen takeover, so it is a real button with a
+   ring rather than a faint corner glyph. Top-left: on a phone this panel has no
+   visible scrim to tap, and left reads as "out of here". */
+.close {
+    align-self: flex-start;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+/* CloseIcon draws its × across half its box, so it needs a larger nominal size
+   than a full-bleed glyph to read at the same weight. */
+.close svg {
+    width: 22px;
+    height: 22px;
+}
+
+.close:hover {
+    background: var(--hover-neutral);
+    color: var(--ink);
+}
+
+.close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* No wordmark above the title: the title is the first thing this screen needs
+   to say. One arguably belongs here — size="full" opaques the scrim, so the top
+   bar's own mark is hidden while this is open — but as a line of text above the
+   heading it read as neither a caption nor the brand at any size tried, so it
+   is out until there is a treatment worth having. */
+.head {
+    margin-top: var(--sp-5);
+}
+
+/* A step above --fs-title (the largest step in the scale) so it can lead a
+   screen, but no further: at 1.5x it overshot 20px, which is the ceiling the
+   rest of the app observes (the mono stat numerals in StatsBoard/ArchiveRow),
+   and the whole screen read as though it were zoomed in. Derived from the
+   scale rather than adding a global token for one component. */
+.title {
+    margin: var(--sp-2) 0 0;
+    font: 600 calc(var(--fs-title) * 1.25) / 1.2 var(--display);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+.subtitle {
+    margin: var(--sp-1) 0 0;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-soft);
+}
+
+.form {
+    margin-top: var(--sp-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+/* --fs-row rather than --fs-body: one step up for the one screen whose whole
+   job is typing, and the same size the archive and focus-day rows already use,
+   so it stays inside the app's scale. (--fs-title would have bought immunity
+   from iOS Safari's zoom-on-focus, which kicks in under 16px — but it is a
+   step above anything else in the app and looked it.) Filled with --bg, not
+   --paper, so the fields read as wells sunk into the panel — --paper on a
+   --paper panel is a border and nothing else. */
+.input {
+    width: 100%;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    background: var(--bg);
+    color: var(--ink);
+    font: var(--fs-row) / 1.4 var(--sans);
+    padding: var(--sp-3);
+}
+
+.input::placeholder {
+    color: var(--ink-faint);
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--paper);
+}
+
+/* Sits under the password field it belongs to, pulled to the right edge so it
+   reads as a footnote on that field rather than as a second call to action
+   stacked in the middle of the column. */
+.forgot {
+    align-self: flex-end;
+}
+
+.pwWrap {
+    position: relative;
+    display: flex;
+}
+
+/* room for the reveal button so typed text never runs under it */
+.pwWrap .input {
+    padding-right: calc(var(--sp-2) * 2 + 32px);
+}
+
+.reveal {
+    position: absolute;
+    right: var(--sp-2);
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--r-chip);
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+}
+
+.reveal svg {
+    width: 18px;
+    height: 18px;
+}
+
+.reveal:hover {
+    color: var(--ink-soft);
+    background: var(--hover-neutral);
+}
+
+.captcha {
+    display: flex;
+    justify-content: center;
+}
+
+/* A tinted block, not a line of red text: on a screen with this much empty
+   space a bare sentence is easy to miss. --hover-accent is the palette's pale
+   terracotta wash and has a dark-mode value already. */
+.error {
+    margin: 0;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r);
+    background: var(--hover-accent);
+    color: var(--accent);
+    font: var(--fs-body) / 1.45 var(--sans);
+}
+
+/* Same shape as .error, --good instead of --accent — the one place this
+   screen needs a success channel distinct from a problem channel (a reset
+   email was sent). Deliberately not reusing --good-soft: that token isn't
+   defined for the same contrast role --hover-accent fills for .error. */
+.notice {
+    margin: 0;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r);
+    background: var(--good-soft);
+    color: var(--good);
+    font: var(--fs-body) / 1.45 var(--sans);
+}
+
+/* Bigger than a footer button: it is the point of the screen, not one option
+   among several in a button row. */
+.submit {
+    width: 100%;
+    margin-top: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    font: 500 var(--fs-row) var(--sans);
+    text-align: center;
+}
+
+/* margin-top: auto pins this to the bottom on a phone, where the panel has a
+   real height, and collapses to nothing on desktop, where the panel is
+   content-sized — so padding-top is what guarantees a gap there. */
+.foot {
+    margin-top: auto;
+    padding-top: var(--sp-6);
+    /* edge-to-edge on phone, so the last link needs more than the panel's own
+       padding between it and the bottom of the screen */
+    padding-bottom: var(--sp-3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-3);
+}
+
+/* a muted sentence with the accent only on the verb, so it does not read as
+   another button competing with the CTA */
+.switch {
+    margin: 0;
+    text-align: center;
+    font: var(--fs-body) / 1.4 var(--sans);
+    color: var(--ink-soft);
+}
+
+.link {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: var(--fs-body) var(--sans);
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.link:hover {
+    opacity: 0.8;
+}
+
+/* The escape hatch, spelled out. The × says the same thing to a screen reader
+   and nothing at all to everyone else. */
+.guest {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: var(--fs-body) var(--sans);
+    color: var(--ink-faint);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.guest:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.guest:hover {
+    color: var(--ink-soft);
+}
+
+@container app (min-width: 640px) {
+    /* Back to an ordinary centered card: the panel is content-sized here, so
+       there is no free space to anchor against and no takeover to escape from
+       (the scrim is clickable again). */
+    .wrap {
+        padding-top: 0;
+    }
+
+    /* "Keep planning as a guest" already says this, in words, and here it is
+       visible without scrolling — so the × is a second control for the same
+       thing. It stays on phone, where the card is tall enough that the foot can
+       sit below the fold. */
+    .close {
+        display: none;
+    }
+
+    /* no × above it here, so the heading is the card's first line */
+    .head {
+        margin-top: 0;
+    }
+
+    .foot {
+        padding-top: var(--sp-5);
+    }
+}

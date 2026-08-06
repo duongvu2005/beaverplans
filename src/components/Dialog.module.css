@@ -54,3 +54,38 @@
         border-radius: var(--r-card);
     }
 }
+
+/* size="full": same docking as the default panel (bottom sheet on phone,
+   centered modal on desktop) — just tall enough to fill nearly the whole
+   screen, for content that should dominate (AuthForm). Deliberately short of
+   100dvh: the strip of scrim above the rounded top edge is what keeps this
+   reading as a sheet pulled all the way up rather than as a separate page.
+   Docking, width, and corner rounding are untouched; only the height changes. */
+/* Solid, not a wash over the board: paired with .panelFull so the whole surface
+   reads as its own screen. On desktop that leaves a --paper card centred on a
+   plain --bg field, which is exactly what a login page looks like. */
+.scrimFull {
+    background: var(--bg);
+}
+
+.panelFull {
+    /* height, not just max-height: max-height only caps a box, it doesn't
+       force it to BE that tall, so a short form would just shrink to fit its
+       own content instead of filling the screen. Phone only — on phone this
+       is a sheet pulled all the way up. */
+    height: 98dvh;
+    max-height: 98dvh;
+}
+
+@container app (min-width: 640px) {
+    /* Desktop cancels the phone override back to a plain centered modal.
+       Narrower than the 520px shared by every other dialog: this one holds a
+       single 360px column, and at 520 the gutters were wide enough that it
+       read as a wide dialog with a form parked in the middle rather than as a
+       login card. */
+    .panelFull {
+        width: min(420px, 92vw);
+        height: auto;
+        max-height: 88dvh;
+    }
+}

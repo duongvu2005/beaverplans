@@ -34,9 +34,15 @@ type DialogProps = {
     onClose: () => void;
     labelledBy?: string;
     children: ReactNode;
+    // 'default': today's height for every existing dialog. 'full': same
+    // docking (bottom sheet on phone, centered modal on desktop) but tall
+    // enough to fill nearly the whole screen — for content that wants to
+    // dominate (AuthForm) without giving up the scrim/focus/Escape/scroll-lock
+    // behavior a bare full-page div would have to reimplement.
+    size?: 'default' | 'full';
 };
 
-export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
+export function Dialog({ open, onClose, labelledBy, children, size = 'default' }: DialogProps) {
     const panelRef = useRef<HTMLDivElement>(null);
     const idRef = useRef(Symbol('dialog'));
     // Callers pass onClose as a fresh inline function on every render (e.g.
@@ -76,11 +82,17 @@ export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
 
     if (!open) return null;
 
+    const panelClass = size === 'full' ? `${styles.panel} ${styles.panelFull}` : styles.panel;
+    // size="full" also opaques the scrim: this size is for content that is a
+    // destination in its own right, and a translucent wash reads as "the app is
+    // still there, behind glass" — the opposite of what a destination wants.
+    const scrimClass = size === 'full' ? `${styles.scrim} ${styles.scrimFull}` : styles.scrim;
+
     return createPortal(
-        <div className={styles.scrim} onClick={onClose}>
+        <div className={scrimClass} onClick={onClose}>
             <div
                 ref={panelRef}
-                className={styles.panel}
+                className={panelClass}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={labelledBy}
