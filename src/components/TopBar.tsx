@@ -3,6 +3,7 @@ import { AccountSheet } from './AccountSheet';
 import { HeartIcon } from './HeartIcon';
 import { UserIcon } from './UserIcon';
 import { useTheme } from './useTheme';
+import type { AuthUser } from './useAuth';
 import styles from './TopBar.module.css';
 
 export type View = 'plan' | 'stats' | 'archive';
@@ -16,6 +17,9 @@ const SUPPORT_URL = 'https://github.com/duongvu2005/beaverplans/issues';
 type TopBarProps = {
     view: View;
     onView: (view: View) => void;
+    user: AuthUser | null;
+    onOpenAuth: () => void;
+    onSignOut: () => void;
 };
 
 /**
@@ -29,7 +33,7 @@ type TopBarProps = {
  * holding the tabs and a fourth slot, and everything else in the bar folds into
  * the sheet behind that slot.
  */
-export function TopBar({ view, onView }: TopBarProps) {
+export function TopBar({ view, onView, user, onOpenAuth, onSignOut }: TopBarProps) {
     const { theme, toggleTheme } = useTheme();
     const [sheetOpen, setSheetOpen] = useState(false);
     const themeLabel = theme === 'dark' ? 'Switch to light' : 'Switch to dark';
@@ -88,19 +92,25 @@ export function TopBar({ view, onView }: TopBarProps) {
 
                     {/* A status readout, not a control — one word for where your
                         weeks are kept. The same slot carries Saved / Saving… /
-                        Offline once there is a cloud to be out of sync with, and
-                        the account chip once there is an account. */}
+                        Offline once there is a cloud to be out of sync with. */}
                     <span className={styles.guest}>
                         <i aria-hidden="true" />
-                        Guest
+                        <span
+                            className={
+                                user === null
+                                    ? styles.guestLabel
+                                    : `${styles.guestLabel} ${styles.guestEmail}`
+                            }
+                        >
+                            {user === null ? 'Guest' : (user.email ?? 'Account')}
+                        </span>
                     </span>
                     <button
                         type="button"
                         className={styles.btn}
-                        disabled
-                        title="Accounts arrive with cloud sync"
+                        onClick={user === null ? onOpenAuth : onSignOut}
                     >
-                        Sign in
+                        {user === null ? 'Sign in' : 'Sign out'}
                     </button>
 
                     {/* Phone only: the fourth slot in the floating pill, which is
@@ -123,8 +133,17 @@ export function TopBar({ view, onView }: TopBarProps) {
                 <AccountSheet
                     theme={theme}
                     supportUrl={SUPPORT_URL}
+                    user={user}
                     onClose={() => setSheetOpen(false)}
                     onToggleTheme={toggleTheme}
+                    // Hand off, don't stack: AuthForm is a takeover, and leaving
+                    // this sheet mounted behind it composites a second scrim and
+                    // makes Escape land back here instead of on the board.
+                    onSignIn={() => {
+                        setSheetOpen(false);
+                        onOpenAuth();
+                    }}
+                    onSignOut={onSignOut}
                 />
             )}
         </>

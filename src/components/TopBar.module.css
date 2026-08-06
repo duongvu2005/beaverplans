@@ -204,6 +204,20 @@
     background: var(--ink-faint);
 }
 
+.guestLabel {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Email addresses aren't a caps-and-tracked LABEL the way "Guest" is — the
+   chip's uppercase/letter-spacing was designed for that one static word, not
+   variable-length mixed-case text. */
+.guestEmail {
+    text-transform: none;
+    letter-spacing: normal;
+}
+
 /* Same recipe as WeekHeader's .btn — one button shape across the app. Height
    matches .guest, since the two sit as a paired status + action cluster. */
 .btn {
