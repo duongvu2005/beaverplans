@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { AccountSheet } from './AccountSheet';
 import { HeartIcon } from './HeartIcon';
 import { UserIcon } from './UserIcon';
-import { useTheme } from './useTheme';
-import type { AuthUser } from './useAuth';
+import { useTheme } from '../hooks/useTheme';
+import type { AuthUser } from '../hooks/useAuth';
 import styles from './TopBar.module.css';
 
 export type View = 'plan' | 'stats' | 'archive';

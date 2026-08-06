@@ -1,5 +1,5 @@
-import type { Theme } from './useTheme';
-import type { AuthUser } from './useAuth';
+import type { Theme } from '../hooks/useTheme';
+import type { AuthUser } from '../hooks/useAuth';
 import { Dialog } from './Dialog';
 import shell from './dialogShell.module.css';
 import styles from './WeekActionsSheet.module.css';

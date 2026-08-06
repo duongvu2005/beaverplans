@@ -32,10 +32,10 @@ import { WeekRef } from './components/WeekRef';
 import { TopBar, type View } from './components/TopBar';
 import { AuthForm, type AuthMode } from './components/AuthForm';
 import { RecoveryScreen } from './components/RecoveryScreen';
-import { useAuth } from './components/useAuth';
+import { useAuth } from './hooks/useAuth';
 import shell from './components/dialogShell.module.css';
 import './App.css';
-import { useWeeks } from './components/useWeeks';
+import { useWeeks } from './hooks/useWeeks';
 
 export default function App() {
     const auth = useAuth();

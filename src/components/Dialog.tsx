@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { APP_CONTAINER_SELECTOR } from './useContainerWidth';
+import { APP_CONTAINER_SELECTOR } from '../hooks/useContainerWidth';
 import styles from './Dialog.module.css';
 
 // Where the overlay is portalled to. The app shell's own box, not <body>: the

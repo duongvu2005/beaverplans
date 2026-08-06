@@ -16,7 +16,7 @@ import { WeekTrend } from './WeekTrend';
 import { WeekRef } from './WeekRef';
 import { Heatmap, HeatmapLegend } from './Heatmap';
 import { heatColumns } from './heatColumns';
-import { useContainerWidth } from './useContainerWidth';
+import { useContainerWidth } from '../hooks/useContainerWidth';
 import styles from './StatsBoard.module.css';
 
 /** A week counts toward the streak at half its planned weight or better. */
