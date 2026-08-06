@@ -11,6 +11,7 @@ describe('Dialog', () => {
      *         render container
      *     partition on interaction: click the scrim | click inside the panel
      *         | Escape key
+     *     partition on closeOnScrimClick: default (true) | false
      *     partition on nesting: a single open dialog | two simultaneously open
      *         dialogs (only the topmost responds to Escape)
      *     scroll lock: locked once the first dialog opens; a nested dialog
@@ -49,6 +50,20 @@ describe('Dialog', () => {
         await user.click(screen.getByRole('dialog').parentElement!);
 
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('covers closeOnScrimClick={false}: clicking the scrim does not call onClose', async () => {
+        const user = userEvent.setup();
+        const onClose = vi.fn();
+        render(
+            <Dialog open onClose={onClose} closeOnScrimClick={false}>
+                <p>content</p>
+            </Dialog>,
+        );
+
+        await user.click(screen.getByRole('dialog').parentElement!);
+
+        expect(onClose).not.toHaveBeenCalled();
     });
 
     it('covers clicking inside the panel: does not call onClose', async () => {

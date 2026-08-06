@@ -40,9 +40,21 @@ type DialogProps = {
     // dominate (AuthForm) without giving up the scrim/focus/Escape/scroll-lock
     // behavior a bare full-page div would have to reimplement.
     size?: 'default' | 'full';
+    // true everywhere except AuthForm: a stray click while typing a
+    // password shouldn't discard the form. Escape and the dialog's own
+    // close/cancel controls still work either way — this only governs the
+    // scrim.
+    closeOnScrimClick?: boolean;
 };
 
-export function Dialog({ open, onClose, labelledBy, children, size = 'default' }: DialogProps) {
+export function Dialog({
+    open,
+    onClose,
+    labelledBy,
+    children,
+    size = 'default',
+    closeOnScrimClick = true,
+}: DialogProps) {
     const panelRef = useRef<HTMLDivElement>(null);
     const idRef = useRef(Symbol('dialog'));
     // Callers pass onClose as a fresh inline function on every render (e.g.
@@ -89,7 +101,7 @@ export function Dialog({ open, onClose, labelledBy, children, size = 'default' }
     const scrimClass = size === 'full' ? `${styles.scrim} ${styles.scrimFull}` : styles.scrim;
 
     return createPortal(
-        <div className={scrimClass} onClick={onClose}>
+        <div className={scrimClass} onClick={closeOnScrimClick ? onClose : undefined}>
             <div
                 ref={panelRef}
                 className={panelClass}

@@ -1,7 +1,8 @@
 /* Reusable overlay primitive. Mobile-first: the panel is a bottom sheet (docked
    to the bottom edge, full width). At the desktop breakpoint it becomes a centered
-   modal. Scrim covers the viewport and closes on click; the panel stops propagation
-   so clicks inside don't close it. */
+   modal. Scrim covers the viewport and, by default, closes the dialog on click
+   (opt out via closeOnScrimClick — see Dialog.tsx); the panel stops propagation
+   so clicks inside never reach it regardless. */
 
 .scrim {
     position: fixed;
