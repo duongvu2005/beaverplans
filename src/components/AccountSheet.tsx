@@ -11,18 +11,26 @@ type AccountSheetProps = {
     onClose: () => void;
     onToggleTheme: () => void;
     onSignIn: () => void;
+    /** signed in only; hands off to the dialog the way onSignIn does */
+    onChangePassword: () => void;
     onSignOut: () => void;
 };
 
 /**
  * The phone's home for the top bar's right cluster.
  *
- * There is no top bar on a phone, so Support, the theme toggle and signing in
- * have nowhere to sit. They live behind the account slot in the floating tab
- * bar instead — the same rows-with-a-sentence shape as WeekActionsSheet, and
- * its stylesheet, because they are the same kind of list. Sign in itself is
- * NOT a row's worth of UI — it hands off to AuthForm, a full-screen takeover
- * owned by App, not a child of this sheet.
+ * There is no top bar on a phone, so Support, the theme toggle and the account
+ * rows have nowhere to sit. They live behind the account slot in the floating
+ * tab bar instead — the same rows-with-a-sentence shape as WeekActionsSheet,
+ * and its stylesheet, because they are the same kind of list. The desktop's
+ * equivalent is AccountMenu, a dropdown off the email chip, and it is
+ * deliberately shorter: over there Support and the theme toggle are already
+ * sitting in the open, so only the account rows need a menu at all.
+ *
+ * No row here is more than a handoff. Sign in opens AuthForm and Change
+ * password opens ChangePasswordForm — both owned by App, neither a child of
+ * this sheet, and the sheet closes before either appears rather than stacking
+ * underneath it.
  */
 export function AccountSheet({
     theme,
@@ -31,6 +39,7 @@ export function AccountSheet({
     onClose,
     onToggleTheme,
     onSignIn,
+    onChangePassword,
     onSignOut,
 }: AccountSheetProps) {
     const titleId = 'account-sheet-title';
@@ -65,7 +74,7 @@ export function AccountSheet({
                     onClick={onClose}
                 >
                     <b>Support</b>
-                    <span>Report something broken, or ask for a hand.</span>
+                    <span>Chip in to keep beaverplans running. Entirely optional.</span>
                 </a>
                 {user === null ? (
                     <button type="button" className={styles.item} onClick={onSignIn}>
@@ -73,20 +82,29 @@ export function AccountSheet({
                         <span>Sync your weeks across devices.</span>
                     </button>
                 ) : (
-                    <button
-                        type="button"
-                        className={styles.item}
-                        onClick={() => {
-                            onSignOut();
-                            onClose();
-                        }}
-                    >
-                        <b>Sign out</b>
-                        <span>
-                            You&rsquo;ll keep your weeks on this device too — sign back in anytime
-                            to sync them again.
-                        </span>
-                    </button>
+                    <>
+                        <button type="button" className={styles.item} onClick={onChangePassword}>
+                            <b>Change password</b>
+                            <span>
+                                You&rsquo;ll confirm your current one first. Forgotten it? That
+                                screen can email you a link instead.
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.item}
+                            onClick={() => {
+                                onSignOut();
+                                onClose();
+                            }}
+                        >
+                            <b>Sign out</b>
+                            <span>
+                                You&rsquo;ll keep your weeks on this device too — sign back in
+                                anytime to sync them again.
+                            </span>
+                        </button>
+                    </>
                 )}
             </div>
             <div className={shell.foot}>

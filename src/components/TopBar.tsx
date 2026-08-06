@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { AccountMenu } from './AccountMenu';
 import { AccountSheet } from './AccountSheet';
+import { ChevronIcon } from './ChevronIcon';
 import { HeartIcon } from './HeartIcon';
 import { UserIcon } from './UserIcon';
 import { useTheme } from '../hooks/useTheme';
@@ -10,15 +12,16 @@ export type View = 'plan' | 'stats' | 'archive';
 
 const VIEWS: readonly View[] = ['plan', 'stats', 'archive'];
 
-// PLACEHOLDER (2026-08-01): points at the repo until there is a real support
-// destination to send people to. One line to change.
-const SUPPORT_URL = 'https://github.com/duongvu2005/beaverplans/issues';
+// "Support" as in chip in, not as in help desk — this is the donation page,
+// which is what the heart beside it has always meant.
+const DONATE_URL = 'https://donations.amysteriousbeaver.com/';
 
 type TopBarProps = {
     view: View;
     onView: (view: View) => void;
     user: AuthUser | null;
     onOpenAuth: () => void;
+    onChangePassword: () => void;
     onSignOut: () => void;
 };
 
@@ -33,9 +36,20 @@ type TopBarProps = {
  * holding the tabs and a fourth slot, and everything else in the bar folds into
  * the sheet behind that slot.
  */
-export function TopBar({ view, onView, user, onOpenAuth, onSignOut }: TopBarProps) {
+export function TopBar({
+    view,
+    onView,
+    user,
+    onOpenAuth,
+    onChangePassword,
+    onSignOut,
+}: TopBarProps) {
     const { theme, toggleTheme } = useTheme();
+    // Two account surfaces, one per form factor, and only one is ever on
+    // screen: the CSS hides the desktop chip on a phone and the phone's tab-bar
+    // slot on a desktop, so these never race each other.
     const [sheetOpen, setSheetOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
     const themeLabel = theme === 'dark' ? 'Switch to light' : 'Switch to dark';
 
     return (
@@ -67,10 +81,10 @@ export function TopBar({ view, onView, user, onOpenAuth, onSignOut }: TopBarProp
 
                     <a
                         className={styles.util}
-                        href={SUPPORT_URL}
+                        href={DONATE_URL}
                         target="_blank"
                         rel="noreferrer"
-                        title="Support"
+                        title="Support this project"
                     >
                         <HeartIcon />
                         <span className={styles.utilLabel}>Support</span>
@@ -90,28 +104,59 @@ export function TopBar({ view, onView, user, onOpenAuth, onSignOut }: TopBarProp
 
                     <span className={styles.rule} aria-hidden="true" />
 
-                    {/* A status readout, not a control — one word for where your
-                        weeks are kept. The same slot carries Saved / Saving… /
-                        Offline once there is a cloud to be out of sync with. */}
-                    <span className={styles.guest}>
-                        <i aria-hidden="true" />
-                        <span
-                            className={
-                                user === null
-                                    ? styles.guestLabel
-                                    : `${styles.guestLabel} ${styles.guestEmail}`
+                    {/* Signed out this is a status readout, not a control — one
+                        word for where your weeks are kept, with Sign in beside
+                        it as the actual thing to do. The same slot carries
+                        Saved / Saving… / Offline once there is a cloud to be
+                        out of sync with.
+
+                        Signed in the chip becomes the account menu's trigger and
+                        the pair collapses to one control: your address is the
+                        most specific label a menu about your account could
+                        have, and signing out moves inside it. What drops down
+                        is a dropdown — see AccountMenu — not the phone's sheet:
+                        a scrim over the whole board is far too much weight for
+                        two rows when there is a chip to hang them under. */}
+                    {user === null ? (
+                        <>
+                            <span className={styles.guest}>
+                                <i aria-hidden="true" />
+                                <span className={styles.guestLabel}>Guest</span>
+                            </span>
+                            <button type="button" className={styles.btn} onClick={onOpenAuth}>
+                                Sign in
+                            </button>
+                        </>
+                    ) : (
+                        <AccountMenu
+                            className={styles.acct}
+                            open={menuOpen}
+                            onClose={() => setMenuOpen(false)}
+                            onChangePassword={() => {
+                                setMenuOpen(false);
+                                onChangePassword();
+                            }}
+                            onSignOut={() => {
+                                setMenuOpen(false);
+                                onSignOut();
+                            }}
+                            trigger={
+                                <button
+                                    type="button"
+                                    className={`${styles.guest} ${styles.account}`}
+                                    onClick={() => setMenuOpen((shown) => !shown)}
+                                    aria-haspopup="menu"
+                                    aria-expanded={menuOpen}
+                                >
+                                    <i aria-hidden="true" />
+                                    <span className={`${styles.guestLabel} ${styles.guestEmail}`}>
+                                        {user.email ?? 'Account'}
+                                    </span>
+                                    <ChevronIcon dir="down" />
+                                </button>
                             }
-                        >
-                            {user === null ? 'Guest' : (user.email ?? 'Account')}
-                        </span>
-                    </span>
-                    <button
-                        type="button"
-                        className={styles.btn}
-                        onClick={user === null ? onOpenAuth : onSignOut}
-                    >
-                        {user === null ? 'Sign in' : 'Sign out'}
-                    </button>
+                        />
+                    )}
 
                     {/* Phone only: the fourth slot in the floating pill, which is
                         where the three controls above go when there is no bar. */}
@@ -132,7 +177,7 @@ export function TopBar({ view, onView, user, onOpenAuth, onSignOut }: TopBarProp
             {sheetOpen && (
                 <AccountSheet
                     theme={theme}
-                    supportUrl={SUPPORT_URL}
+                    supportUrl={DONATE_URL}
                     user={user}
                     onClose={() => setSheetOpen(false)}
                     onToggleTheme={toggleTheme}
@@ -142,6 +187,13 @@ export function TopBar({ view, onView, user, onOpenAuth, onSignOut }: TopBarProp
                     onSignIn={() => {
                         setSheetOpen(false);
                         onOpenAuth();
+                    }}
+                    // Same handoff. ChangePasswordDialog is an ordinary dialog
+                    // and Dialog does stack, but a menu that stays open behind
+                    // the thing it opened is a menu you have to dismiss twice.
+                    onChangePassword={() => {
+                        setSheetOpen(false);
+                        onChangePassword();
                     }}
                     onSignOut={onSignOut}
                 />

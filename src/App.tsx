@@ -31,6 +31,7 @@ import { WeekHeader } from './components/WeekHeader';
 import { WeekRef } from './components/WeekRef';
 import { TopBar, type View } from './components/TopBar';
 import { AuthForm, type AuthMode } from './components/AuthForm';
+import { ChangePasswordForm } from './components/ChangePasswordForm';
 import { RecoveryScreen } from './components/RecoveryScreen';
 import { useAuth } from './hooks/useAuth';
 import shell from './components/dialogShell.module.css';
@@ -41,6 +42,7 @@ export default function App() {
     const auth = useAuth();
     const [view, setView] = useState<View>('plan');
     const [authOpen, setAuthOpen] = useState(false);
+    const [changingPassword, setChangingPassword] = useState(false);
     const [weeks, setWeeks] = useWeeks(auth.epoch);
     const currentWeek = weekStartOf(new Date());
     // Always the literal current week, whether it holds work, is empty, or has
@@ -191,6 +193,7 @@ export default function App() {
                 onView={setView}
                 user={auth.user}
                 onOpenAuth={() => setAuthOpen(true)}
+                onChangePassword={() => setChangingPassword(true)}
                 onSignOut={() => void auth.signOut()}
             />
             <main className="pane">
@@ -265,6 +268,20 @@ export default function App() {
                     initialMode="signin"
                     onCancel={() => setAuthOpen(false)}
                     onSubmit={handleAuthSubmit}
+                />
+            )}
+            {/* Owned here rather than by the menu it is opened from, the same
+                way AuthForm is: the menu closes on the way. The email is a
+                precondition, not something the screen copes with being absent —
+                and signing out while it is open takes auth.user away, which is
+                what closes it. */}
+            {changingPassword && auth.user?.email !== undefined && (
+                <ChangePasswordForm
+                    email={auth.user.email}
+                    onVerifyPassword={auth.verifyPassword}
+                    onUpdatePassword={auth.updatePassword}
+                    onResetPassword={auth.resetPassword}
+                    onClose={() => setChangingPassword(false)}
                 />
             )}
         </>

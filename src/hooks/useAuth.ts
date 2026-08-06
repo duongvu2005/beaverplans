@@ -83,6 +83,7 @@ type UseAuthResult = {
     signUp: (email: string, password: string, captchaToken: string) => Promise<void>;
     resetPassword: (email: string, captchaToken: string) => Promise<void>;
     updatePassword: (password: string) => Promise<void>;
+    verifyPassword: (password: string, captchaToken: string) => Promise<boolean>;
     signOut: () => Promise<void>;
     clearRecovering: () => void;
     cancelRecovery: () => Promise<void>;
@@ -201,6 +202,38 @@ export function useAuth(): UseAuthResult {
         if (error) throw new Error(error.message);
     }
 
+    // Re-auth, for gating a change of password on the CURRENT one: knowing the
+    // session is live only proves the browser was left signed in, which is the
+    // thing an attacker at someone's open laptop already has.
+    //
+    // Signing in again is how that gets proven, and it is deliberately not
+    // destructive either way. A correct password re-issues a session for the
+    // SAME user, so applySession sees no account switch and resets nothing;
+    // the reload its epoch bump triggers goes through CloudBackend.load, which
+    // keeps unpushed local edits. A wrong password fails the request outright
+    // and leaves the existing session untouched.
+    //
+    // Takes a captcha token because this project enforces captcha on the
+    // password grant — checked against the live endpoint, which rejects a
+    // token-less call with captcha_failed, rather than assumed from the fact
+    // that signIn passes one.
+    async function verifyPassword(password: string, captchaToken: string): Promise<boolean> {
+        const email = user?.email;
+        if (email === undefined) throw new Error('No signed-in account to confirm.');
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+            options: { captchaToken },
+        });
+        if (error === null) return true;
+        // Only a rejected password answers the question with `false`. Anything
+        // else — offline, captcha, rate limit — is a failure to ASK it, and
+        // reporting that as "wrong password" would send someone off changing a
+        // password that was never the problem.
+        if (error.code === 'invalid_credentials') return false;
+        throw new Error(error.message);
+    }
+
     async function signOut(): Promise<void> {
         cloudBackend.reset(); // also cancels any scheduled push — see reset()
         // Best-effort, deliberately not thrown: the safety-critical step
@@ -244,6 +277,7 @@ export function useAuth(): UseAuthResult {
         signUp,
         resetPassword,
         updatePassword,
+        verifyPassword,
         signOut,
         clearRecovering,
         cancelRecovery,

@@ -1,15 +1,17 @@
-// Support — an outlined heart at the same 16px/1.5 weight as the other chrome
-// glyphs, so it sits beside the theme toggle without shouting.
+// Support — a heart at the same 16px box as the other chrome glyphs, but
+// FILLED rather than outlined. This link asks for a donation, not for a bug
+// report, and a hollow heart beside a hollow theme disc reads as one more
+// utility; a solid one reads as a gift. Tinted --accent by its caller, the way
+// the old app's did.
 export function HeartIcon() {
     return (
         <svg
             width="15"
             height="15"
             viewBox="0 0 16 16"
-            fill="none"
+            fill="currentColor"
             stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
+            strokeWidth="1.1"
             strokeLinejoin="round"
             aria-hidden="true"
         >

@@ -9,9 +9,13 @@ describe('TopBar', () => {
      *     partition on the current view: each of the three
      *     partition on the theme: light | dark, and across a remount
      *     partition on the account sheet: closed | open | dismissed
+     *     partition on the user: signed out (Guest + Sign in) | signed in
+     *         (the chip is the menu button, and the account rows exist)
      *     cross-cutting: the markup is the same at every width, so what the
      *         phone shows is the same DOM the desktop bar shows
      */
+
+    const SIGNED_IN = { id: 'u1', email: 'you@example.com' };
 
     beforeEach(() => {
         localStorage.clear();
@@ -25,6 +29,7 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -44,6 +49,7 @@ describe('TopBar', () => {
                 onView={onView}
                 user={null}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -59,6 +65,7 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -77,6 +84,7 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -88,6 +96,7 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -102,6 +111,7 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -126,6 +136,7 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -144,6 +155,7 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={onOpenAuth}
+                onChangePassword={vi.fn()}
                 onSignOut={vi.fn()}
             />,
         );
@@ -159,33 +171,126 @@ describe('TopBar', () => {
         expect(onOpenAuth).toHaveBeenCalledTimes(2);
     });
 
-    it('signed in shows the email instead of Guest, and signing out is reachable from both', async () => {
-        const onSignOut = vi.fn();
-        const authUser = { id: 'u1', email: 'you@example.com' };
+    it('signed in the chip replaces Guest and opens the dropdown, not a dialog', async () => {
         const rendered = userEvent.setup();
         render(
             <TopBar
                 view="plan"
                 onView={vi.fn()}
-                user={authUser}
+                user={SIGNED_IN}
                 onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
+                onSignOut={vi.fn()}
+            />,
+        );
+        expect(screen.queryByText('Guest')).not.toBeInTheDocument();
+        // Signed in there is no bar Sign in/Sign out button at all — both live
+        // behind the chip now.
+        expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
+
+        const chip = screen.getByRole('button', { name: /you@example\.com/ });
+        expect(chip).toHaveAttribute('aria-expanded', 'false');
+        await rendered.click(chip);
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+        expect(chip).toHaveAttribute('aria-expanded', 'true');
+        // a menu under a chip, not a modal over the board
+        expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('the dropdown closes on Escape and on a click outside it', async () => {
+        const rendered = userEvent.setup();
+        render(
+            <TopBar
+                view="plan"
+                onView={vi.fn()}
+                user={SIGNED_IN}
+                onOpenAuth={vi.fn()}
+                onChangePassword={vi.fn()}
+                onSignOut={vi.fn()}
+            />,
+        );
+        const chip = screen.getByRole('button', { name: /you@example\.com/ });
+
+        await rendered.click(chip);
+        await rendered.keyboard('{Escape}');
+        expect(screen.queryByRole('menu')).toBeNull();
+
+        await rendered.click(chip);
+        await rendered.click(screen.getByRole('button', { name: 'stats' }));
+        expect(screen.queryByRole('menu')).toBeNull();
+    });
+
+    it('the dropdown carries the two account actions, each closing it', async () => {
+        const onChangePassword = vi.fn();
+        const onSignOut = vi.fn();
+        const rendered = userEvent.setup();
+        render(
+            <TopBar
+                view="plan"
+                onView={vi.fn()}
+                user={SIGNED_IN}
+                onOpenAuth={vi.fn()}
+                onChangePassword={onChangePassword}
                 onSignOut={onSignOut}
             />,
         );
-        expect(screen.getByText('you@example.com')).toBeInTheDocument();
-        expect(screen.queryByText('Guest')).not.toBeInTheDocument();
+        const chip = screen.getByRole('button', { name: /you@example\.com/ });
 
-        // in the bar
-        await rendered.click(screen.getByRole('button', { name: 'Sign out' }));
+        await rendered.click(chip);
+        await rendered.click(screen.getByRole('menuitem', { name: 'Change password' }));
+        expect(onChangePassword).toHaveBeenCalledTimes(1);
+        // hands off rather than stacking: the menu is gone before the screen
+        // App owns can appear
+        expect(screen.queryByRole('menu')).toBeNull();
+
+        await rendered.click(chip);
+        await rendered.click(screen.getByRole('menuitem', { name: 'Sign out' }));
         expect(onSignOut).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('menu')).toBeNull();
+    });
 
-        // and in the sheet
+    it('the phone sheet carries the same account rows, only when signed in', async () => {
+        const onChangePassword = vi.fn();
+        const onSignOut = vi.fn();
+        const rendered = userEvent.setup();
+        const { rerender } = render(
+            <TopBar
+                view="plan"
+                onView={vi.fn()}
+                user={null}
+                onOpenAuth={vi.fn()}
+                onChangePassword={onChangePassword}
+                onSignOut={onSignOut}
+            />,
+        );
+        await rendered.click(screen.getByRole('button', { name: 'Account' }));
+        // nothing to change the password OF as a guest
+        expect(within(screen.getByRole('dialog')).queryByText('Change password')).toBeNull();
+        await rendered.click(
+            within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }),
+        );
+
+        rerender(
+            <TopBar
+                view="plan"
+                onView={vi.fn()}
+                user={SIGNED_IN}
+                onOpenAuth={vi.fn()}
+                onChangePassword={onChangePassword}
+                onSignOut={onSignOut}
+            />,
+        );
         await rendered.click(screen.getByRole('button', { name: 'Account' }));
         const sheet = screen.getByRole('dialog');
-        expect(within(sheet).getByText('you@example.com')).toBeInTheDocument();
-        await rendered.click(within(sheet).getByText('Sign out').closest('button')!);
-        expect(onSignOut).toHaveBeenCalledTimes(2);
-        // the sheet's Sign out also closes it, unlike Cancel-less rows elsewhere
+        await rendered.click(within(sheet).getByText('Change password').closest('button')!);
+        expect(onChangePassword).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('dialog')).toBeNull();
+
+        await rendered.click(screen.getByRole('button', { name: 'Account' }));
+        await rendered.click(
+            within(screen.getByRole('dialog')).getByText('Sign out').closest('button')!,
+        );
+        expect(onSignOut).toHaveBeenCalledTimes(1);
         expect(screen.queryByRole('dialog')).toBeNull();
     });
 });

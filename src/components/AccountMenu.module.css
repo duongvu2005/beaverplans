@@ -1,0 +1,101 @@
+/* The desktop account dropdown, hung off the email chip in the top bar.
+
+   Deliberately NOT a Dialog: a modal with a scrim is the right weight for a
+   phone, where the account slot is a floating tab and there is nowhere to
+   anchor to, but on a desktop it blacks out the board to offer two rows. This
+   is the old app's dropdown — anchored under its trigger, right-aligned so it
+   cannot run off the bar's own right edge, dismissed by clicking anywhere else
+   or by Escape. */
+
+/* the positioning context for the panel; the trigger is its other child */
+.anchor {
+    position: relative;
+    display: inline-flex;
+}
+
+.menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 110; /* above the bar itself, which phone-side sits at 100 */
+    width: max-content;
+    min-width: 200px;
+    padding: 5px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow-float);
+    animation: pop 0.13s ease;
+}
+
+@keyframes pop {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sep {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--line);
+}
+
+/* Icon + label on one line, left-aligned so the labels share a reading edge.
+   Sans sentence case: these change something, they do not move you somewhere
+   (see docs/conventions.md). */
+.item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    text-align: left;
+    white-space: nowrap;
+    font: 500 var(--fs-body) var(--sans);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: 0.12s;
+}
+
+.item:hover {
+    background: var(--hover-neutral);
+    color: var(--ink);
+}
+
+.item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.item svg {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    color: var(--ink-faint);
+}
+
+.item:hover svg {
+    color: var(--ink-soft);
+}
+
+/* Signing out is the one thing here you cannot undo with the same click, so it
+   carries the app's one "pay attention" colour — same treatment the old app
+   gave it, and the same --accent the danger button in dialogShell uses. */
+.danger,
+.danger svg,
+.danger:hover,
+.danger:hover svg {
+    color: var(--accent);
+}
+
+.danger:hover {
+    background: var(--hover-accent);
+}
