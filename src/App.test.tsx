@@ -9,6 +9,28 @@ import { sampleArchive } from './fixtures/sampleArchive';
 import { STORAGE_KEY } from './storage/localBackend';
 import type { Weeks } from './core/types';
 
+// App now calls useAuth, which talks to the real Supabase client — these
+// tests must stay hermetic (no real network, no timing dependent on it).
+// onAuthStateChange's mock fires its callback synchronously (unlike the real
+// one) specifically so `loading` resolves to false within the same render()
+// call, matching every existing test's synchronous assertions below.
+vi.mock('./storage/supabaseClient', () => ({
+    supabase: {
+        auth: {
+            getSession: () => Promise.resolve({ data: { session: null } }),
+            onAuthStateChange: (callback: (event: string, session: null) => void) => {
+                callback('INITIAL_SESSION', null);
+                return { data: { subscription: { unsubscribe: () => {} } } };
+            },
+            signInWithPassword: () => Promise.resolve({ error: null }),
+            signUp: () => Promise.resolve({ error: null }),
+            resetPasswordForEmail: () => Promise.resolve({ error: null }),
+            updateUser: () => Promise.resolve({ error: null }),
+            signOut: () => Promise.resolve({ error: null }),
+        },
+    },
+}));
+
 // The app's state is one collection of weeks, past, present and future alike,
 // active and ended together (see the Weeks ADT in core/types.ts). These cover
 // the seeding and the derivations App does on it, plus a render smoke check;

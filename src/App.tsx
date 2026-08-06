@@ -30,13 +30,18 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { WeekHeader } from './components/WeekHeader';
 import { WeekRef } from './components/WeekRef';
 import { TopBar, type View } from './components/TopBar';
+import { AuthForm, type AuthMode } from './components/AuthForm';
+import { RecoveryScreen } from './components/RecoveryScreen';
+import { useAuth } from './components/useAuth';
 import shell from './components/dialogShell.module.css';
 import './App.css';
 import { useWeeks } from './components/useWeeks';
 
 export default function App() {
+    const auth = useAuth();
     const [view, setView] = useState<View>('plan');
-    const [weeks, setWeeks] = useWeeks();
+    const [authOpen, setAuthOpen] = useState(false);
+    const [weeks, setWeeks] = useWeeks(auth.epoch);
     const currentWeek = weekStartOf(new Date());
     // Always the literal current week, whether it holds work, is empty, or has
     // already been ended — weeks may interleave now, so there is no archive
@@ -146,9 +151,48 @@ export default function App() {
         setConfirmingEndWeek(false);
     }
 
+    // signin/signup close the dialog on success; reset doesn't (AuthForm shows
+    // its own non-committal notice and stays put) — see AuthForm.tsx.
+    async function handleAuthSubmit(
+        mode: AuthMode,
+        email: string,
+        password: string,
+        captchaToken: string,
+    ): Promise<void> {
+        if (mode === 'signin') {
+            await auth.signIn(email, password, captchaToken);
+            setAuthOpen(false);
+        } else if (mode === 'signup') {
+            await auth.signUp(email, password, captchaToken);
+            setAuthOpen(false);
+        } else {
+            await auth.resetPassword(email, captchaToken);
+        }
+    }
+
+    if (auth.loading) {
+        return null;
+    }
+
+    if (auth.recovering) {
+        return (
+            <RecoveryScreen
+                onUpdatePassword={auth.updatePassword}
+                onDone={auth.clearRecovering}
+                onCancel={auth.cancelRecovery}
+            />
+        );
+    }
+
     return (
         <>
-            <TopBar view={view} onView={setView} />
+            <TopBar
+                view={view}
+                onView={setView}
+                user={auth.user}
+                onOpenAuth={() => setAuthOpen(true)}
+                onSignOut={() => void auth.signOut()}
+            />
             <main className="pane">
                 {view === 'plan' && (
                     <>
@@ -215,6 +259,13 @@ export default function App() {
                         This records the week in your archive and starts a fresh board.
                     </p>
                 </ConfirmDialog>
+            )}
+            {authOpen && (
+                <AuthForm
+                    initialMode="signin"
+                    onCancel={() => setAuthOpen(false)}
+                    onSubmit={handleAuthSubmit}
+                />
             )}
         </>
     );

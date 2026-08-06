@@ -1,0 +1,13 @@
+/* Just the page-level wrapper: this screen reuses AuthForm.module.css for
+   everything inside it (title/subtitle/form/input/error/submit/foot/guest —
+   see the "same login card chrome" note in RecoveryScreen.tsx). There is no
+   Dialog here — App renders this as the ENTIRE screen (a hard gate ahead of
+   the normal tree, not an overlay on top of it), so there's nothing behind it
+   to scrim, and no portal to escape into. */
+.page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    padding: var(--sp-4);
+}
