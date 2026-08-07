@@ -1,3 +1,4 @@
+import { REALTIME_SUBSCRIBE_STATES } from '@supabase/supabase-js';
 import { CloudBackend, type RemoteWatcher } from './cloudBackend';
 import { LocalBackend } from './localBackend';
 import { Store } from './store';
@@ -23,7 +24,17 @@ const watchPlannerWeeks: RemoteWatcher = (userId, onChange) => {
                 onChange();
             },
         )
-        .subscribe();
+        // Reporting on every join, not only on a row event: while the socket
+        // was down no event could arrive, and the ones fired meanwhile are
+        // gone for good. Without this a slept laptop stays stale until it is
+        // reloaded, which turns "an event costs latency" into "an event costs
+        // latency without bound". A join says only that we may have missed
+        // something, which is the same signal an event carries anyway.
+        .subscribe((status) => {
+            if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+                onChange();
+            }
+        });
     return () => {
         void supabase.removeChannel(channel);
     };
