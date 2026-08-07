@@ -56,11 +56,11 @@ export class LocalBackend implements Backend {
     }
 
     private read(): { weeks: Weeks } {
-        const storageJSON = this.storage.getItem(this.storageKey);
-        if (!storageJSON) {
-            return this.emptyState();
-        }
         try {
+            const storageJSON = this.storage.getItem(this.storageKey);
+            if (!storageJSON) {
+                return this.emptyState();
+            }
             const parsed = JSON.parse(storageJSON) as { weeks: Weeks };
             if (!isValidWeeks(parsed.weeks)) return this.emptyState();
             return { weeks: parsed.weeks };

@@ -63,7 +63,7 @@ export function useGuestMigration(
             .hasLocalData()
             .then((hasLocal) => {
                 if (cancelled || !hasLocal) return; // nothing to do — don't even read cloud
-                const decision = decideMigration(store.getWeeks().length === 0, hasLocal);
+                const decision = decideMigration(store.cloudSnapshot().length === 0, hasLocal);
                 if (decision === 'auto') {
                     return store.mergeLocalIntoCloud().then(() => {
                         if (!cancelled) setWeeks(store.getWeeks());

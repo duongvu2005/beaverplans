@@ -165,6 +165,8 @@ describe('Store guest migration helpers', () => {
      *   clearLocal: empties local; cloud untouched
      *   mergeLocalIntoCloud: cloud.setWeeks receives cloud folded with local
      *     (via mergeGuestWeeks), then local is cleared
+     *   cloudSnapshot: returns cloud's Weeks; does not touch local; unaffected by
+     *     which backend is active
      */
 
     it('hasLocalData: false when the local backend holds nothing', async () => {
@@ -212,5 +214,24 @@ describe('Store guest migration helpers', () => {
         // ...and local's week lands wholesale, re-identified.
         expect(merged.find((w) => w.weekStart === '2026-07-13')?.projects[0]?.id).toBe('new-1');
         expect(local.getWeeks()).toEqual([]);
+    });
+
+    it('cloudSnapshot: returns the cloud backend’s Weeks without touching local', () => {
+        const { store, local, cloud } = makeStore();
+        expect(store.cloudSnapshot()).toEqual(cloudWeeks);
+        expect(local.getWeeks()).toEqual(localWeeks); // untouched
+        expect(cloud.setWeeksCalls).toEqual([]);
+    });
+
+    it('cloudSnapshot: reads cloud even while local is the active backend', () => {
+        const { store } = makeStore(); // active defaults to local
+        expect(store.getWeeks()).toEqual(localWeeks); // active says local...
+        expect(store.cloudSnapshot()).toEqual(cloudWeeks); // ...cloudSnapshot does not
+    });
+
+    it('cloudSnapshot: does not load, so it reflects whatever cloud already holds', () => {
+        const { store, cloud } = makeStore();
+        store.cloudSnapshot();
+        expect(cloud.loadCalls).toBe(0);
     });
 });

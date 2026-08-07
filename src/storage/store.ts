@@ -95,6 +95,24 @@ export class Store implements Backend {
     }
 
     /**
+     * Read the account's data without mutating anything — the counterpart to
+     * localSnapshot, reading the cloud backend directly regardless of which
+     * backend is active.
+     *
+     * Unlike localSnapshot this does NOT load first, and the asymmetry is
+     * deliberate: local may hold a cache no one ever populated (it is not the
+     * active backend once signed in), whereas cloud is the active backend
+     * exactly when there is an account to read, so the app's normal load path
+     * has already reconciled it. A caller that needs it reconciled must await
+     * that load itself — see useGuestMigration's weeksLoaded gate.
+     *
+     * @returns the cloud backend's current Weeks
+     */
+    public cloudSnapshot(): Weeks {
+        return this.cloud.getWeeks();
+    }
+
+    /**
      * Drop the guest copy — e.g. once it has been migrated or merged, or
      * when the user explicitly discards it.
      */
@@ -120,7 +138,8 @@ export class Store implements Backend {
      */
     public async mergeLocalIntoCloud(newId: () => string = defaultNewId): Promise<void> {
         const guestWeeks = await this.localSnapshot();
-        this.cloud.setWeeks(mergeGuestWeeks(this.cloud.getWeeks(), guestWeeks, newId));
+        const cloudWeeks = this.cloudSnapshot(); 
+        this.cloud.setWeeks(mergeGuestWeeks(cloudWeeks, guestWeeks, newId));
         this.clearLocal();
     }
 }

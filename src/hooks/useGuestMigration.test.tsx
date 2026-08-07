@@ -4,11 +4,14 @@ import { useGuestMigration } from './useGuestMigration';
 import { store } from '../storage/instance';
 import type { Weeks } from '../core/types';
 
-// Mocked down to just the four Store methods this hook actually calls — same
-// approach as useWeeks.test.tsx.
+// Mocked down to just the Store methods this hook actually calls — same
+// approach as useWeeks.test.tsx. A method missing here reads as undefined and
+// throws on call, which the hook's catch would swallow into "gave up quietly",
+// so this list has to keep up with the hook.
 vi.mock('../storage/instance', () => ({
     store: {
         hasLocalData: vi.fn(),
+        cloudSnapshot: vi.fn(),
         getWeeks: vi.fn(),
         mergeLocalIntoCloud: vi.fn(),
         clearLocal: vi.fn(),
@@ -22,6 +25,7 @@ const nonEmptyCloud: Weeks = [
 describe('useGuestMigration', () => {
     beforeEach(() => {
         vi.mocked(store.hasLocalData).mockReset();
+        vi.mocked(store.cloudSnapshot).mockReset();
         vi.mocked(store.getWeeks).mockReset();
         vi.mocked(store.mergeLocalIntoCloud).mockReset().mockResolvedValue(undefined);
         vi.mocked(store.clearLocal).mockReset();
@@ -62,8 +66,8 @@ describe('useGuestMigration', () => {
     it('local data + empty cloud: auto-merges silently and syncs weeks', async () => {
         vi.mocked(store.hasLocalData).mockResolvedValue(true);
         const merged: Weeks = [{ weekStart: '2026-07-13', ended: false, projects: [] }];
-        // First call is the cloudEmpty check, second is the post-merge read.
-        vi.mocked(store.getWeeks).mockReturnValueOnce([]).mockReturnValueOnce(merged);
+        vi.mocked(store.cloudSnapshot).mockReturnValue([]); // the cloudEmpty check
+        vi.mocked(store.getWeeks).mockReturnValue(merged); // the post-merge board read
         const setWeeks = vi.fn();
 
         const { result } = renderHook(() => useGuestMigration('u1', true, setWeeks));
@@ -75,7 +79,7 @@ describe('useGuestMigration', () => {
 
     it('local data + non-empty cloud: prompts instead of merging', async () => {
         vi.mocked(store.hasLocalData).mockResolvedValue(true);
-        vi.mocked(store.getWeeks).mockReturnValue(nonEmptyCloud);
+        vi.mocked(store.cloudSnapshot).mockReturnValue(nonEmptyCloud);
 
         const { result } = renderHook(() => useGuestMigration('u1', true, vi.fn()));
 
@@ -85,7 +89,9 @@ describe('useGuestMigration', () => {
 
     it('confirmMerge: merges, syncs weeks, closes the prompt', async () => {
         vi.mocked(store.hasLocalData).mockResolvedValue(true);
-        vi.mocked(store.getWeeks).mockReturnValue(nonEmptyCloud);
+        vi.mocked(store.cloudSnapshot).mockReturnValue(nonEmptyCloud);
+        const merged: Weeks = [{ weekStart: '2026-07-13', ended: false, projects: [] }];
+        vi.mocked(store.getWeeks).mockReturnValue(merged); // the post-merge board read
         const setWeeks = vi.fn();
 
         const { result } = renderHook(() => useGuestMigration('u1', true, setWeeks));
@@ -97,13 +103,13 @@ describe('useGuestMigration', () => {
         });
 
         expect(store.mergeLocalIntoCloud).toHaveBeenCalledTimes(1);
-        expect(setWeeks).toHaveBeenCalled();
+        expect(setWeeks).toHaveBeenCalledWith(merged);
         expect(result.current.pendingMerge).toBe(false);
     });
 
     it('discardGuestWork: clears local, closes the prompt, never merges', async () => {
         vi.mocked(store.hasLocalData).mockResolvedValue(true);
-        vi.mocked(store.getWeeks).mockReturnValue(nonEmptyCloud);
+        vi.mocked(store.cloudSnapshot).mockReturnValue(nonEmptyCloud);
 
         const { result } = renderHook(() => useGuestMigration('u1', true, vi.fn()));
         await waitFor(() => expect(result.current.pendingMerge).toBe(true));
@@ -147,7 +153,7 @@ describe('useGuestMigration', () => {
 
     it('decideLater: closes the prompt, touches neither local nor cloud', async () => {
         vi.mocked(store.hasLocalData).mockResolvedValue(true);
-        vi.mocked(store.getWeeks).mockReturnValue(nonEmptyCloud);
+        vi.mocked(store.cloudSnapshot).mockReturnValue(nonEmptyCloud);
 
         const { result } = renderHook(() => useGuestMigration('u1', true, vi.fn()));
         await waitFor(() => expect(result.current.pendingMerge).toBe(true));
@@ -175,7 +181,7 @@ describe('useGuestMigration', () => {
 
         // The retry: now storage cooperates and there IS guest work to fold in.
         vi.mocked(store.hasLocalData).mockResolvedValue(true);
-        vi.mocked(store.getWeeks).mockReturnValue(nonEmptyCloud);
+        vi.mocked(store.cloudSnapshot).mockReturnValue(nonEmptyCloud);
         rerender({ loaded: false });
         rerender({ loaded: true });
 
@@ -184,7 +190,7 @@ describe('useGuestMigration', () => {
 
     it('userId reverting to undefined (signed out) resets a pending prompt', async () => {
         vi.mocked(store.hasLocalData).mockResolvedValue(true);
-        vi.mocked(store.getWeeks).mockReturnValue(nonEmptyCloud);
+        vi.mocked(store.cloudSnapshot).mockReturnValue(nonEmptyCloud);
         const { result, rerender } = renderHook(({ id }) => useGuestMigration(id, true, vi.fn()), {
             initialProps: { id: 'u1' as string | undefined },
         });

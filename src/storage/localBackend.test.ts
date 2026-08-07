@@ -21,6 +21,11 @@ class ThrowingStorage extends FakeStorage {
         throw new Error('quota exceeded');
     }
 }
+class UnreadableStorage extends FakeStorage {
+    public getItem(): string | null {
+        throw new Error('storage disabled');
+    }
+}
 
 // --- fixtures ---
 const activeWeek: WeekPlan = {
@@ -59,6 +64,7 @@ describe('LocalBackend', () => {
      *     the store (fresh reload)
      *   partition on write outcome: succeeds | throws (quota)
      *   partition on state before reset: populated | already empty
+     *   partition on read outcome: succeeds | throws (storage disabled)
      */
 
     it('covers fresh backend, no load: getter returns empty default', () => {
@@ -173,5 +179,11 @@ describe('LocalBackend', () => {
         const freshCloudCache = new LocalBackend(storage, 'beaverplans.cloudCache.v1');
         await freshCloudCache.load();
         expect(freshCloudCache.getWeeks()).toEqual([activeWeek]);
+    });
+
+    it('covers read throws: load resolves and leaves an empty state', async () => {
+        const backend = new LocalBackend(new UnreadableStorage());
+        await expect(backend.load()).resolves.toBeUndefined();
+        expect(backend.getWeeks()).toEqual([]);
     });
 });
