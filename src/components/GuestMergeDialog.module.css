@@ -1,0 +1,12 @@
+/* Desktop-only foot: three buttons (Decide later / Discard / Merge) that
+   already nearly fill the row at their natural width — stretching each to an
+   equal share reads as deliberate instead of as three buttons that happened
+   to almost fit. Targets the plain <button> tag rather than dialogShell's
+   .btn class, since a CSS module can't select another module's class name. */
+.footSpan {
+    justify-content: stretch;
+}
+
+.footSpan button {
+    flex: 1;
+}

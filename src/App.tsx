@@ -27,6 +27,8 @@ import { WeekBoard } from './components/WeekBoard';
 import { ArchiveBoard } from './components/ArchiveBoard';
 import { StatsBoard } from './components/StatsBoard';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { GuestMergeDialog } from './components/GuestMergeDialog';
+import { GuestMergeSheet } from './components/GuestMergeSheet';
 import { WeekHeader } from './components/WeekHeader';
 import { WeekRef } from './components/WeekRef';
 import { TopBar, type View } from './components/TopBar';
@@ -34,6 +36,8 @@ import { AuthForm, type AuthMode } from './components/AuthForm';
 import { ChangePasswordForm } from './components/ChangePasswordForm';
 import { RecoveryScreen } from './components/RecoveryScreen';
 import { useAuth } from './hooks/useAuth';
+import { useGuestMigration } from './hooks/useGuestMigration';
+import { useIsDesktop } from './hooks/useContainerWidth';
 import shell from './components/dialogShell.module.css';
 import './App.css';
 import { useWeeks } from './hooks/useWeeks';
@@ -44,6 +48,11 @@ export default function App() {
     const [authOpen, setAuthOpen] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
     const [weeks, setWeeks, weeksLoaded] = useWeeks(auth.epoch);
+    const guestMigration = useGuestMigration(auth.user?.id, weeksLoaded, setWeeks);
+    // The guest-work prompt is the one place two form factors want different
+    // markup rather than different styling, so the choice is made here instead
+    // of inside one component that tried to be both.
+    const isDesktop = useIsDesktop();
     const currentWeek = weekStartOf(new Date());
     // Always the literal current week, whether it holds work, is empty, or has
     // already been ended — weeks may interleave now, so there is no archive
@@ -298,6 +307,20 @@ export default function App() {
                     onClose={() => setChangingPassword(false)}
                 />
             )}
+            {guestMigration.pendingMerge &&
+                (isDesktop ? (
+                    <GuestMergeDialog
+                        onClose={guestMigration.decideLater}
+                        onMerge={guestMigration.confirmMerge}
+                        onDiscard={guestMigration.discardGuestWork}
+                    />
+                ) : (
+                    <GuestMergeSheet
+                        onClose={guestMigration.decideLater}
+                        onMerge={guestMigration.confirmMerge}
+                        onDiscard={guestMigration.discardGuestWork}
+                    />
+                ))}
         </>
     );
 }
