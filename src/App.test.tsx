@@ -269,9 +269,7 @@ describe('App under the weeks model', () => {
 
             expect(await dialog.findByText('Check your email')).toBeTruthy();
             expect(dialog.getByText('new@example.com')).toBeTruthy();
-            expect(
-                dialog.getByText(/Open the link to finish creating your account/),
-            ).toBeTruthy();
+            expect(dialog.getByText(/Open the link to finish creating your account/)).toBeTruthy();
             // Following the confirmation link signs the browser in
             // automatically — this screen must not offer or imply a manual
             // sign-in step.
@@ -348,7 +346,9 @@ describe('App under the weeks model', () => {
             await user.click(dialog.getByRole('button', { name: 'Send reset link' }));
 
             expect(
-                await dialog.findByText('If that email has an account, a reset link is on its way.'),
+                await dialog.findByText(
+                    'If that email has an account, a reset link is on its way.',
+                ),
             ).toBeTruthy();
             expect(screen.getByRole('dialog')).toBeTruthy();
         });

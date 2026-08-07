@@ -138,7 +138,7 @@ export class Store implements Backend {
      */
     public async mergeLocalIntoCloud(newId: () => string = defaultNewId): Promise<void> {
         const guestWeeks = await this.localSnapshot();
-        const cloudWeeks = this.cloudSnapshot(); 
+        const cloudWeeks = this.cloudSnapshot();
         this.cloud.setWeeks(mergeGuestWeeks(cloudWeeks, guestWeeks, newId));
         this.clearLocal();
     }

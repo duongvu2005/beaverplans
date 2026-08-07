@@ -148,7 +148,7 @@ export function TopBar({
                                             : `${styles.guestLabel} ${styles.guestEmail}`
                                     }
                                 >
-                                    {user === null ? 'Guest' : user.email ?? 'Account'}
+                                    {user === null ? 'Guest' : (user.email ?? 'Account')}
                                 </span>
                                 <ChevronIcon dir="down" />
                             </button>

@@ -240,8 +240,8 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
                             <p className={styles.pendingLead}>We sent a confirmation link to</p>
                             <p className={styles.pendingEmail}>{email}</p>
                             <p className={styles.pendingHint}>
-                                Open the link to finish creating your account. You'll be signed
-                                in automatically.
+                                Open the link to finish creating your account. You'll be signed in
+                                automatically.
                             </p>
                             {/* The only thing there is to press here — everything
                                 else waits on the inbox. Ghost, not primary: the

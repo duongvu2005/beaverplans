@@ -125,9 +125,7 @@ export function AccountMenu({
             {open && (
                 <div
                     className={
-                        accountActions
-                            ? styles.menu
-                            : `${styles.menu} ${styles.menuCompact}`
+                        accountActions ? styles.menu : `${styles.menu} ${styles.menuCompact}`
                     }
                     role="menu"
                 >
