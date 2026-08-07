@@ -357,8 +357,13 @@
         margin-left: auto;
     }
 
+    /* Every whole-week action collapses into the sheet here — .reopen included,
+       since it stands in the same slot as .end and has the same problem: no
+       room, and a label that does not explain itself without the sheet's
+       sentence under it. */
     .move,
-    .end {
+    .end,
+    .reopen {
         display: none;
     }
 
