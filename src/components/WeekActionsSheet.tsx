@@ -7,11 +7,15 @@ type WeekActionsSheetProps = {
     weekLabel: string;
     canMove: boolean;
     canEnd: boolean;
+    /** the week is already in the archive: End week becomes Reopen */
+    ended?: boolean;
     onClose: () => void;
     /** arm the stepper's move mode; the sheet closes first, it never stacks */
     onMove: () => void;
     /** hand off to the end-week confirm; likewise after the sheet is gone */
     onEnd: () => void;
+    /** hand off to the reopen confirm; likewise */
+    onReopen: () => void;
 };
 
 /**
@@ -26,9 +30,11 @@ export function WeekActionsSheet({
     weekLabel,
     canMove,
     canEnd,
+    ended,
     onClose,
     onMove,
     onEnd,
+    onReopen,
 }: WeekActionsSheetProps) {
     const titleId = 'week-actions-title';
     return (
@@ -46,13 +52,28 @@ export function WeekActionsSheet({
                         Relabel the whole plan onto a different week. Nothing is finished or lost.
                     </span>
                 </button>
-                <button type="button" className={styles.item} disabled={!canEnd} onClick={onEnd}>
-                    <b>End week</b>
-                    <span>
-                        File it in your archive and start the next one. Unfinished tasks can carry
-                        forward.
-                    </span>
-                </button>
+                {ended ? (
+                    <button type="button" className={styles.item} onClick={onReopen}>
+                        <b>Reopen this week</b>
+                        <span>
+                            Take it back out of the archive so it can be edited again. You&rsquo;ll
+                            be asked to confirm.
+                        </span>
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        className={styles.item}
+                        disabled={!canEnd}
+                        onClick={onEnd}
+                    >
+                        <b>End week</b>
+                        <span>
+                            File it in your archive and start the next one. Unfinished tasks can
+                            carry forward.
+                        </span>
+                    </button>
+                )}
             </div>
             <div className={shell.foot}>
                 <button type="button" className={`${shell.btn} ${shell.ghost}`} onClick={onClose}>

@@ -17,6 +17,7 @@ function setup(overrides: Partial<Parameters<typeof WeekHeader>[0]> = {}) {
     const onView = vi.fn();
     const onMoveWork = vi.fn();
     const onEndWeek = vi.fn();
+    const onReopenWeek = vi.fn();
     const view = render(
         <WeekHeader
             weekStart={THIS_WEEK}
@@ -30,11 +31,12 @@ function setup(overrides: Partial<Parameters<typeof WeekHeader>[0]> = {}) {
             onView={onView}
             onMoveWork={onMoveWork}
             onEndWeek={onEndWeek}
+            onReopenWeek={onReopenWeek}
             {...overrides}
         />,
     );
     root = view.container;
-    return { ...view, onView, onMoveWork, onEndWeek, user: userEvent.setup() };
+    return { ...view, onView, onMoveWork, onEndWeek, onReopenWeek, user: userEvent.setup() };
 }
 
 const back = () => within(root).getByRole('button', { name: /previous week|earlier destination/i });

@@ -32,6 +32,8 @@ type WeekHeaderProps = {
     /** commit: take the work on `from` and put it on `to` */
     onMoveWork: (from: DateKey, to: DateKey) => void;
     onEndWeek: () => void;
+    /** un-end the viewed week, putting it back on the live board */
+    onReopenWeek: () => void;
 };
 
 /**
@@ -58,6 +60,7 @@ export function WeekHeader({
     onView,
     onMoveWork,
     onEndWeek,
+    onReopenWeek,
 }: WeekHeaderProps) {
     // null = idle; a DateKey = armed, aimed at that week. One value carries both
     // "are we moving" and "where to", so the two can never disagree.
@@ -184,22 +187,29 @@ export function WeekHeader({
                     >
                         {armed ? `Move → ${monthAndDay(shown)}` : 'Move work'}
                     </button>
+                    {/* One slot, two jobs: an ended week's only whole-week action
+                        is getting it back, so Reopen takes End week's place rather
+                        than sitting beside it as a second permanent button. The
+                        two labels are held to one width (see .end in the CSS) so
+                        the row does not reflow as you step across the boundary. */}
                     <button
                         type="button"
-                        className={`${styles.btn} ${styles.end}`}
-                        onClick={onEndWeek}
+                        className={`${styles.btn} ${ended ? styles.reopen : styles.end}`}
+                        onClick={ended ? onReopenWeek : onEndWeek}
                         // Dead while armed: a move in progress is a modal state,
                         // and archiving the week out from under it would commit
                         // one decision while another is still being aimed.
-                        disabled={!canEnd || armed}
+                        disabled={armed || (!ended && !canEnd)}
                     >
-                        End week
+                        {ended ? 'Reopen…' : 'End week'}
                     </button>
                     <button
                         type="button"
                         className={`${styles.btn} ${styles.manage}`}
                         onClick={() => setSheetOpen(true)}
-                        disabled={!canMove && !canEnd}
+                        // An ended week has exactly one action left, and it is
+                        // in the sheet — so this stays live for it.
+                        disabled={!canMove && !canEnd && !ended}
                     >
                         Manage
                     </button>
@@ -225,6 +235,7 @@ export function WeekHeader({
                     weekLabel={weekRangeLabel(weekStart)}
                     canMove={canMove}
                     canEnd={canEnd}
+                    ended={ended}
                     onClose={() => setSheetOpen(false)}
                     // Both handlers dismiss the sheet FIRST and then do the thing,
                     // so at most one layer is ever open: arming just changes this
@@ -237,6 +248,10 @@ export function WeekHeader({
                     onEnd={() => {
                         setSheetOpen(false);
                         onEndWeek();
+                    }}
+                    onReopen={() => {
+                        setSheetOpen(false);
+                        onReopenWeek();
                     }}
                 />
             )}

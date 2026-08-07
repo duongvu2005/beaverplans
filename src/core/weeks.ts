@@ -269,6 +269,32 @@ export function endWeek(weeks: Weeks, weekStart: DateKey, currentWeek: DateKey):
 }
 
 /**
+ * Re-open an ended week, putting it back on the live board.
+ *
+ * The mirror of endWeek, and like endWeek it writes through the private upsert
+ * rather than putWeek: putWeek's guard exists precisely so that no ordinary
+ * producer can touch an ended week, so the flag may only be cleared by
+ * something that means to.
+ *
+ * Unlike ending, this takes no currentWeek and has no gate beyond the flag
+ * itself. Ending is refused for a week you have not lived yet; every ended
+ * week is by definition one you already lived, so there is nothing left to
+ * check.
+ *
+ * @param weeks any Weeks
+ * @param weekStart the week to re-open
+ * @returns a new collection identical to weeks except that the entry at
+ *          weekStart has ended false and every other field of it unchanged;
+ *          or weeks unchanged when there is no entry at weekStart or its
+ *          entry is not ended
+ */
+export function reopenWeek(weeks: Weeks, weekStart: DateKey): Weeks {
+    const week = weekAt(weeks, weekStart);
+    if (!isEnded(week)) return weeks;
+    return writeWeek(weeks, { ...week, ended: false });
+}
+
+/**
  * Copy a week's unfinished work onto a later week.
  *
  * The source is left untouched, so this may be applied to a week that has already

@@ -18,9 +18,11 @@ function yearOf(weekStart: DateKey): string {
 type ArchiveBoardProps = {
     archive: Weeks;
     onChange: (updater: (current: Weeks) => Weeks) => void;
+    /** show one archived week on the plan board (switches tab as well as week) */
+    onOpenWeek: (weekStart: DateKey) => void;
 };
 
-export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
+export function ArchiveBoard({ archive, onChange, onOpenWeek }: ArchiveBoardProps) {
     const [opened, setOpened] = useState<WeekPlan | null>(null);
     const [copying, setCopying] = useState<WeekPlan | null>(null);
     const [removing, setRemoving] = useState<WeekPlan | null>(null);
@@ -112,9 +114,13 @@ export function ArchiveBoard({ archive, onChange }: ArchiveBoardProps) {
                     entry={opened}
                     label={weekRangeLabel(opened.weekStart)}
                     onClose={() => setOpened(null)}
-                    // Edit hands off to the editable WeekBoard; that flow is
-                    // still being designed, so the button is inert for now.
-                    onEdit={() => {}}
+                    // Closes on the way out: the quick look is a peek at this
+                    // week, and leaving it stacked under the board you just
+                    // navigated to would be a layer with nothing left to say.
+                    onView={() => {
+                        setOpened(null);
+                        onOpenWeek(opened.weekStart);
+                    }}
                 />
             )}
             {copying && (

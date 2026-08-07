@@ -18,16 +18,22 @@ type ArchiveQuickLookProps = {
     entry: WeekPlan;
     label: string;
     onClose: () => void;
-    onEdit: () => void;
+    /** open this week on the plan board, where it is still read-only until reopened */
+    onView: () => void;
 };
 
 /**
  * Read-only look at one archived week: the week's day shape and total, then a
  * project/task rollup with a chip counting where work slipped. Deliberately
  * stops above subtask level — a Subtask is a single day with no name, so a
- * subtask row would say almost nothing that Edit's real board doesn't say better.
+ * subtask row would say almost nothing that the real board doesn't say better.
+ *
+ * The footer action is View, not Edit: it goes to the week on the plan board,
+ * which is itself frozen. Editing an archived week means reopening it, and that
+ * decision belongs on the board next to the week, behind its own confirm —
+ * not smuggled in as the label of a button that only navigates.
  */
-export function ArchiveQuickLook({ entry, label, onClose, onEdit }: ArchiveQuickLookProps) {
+export function ArchiveQuickLook({ entry, label, onClose, onView }: ArchiveQuickLookProps) {
     const titleId = 'quicklook-title';
     const overall = overallProgress(entry.projects);
     const pct = Math.round(percentOf(overall.done, overall.total));
@@ -103,8 +109,8 @@ export function ArchiveQuickLook({ entry, label, onClose, onEdit }: ArchiveQuick
                 <button type="button" className={`${shell.btn} ${shell.ghost}`} onClick={onClose}>
                     Close
                 </button>
-                <button type="button" className={`${shell.btn} ${shell.primary}`} onClick={onEdit}>
-                    Edit
+                <button type="button" className={`${shell.btn} ${shell.primary}`} onClick={onView}>
+                    View
                 </button>
             </div>
         </Dialog>

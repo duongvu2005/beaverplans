@@ -10,7 +10,7 @@ import type { WeekPlan } from '../core/types';
  *     partition on projects: empty | one | many
  *     partition on misses: none anywhere (no chips) | some (chip per affected task)
  *     partition on completeness: project fully done (struck) | partly done
- *     partition on footer action: Close | Edit
+ *     partition on footer action: Close | View
  *     the week cases are read from sampleArchive rather than invented, so the
  *     test and the design mock describe the same weeks
  */
@@ -32,7 +32,7 @@ describe('ArchiveQuickLook', () => {
                 entry={SLIPPED}
                 label="Jul 06 – Jul 12"
                 onClose={() => {}}
-                onEdit={() => {}}
+                onView={() => {}}
             />,
         );
 
@@ -51,7 +51,7 @@ describe('ArchiveQuickLook', () => {
                 entry={SLIPPED}
                 label="Jul 06 – Jul 12"
                 onClose={() => {}}
-                onEdit={() => {}}
+                onView={() => {}}
             />,
         );
 
@@ -68,7 +68,7 @@ describe('ArchiveQuickLook', () => {
                 entry={PERFECT}
                 label="Jun 22 – Jun 28"
                 onClose={() => {}}
-                onEdit={() => {}}
+                onView={() => {}}
             />,
         );
 
@@ -82,7 +82,7 @@ describe('ArchiveQuickLook', () => {
                 entry={PERFECT}
                 label="Jun 22 – Jun 28"
                 onClose={() => {}}
-                onEdit={() => {}}
+                onView={() => {}}
             />,
         );
 
@@ -98,7 +98,7 @@ describe('ArchiveQuickLook', () => {
                 entry={{ weekStart: '2026-05-04', ended: true, projects: [] }}
                 label="May 04 – May 10"
                 onClose={() => {}}
-                onEdit={() => {}}
+                onView={() => {}}
             />,
         );
 
@@ -106,39 +106,39 @@ describe('ArchiveQuickLook', () => {
         expect(screen.getByText('0%')).toBeInTheDocument();
     });
 
-    it('calls onClose from the Close button, not onEdit', async () => {
+    it('calls onClose from the Close button, not onView', async () => {
         const onClose = vi.fn();
-        const onEdit = vi.fn();
+        const onView = vi.fn();
         render(
             <ArchiveQuickLook
                 entry={PERFECT}
                 label="Jun 22 – Jun 28"
                 onClose={onClose}
-                onEdit={onEdit}
+                onView={onView}
             />,
         );
 
         await userEvent.click(screen.getByRole('button', { name: 'Close' }));
 
         expect(onClose).toHaveBeenCalledTimes(1);
-        expect(onEdit).not.toHaveBeenCalled();
+        expect(onView).not.toHaveBeenCalled();
     });
 
-    it('calls onEdit from the Edit button, not onClose', async () => {
+    it('calls onView from the View button, not onClose', async () => {
         const onClose = vi.fn();
-        const onEdit = vi.fn();
+        const onView = vi.fn();
         render(
             <ArchiveQuickLook
                 entry={PERFECT}
                 label="Jun 22 – Jun 28"
                 onClose={onClose}
-                onEdit={onEdit}
+                onView={onView}
             />,
         );
 
-        await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+        await userEvent.click(screen.getByRole('button', { name: 'View' }));
 
-        expect(onEdit).toHaveBeenCalledTimes(1);
+        expect(onView).toHaveBeenCalledTimes(1);
         expect(onClose).not.toHaveBeenCalled();
     });
 
@@ -148,7 +148,7 @@ describe('ArchiveQuickLook', () => {
                 entry={PERFECT}
                 label="Jun 22 – Jun 28"
                 onClose={() => {}}
-                onEdit={() => {}}
+                onView={() => {}}
             />,
         );
 

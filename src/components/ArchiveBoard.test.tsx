@@ -46,12 +46,15 @@ function week(weekStart: string): WeekPlan {
 // The archive state App owns, updated the same way React would apply the updater.
 function renderBoard(archive: Weeks) {
     const onChange = vi.fn();
-    const result = render(<ArchiveBoard archive={archive} onChange={onChange} />);
+    const onOpenWeek = vi.fn();
+    const result = render(
+        <ArchiveBoard archive={archive} onChange={onChange} onOpenWeek={onOpenWeek} />,
+    );
     const applied = () => {
         const updater = onChange.mock.calls.at(-1)?.[0] as (c: Weeks) => Weeks;
         return updater(archive);
     };
-    return { ...result, onChange, applied };
+    return { ...result, onChange, onOpenWeek, applied };
 }
 
 function rowLabels() {

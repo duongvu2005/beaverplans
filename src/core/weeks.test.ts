@@ -11,6 +11,7 @@ import {
     moveWeek,
     putWeek,
     removeWeek,
+    reopenWeek,
     weekAt,
 } from './weeks';
 import type { DateKey, Project, Subtask, Task, WeekPlan, Weeks } from './types';
@@ -416,6 +417,60 @@ describe('endWeek', () => {
         expect(isValidWeeks(weeks)).toBe(true);
         expect(isEnded(weekAt(weeks, JUL13))).toBe(true);
         expect(isEnded(weekAt(weeks, JUL06))).toBe(false);
+    });
+});
+
+describe('reopenWeek', () => {
+    /*
+     * Testing strategy
+     *   partition on the entry at weekStart: ended | active | absent
+     *   partition on what survives: only the flag moves — the projects, the
+     *     other entries and their order do not
+     *   partition on what re-opening unlocks: putWeek takes writes again,
+     *     canEndWeek allows the return trip, the week leaves endedWeeks
+     */
+
+    it('clears ended and leaves the work exactly as it stands', () => {
+        const weeks = reopenWeek(endWeek([detailedWeek(JUL13)], JUL13, JUL20), JUL13);
+        expect(isEnded(weekAt(weeks, JUL13))).toBe(false);
+        expect(weekAt(weeks, JUL13).projects).toEqual(detailedWeek(JUL13).projects);
+    });
+
+    it('an already-active week: unchanged', () => {
+        const before: Weeks = [week(JUL13, 'a')];
+        expect(reopenWeek(before, JUL13)).toEqual(before);
+    });
+
+    it('no entry at that week: unchanged', () => {
+        const before: Weeks = [week(JUL13, 'a', true)];
+        expect(reopenWeek(before, JUL27)).toEqual(before);
+    });
+
+    it('leaves the neighbouring entries and their order alone (oracle)', () => {
+        const before: Weeks = [week(JUL06, 'a', true), week(JUL13, 'b', true), week(JUL20, 'c')];
+        const weeks = reopenWeek(before, JUL13);
+        expect(isValidWeeks(weeks)).toBe(true);
+        expect(starts(weeks)).toEqual([JUL06, JUL13, JUL20]);
+        expect(starts(endedWeeks(weeks))).toEqual([JUL06]);
+    });
+
+    it('undoes endWeek exactly (round trip)', () => {
+        const before: Weeks = [detailedWeek(JUL13)];
+        expect(reopenWeek(endWeek(before, JUL13, JUL20), JUL13)).toEqual(before);
+    });
+
+    it('the re-opened week takes edits again — putWeek no longer refuses it', () => {
+        const reopened = reopenWeek([week(JUL13, 'a', true)], JUL13);
+        const edited = putWeek(reopened, {
+            ...weekAt(reopened, JUL13),
+            projects: week(JUL13, 'b').projects,
+        });
+        expect(weekAt(edited, JUL13).projects).toEqual(week(JUL13, 'b').projects);
+    });
+
+    it('the re-opened week can be ended again', () => {
+        const reopened = reopenWeek([week(JUL13, 'a', true)], JUL13);
+        expect(canEndWeek(reopened, JUL13, JUL20)).toBe(true);
     });
 });
 

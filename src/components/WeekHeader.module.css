@@ -180,6 +180,24 @@
     color: var(--accent);
 }
 
+/* One width for both states of this slot. "End week" is the wider of the two
+   labels, so the box is sized to it and "Reopen…" sits inside the same box —
+   the row keeps its geometry as you step across the ended boundary instead of
+   shuffling Move work sideways. Padding still applies; this is only a floor. */
+.end,
+.reopen {
+    min-width: 5.75rem;
+    justify-content: center;
+}
+
+/* Reopen is deliberately the quietest control in .acts: discoverable, not a
+   call to action. It keeps .btn's resting look and gains no accent on hover —
+   the dialog behind it is where the weight of the decision belongs, not here.
+   Ink-faint until hovered so it reads as available rather than offered. */
+.reopen {
+    color: var(--ink-faint);
+}
+
 .acts {
     grid-area: acts;
     display: flex;

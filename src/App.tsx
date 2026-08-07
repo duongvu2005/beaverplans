@@ -7,6 +7,7 @@ import {
     monthAndDay,
     nextWeekStart,
     todayKey,
+    weekRangeLabel,
     weekStartOf,
 } from './core/dates';
 import {
@@ -14,6 +15,7 @@ import {
     carryForward,
     earliestActiveWeek,
     endWeek,
+    reopenWeek,
     endedWeeks,
     isEmptyWeek,
     isEnded,
@@ -60,6 +62,7 @@ export default function App() {
     // header note below points at it rather than the app silently jumping there.
     const [viewing, setViewing] = useState<DateKey>(currentWeek);
     const [confirmingEndWeek, setConfirmingEndWeek] = useState(false);
+    const [confirmingReopen, setConfirmingReopen] = useState(false);
 
     const plan = weekAt(weeks, viewing);
     const overall = overallProgress(plan.projects);
@@ -162,6 +165,13 @@ export default function App() {
         setConfirmingEndWeek(false);
     }
 
+    // Reopening leaves the viewed week where it is: you are looking at the week
+    // you want back, and it stays under you — only its frozen-ness changes.
+    function handleConfirmReopen() {
+        setWeeks((current) => reopenWeek(current, viewing));
+        setConfirmingReopen(false);
+    }
+
     // signin closes the dialog on success; reset doesn't (AuthForm shows its
     // own non-committal notice and stays put). signup closes it only when
     // Supabase hands back a live session immediately — when email
@@ -236,13 +246,18 @@ export default function App() {
                             onView={setViewing}
                             onMoveWork={handleMoveWork}
                             onEndWeek={handleEndWeek}
+                            onReopenWeek={() => setConfirmingReopen(true)}
                         />
                         <WeekBoard plan={plan} onChange={handlePlanChange} />
                     </>
                 )}
                 {view === 'stats' && <StatsBoard archive={archive} onOpenWeek={handleOpenWeek} />}
                 {view === 'archive' && (
-                    <ArchiveBoard archive={archive} onChange={handleArchiveChange} />
+                    <ArchiveBoard
+                        archive={archive}
+                        onChange={handleArchiveChange}
+                        onOpenWeek={handleOpenWeek}
+                    />
                 )}
             </main>
             {confirmingEndWeek && hasUnfinished && (
@@ -283,6 +298,26 @@ export default function App() {
                 >
                     <p className={shell.text}>
                         This records the week in your archive and starts a fresh board.
+                    </p>
+                </ConfirmDialog>
+            )}
+            {/* The whole weight of the reopen decision sits here rather than in
+                the button, which is deliberately the quietest control on the
+                header. Mis-ending a week is an easy slip and has to be
+                fixable — so the copy permits that plainly first, and only then
+                makes the case for leaving a finished week alone. */}
+            {confirmingReopen && (
+                <ConfirmDialog
+                    eyebrow={weekRangeLabel(viewing)}
+                    title="Rewriting history?"
+                    confirmLabel="Reopen week"
+                    onConfirm={handleConfirmReopen}
+                    onClose={() => setConfirmingReopen(false)}
+                >
+                    <p className={shell.text}>
+                        Ended the week by mistake, or forgot to log something? Reopen it and make it
+                        right. Just remember: your archive is most valuable when it reflects how
+                        things actually went ;{')'}
                     </p>
                 </ConfirmDialog>
             )}
