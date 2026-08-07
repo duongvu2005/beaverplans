@@ -51,6 +51,19 @@ export class LocalBackend implements Backend {
         this.write();
     }
 
+    /**
+     * @inheritdoc
+     * Never reports anything, and the no-op is truthful rather than a stub:
+     * this backend's cache only changes through its own methods. Another tab
+     * writing the same key does change the underlying store, but nothing here
+     * listens for the browser's `storage` event, so there is no such change to
+     * report until something does.
+     */
+    public subscribe(listener: () => void): () => void {
+        void listener;
+        return () => {};
+    }
+
     private emptyState(): { weeks: Weeks } {
         return { weeks: [] };
     }

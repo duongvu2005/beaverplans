@@ -46,6 +46,17 @@ class SpyBackend implements Backend {
     public reset(): void {
         this.resetCalls++;
     }
+    public subscribe(listener: () => void): () => void {
+        this.listeners.add(listener);
+        return () => {
+            this.listeners.delete(listener);
+        };
+    }
+    /** Stand in for a remote change arriving on this backend. */
+    public emitChange(): void {
+        for (const listener of [...this.listeners]) listener();
+    }
+    public readonly listeners = new Set<() => void>();
 }
 
 // --- fixtures ---
@@ -152,6 +163,63 @@ describe('Store', () => {
         release();
         await loading;
         expect(settled).toBe(true);
+    });
+});
+
+describe('Store subscribe', () => {
+    /*
+     * Testing strategy
+     *   partition on which backend reports: the active one | the inactive one
+     *     (must not be heard)
+     *   partition on useBackend: a listener registered BEFORE the switch must
+     *     follow it, and the outgoing backend must stop being relayed
+     *   partition on unsubscribing: stops delivery; the last unsubscribe also
+     *     releases the underlying subscription
+     */
+
+    it('relays the active backend, and ignores the inactive one', () => {
+        const { store, cloud } = makeStore();
+        let woken = 0;
+        store.subscribe(() => {
+            woken += 1;
+        });
+
+        cloud.emitChange(); // local is active, so cloud is not being listened to
+        expect(woken).toBe(0);
+
+        store.useBackend('cloud');
+        cloud.emitChange();
+        expect(woken).toBe(1);
+    });
+
+    it('a listener registered before a switch follows it, without re-subscribing', () => {
+        const { store, cloud } = makeStore();
+        const seen: string[] = [];
+        store.subscribe(() => seen.push('heard'));
+
+        store.useBackend('cloud');
+        cloud.emitChange();
+        store.useBackend('local');
+        cloud.emitChange(); // cloud is no longer active: silence
+
+        expect(seen).toEqual(['heard']);
+    });
+
+    it('unsubscribing stops delivery and releases the backend subscription', () => {
+        const { store, cloud } = makeStore();
+        store.useBackend('cloud');
+        let woken = 0;
+        const off = store.subscribe(() => {
+            woken += 1;
+        });
+        cloud.emitChange();
+        expect(cloud.listeners.size).toBe(1);
+
+        off();
+        cloud.emitChange();
+
+        expect(woken).toBe(1);
+        expect(cloud.listeners.size).toBe(0); // not merely ignored — detached
     });
 });
 

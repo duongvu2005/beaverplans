@@ -5,14 +5,16 @@ import { store } from '../storage/instance';
 import type { Weeks } from '../core/types';
 
 // useWeeks talks to the real store singleton, which in turn talks to real
-// localStorage/Supabase — mocked here down to just the three Backend methods
-// this hook actually calls, so `load()` can be held open and resolved by
-// hand to observe the state in between.
+// localStorage/Supabase — mocked here down to just the Backend methods this
+// hook actually calls, so `load()` can be held open and resolved by hand to
+// observe the state in between. A method missing from this factory is
+// undefined at the call site, so it has to keep up with the hook.
 vi.mock('../storage/instance', () => ({
     store: {
         load: vi.fn(),
         getWeeks: vi.fn(),
         setWeeks: vi.fn(),
+        subscribe: vi.fn(() => () => {}),
     },
 }));
 
@@ -31,6 +33,9 @@ describe('useWeeks', () => {
         vi.mocked(store.load).mockReset();
         vi.mocked(store.getWeeks).mockReset();
         vi.mocked(store.setWeeks).mockReset();
+        vi.mocked(store.subscribe)
+            .mockReset()
+            .mockImplementation(() => () => {});
     });
 
     /*
@@ -100,5 +105,59 @@ describe('useWeeks', () => {
         renderHook(({ epoch }) => useWeeks(epoch), { initialProps: { epoch: 0 } });
 
         expect(store.setWeeks).not.toHaveBeenCalled();
+    });
+
+    it('adopts weeks the store reports from another device', async () => {
+        const loaded: Weeks = [
+            {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [{ id: 'p1', name: 'A', tasks: [] }],
+            },
+        ];
+        const remote: Weeks = [
+            ...loaded,
+            {
+                weekStart: '2026-07-13',
+                ended: false,
+                projects: [{ id: 'p2', name: 'B', tasks: [] }],
+            },
+        ];
+        let report = () => {};
+        vi.mocked(store.subscribe).mockImplementation((listener) => {
+            report = listener;
+            return () => {};
+        });
+        vi.mocked(store.load).mockResolvedValue(undefined);
+        vi.mocked(store.getWeeks).mockReturnValue(loaded);
+
+        const { result } = renderHook(({ epoch }) => useWeeks(epoch), {
+            initialProps: { epoch: 0 },
+        });
+        await act(async () => {});
+        expect(result.current[0]).toBe(loaded);
+
+        // The store has already merged the remote change into its own weeks
+        // by the time it reports, so the hook adopts whatever it now holds.
+        vi.mocked(store.getWeeks).mockReturnValue(remote);
+        act(() => report());
+
+        expect(result.current[0]).toBe(remote);
+    });
+
+    it('stops listening when unmounted', () => {
+        let detached = 0;
+        vi.mocked(store.subscribe).mockImplementation(() => () => {
+            detached += 1;
+        });
+        vi.mocked(store.load).mockResolvedValue(undefined);
+        vi.mocked(store.getWeeks).mockReturnValue([]);
+
+        const { unmount } = renderHook(({ epoch }) => useWeeks(epoch), {
+            initialProps: { epoch: 0 },
+        });
+        unmount();
+
+        expect(detached).toBe(1);
     });
 });

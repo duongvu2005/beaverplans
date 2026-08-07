@@ -40,5 +40,12 @@ export function useWeeks(epoch: number): [Weeks, Dispatch<SetStateAction<Weeks>>
         store.setWeeks(weeks);
     }, [weeks, loaded]);
 
+    // Changes this client did not make — another device or tab writing the
+    // same account. The store has already merged them into its own weeks by
+    // the time this runs, so adopting them wholesale is right; the effect
+    // above then writes the same value straight back, which is a no-op diff
+    // against what was just synced rather than a loop.
+    useEffect(() => store.subscribe(() => setWeeks(store.getWeeks())), []);
+
     return [weeks, setWeeks, loaded];
 }

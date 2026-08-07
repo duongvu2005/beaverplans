@@ -186,4 +186,21 @@ describe('LocalBackend', () => {
         await expect(backend.load()).resolves.toBeUndefined();
         expect(backend.getWeeks()).toEqual([]);
     });
+
+    it('covers subscribe: never reports, and unsubscribing twice is safe', async () => {
+        const backend = new LocalBackend(new FakeStorage());
+        const off = backend.subscribe(() => {
+            throw new Error('LocalBackend has no outside writer to report');
+        });
+
+        // Nothing this backend does to itself counts as a change from outside.
+        await backend.load();
+        backend.setWeeks(sampleWeeks);
+        backend.reset();
+
+        expect(() => {
+            off();
+            off();
+        }).not.toThrow();
+    });
 });

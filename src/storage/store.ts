@@ -13,12 +13,19 @@ export class Store implements Backend {
     private readonly local: LocalBackend;
     private readonly cloud: Backend;
     private active: Backend;
+    // Held here rather than passed straight through, so that a listener
+    // registered once keeps working across a useBackend switch: the
+    // subscription to the backend follows `active`, the listeners do not.
+    private readonly listeners: Set<() => void>;
+    private unsubscribeActive: (() => void) | undefined;
 
     public constructor(local: LocalBackend, cloud: Backend) {
         this.local = local;
         this.cloud = cloud;
         // default: local
         this.active = local;
+        this.listeners = new Set();
+        this.unsubscribeActive = undefined;
     }
 
     /**
@@ -50,6 +57,23 @@ export class Store implements Backend {
     }
 
     /**
+     * @inheritdoc
+     * Reports whatever the ACTIVE backend reports, and follows it across a
+     * useBackend switch — so a caller subscribes once, at startup, rather than
+     * having to re-subscribe every time the user signs in or out.
+     */
+    public subscribe(listener: () => void): () => void {
+        this.listeners.add(listener);
+        this.watchActive();
+        return () => {
+            this.listeners.delete(listener);
+            if (this.listeners.size === 0) {
+                this.unwatchActive();
+            }
+        };
+    }
+
+    /**
      * Set the active backend to name ('local' | 'cloud')
      *
      * @param name the backend to be made active
@@ -63,6 +87,29 @@ export class Store implements Backend {
             const _exhaustive: never = name; // compile error if a BackendName is unhandled
             throw new Error(`unknown backend: ${String(_exhaustive)}`);
         }
+        // Move the single subscription onto whichever backend is now active;
+        // the outgoing one must stop reporting, or a signed-out session would
+        // still be relaying the cloud's changes.
+        this.unwatchActive();
+        this.watchActive();
+    }
+
+    /** Subscribe to the active backend, if anyone is listening and we are not already. */
+    private watchActive(): void {
+        if (this.unsubscribeActive !== undefined || this.listeners.size === 0) {
+            return;
+        }
+        this.unsubscribeActive = this.active.subscribe(() => {
+            // Copied first: a listener is free to unsubscribe itself when called.
+            for (const listener of [...this.listeners]) {
+                listener();
+            }
+        });
+    }
+
+    private unwatchActive(): void {
+        this.unsubscribeActive?.();
+        this.unsubscribeActive = undefined;
     }
 
     // ---- guest -> cloud migration ----

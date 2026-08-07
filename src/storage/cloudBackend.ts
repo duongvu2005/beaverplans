@@ -6,6 +6,21 @@ import { diffWeeks } from './diffWeeks';
 import { LocalBackend, type KeyValueStore } from './localBackend';
 import { rowToWeekPlan, type PlannerWeekRow } from './plannerWeekRow';
 
+/**
+ * Opens a feed of remote changes to one user's rows.
+ *
+ * Injected rather than reached through CloudClient because the real client's
+ * channel API is broadly overloaded, and a structural interface narrow enough
+ * to be useful here would not match it — so the binding to that API lives in
+ * one adapter at the composition root, and a test supplies its own function.
+ *
+ * @param userId whose rows to watch
+ * @param onChange called when any of them change. Given no payload on
+ *        purpose: see pullAndMerge for why the event is a signal, not data.
+ * @returns a function that closes the feed
+ */
+export type RemoteWatcher = (userId: string, onChange: () => void) => () => void;
+
 export interface CloudClient {
     auth: {
         getSession(): Promise<{
@@ -98,6 +113,22 @@ function toWeeks(rows: ReadonlyArray<unknown>): Weeks {
         .sort((a, b) => (a.weekStart < b.weekStart ? -1 : a.weekStart > b.weekStart ? 1 : 0));
 }
 
+/**
+ * Whether two collections hold the same content, so that a pull which changed
+ * nothing does not wake every listener.
+ *
+ * @param a any Weeks
+ * @param b any Weeks
+ * @returns true iff they have the same entries in the same order, comparing
+ *          by reference first and by content only when that fails
+ */
+function sameWeeks(a: Weeks, b: Weeks): boolean {
+    return (
+        a.length === b.length &&
+        a.every((week, i) => week === b[i] || JSON.stringify(week) === JSON.stringify(b[i]))
+    );
+}
+
 export class CloudBackend implements Backend {
     private readonly client: CloudClient;
     private readonly currentDurable: LocalBackend;
@@ -108,14 +139,24 @@ export class CloudBackend implements Backend {
     private pushTimer: ReturnType<typeof setTimeout> | undefined;
     private pushInFlight: boolean;
     private pushAgainNeeded: boolean;
+    private readonly openFeed: RemoteWatcher | undefined;
+    private closeFeed: (() => void) | undefined;
+    // Which user the open feed filters on, so a sign-in as somebody else
+    // replaces it rather than quietly leaving the previous user's feed running.
+    private feedUserId: string | undefined;
+    private readonly listeners: Set<() => void>;
 
     /**
      * @param client used to talk to the remote service (auth + planner_weeks)
      * @param storage the underlying key-value store the durable local copies
      *        are persisted to (e.g. window.localStorage)
+     * @param openFeed opens the live feed of remote changes; omit it and this
+     *        backend simply never reports any, which is the behaviour every
+     *        caller had before the feed existed
      */
-    public constructor(client: CloudClient, storage: KeyValueStore) {
+    public constructor(client: CloudClient, storage: KeyValueStore, openFeed?: RemoteWatcher) {
         this.client = client;
+        this.openFeed = openFeed;
         this.currentDurable = new LocalBackend(storage, CURRENT_STORAGE_KEY);
         this.syncedDurable = new LocalBackend(storage, SYNCED_STORAGE_KEY);
         this.cache = [];
@@ -124,6 +165,9 @@ export class CloudBackend implements Backend {
         this.pushTimer = undefined;
         this.pushInFlight = false;
         this.pushAgainNeeded = false;
+        this.closeFeed = undefined;
+        this.feedUserId = undefined;
+        this.listeners = new Set();
     }
 
     /**
@@ -148,11 +192,28 @@ export class CloudBackend implements Backend {
         const session = await this.client.auth.getSession();
         if (session.data.session === null) {
             this.userId = undefined;
+            this.unwatchRemote();
             return;
         }
         this.userId = session.data.session.user.id;
+        this.watchRemote();
 
-        // load data
+        // Not notifying: load()'s own caller is about to read getWeeks anyway.
+        await this.pullAndMerge(false);
+    }
+
+    /**
+     * Reads the server's weeks and folds them into the local copy.
+     *
+     * The one path that reconciles with the server, shared by load() and by a
+     * remote change arriving on the channel — so a Realtime event runs exactly
+     * the code a fresh load would, and an event that is dropped or arrives out
+     * of order costs latency rather than correctness.
+     *
+     * @param notify whether to wake subscribers if the merge changed anything.
+     *        False from load(), whose caller reads getWeeks itself.
+     */
+    private async pullAndMerge(notify: boolean): Promise<void> {
         const { data, error } = await this.client
             .from('planner_weeks')
             .select('week_start, projects, ended');
@@ -161,6 +222,7 @@ export class CloudBackend implements Backend {
         }
 
         const serverWeeks = toWeeks(data);
+        const before = this.cache;
 
         // Three-way merge, not a per-week choice of one side: lastSynced is the
         // state both copies last agreed on, so it can tell an edit from a
@@ -180,6 +242,42 @@ export class CloudBackend implements Backend {
         if (upserts.length > 0 || deletes.length > 0) {
             this.schedulePush();
         }
+
+        if (notify && !sameWeeks(before, this.cache)) {
+            // Copied: a listener may unsubscribe itself when called.
+            for (const listener of [...this.listeners]) {
+                listener();
+            }
+        }
+    }
+
+    /**
+     * Opens the row feed for the current user, if it is not already open for
+     * exactly that user.
+     *
+     * The event's payload is deliberately ignored. Realtime can drop events and
+     * deliver them out of order, so applying a payload directly would let a
+     * late one regress state; treating it purely as "something moved, go look"
+     * makes a lost event cost nothing but time.
+     */
+    private watchRemote(): void {
+        if (this.openFeed === undefined || this.userId === undefined) {
+            return;
+        }
+        if (this.feedUserId === this.userId) {
+            return; // already watching exactly this user
+        }
+        this.unwatchRemote();
+        this.feedUserId = this.userId;
+        this.closeFeed = this.openFeed(this.userId, () => {
+            void this.pullAndMerge(true);
+        });
+    }
+
+    private unwatchRemote(): void {
+        this.closeFeed?.();
+        this.closeFeed = undefined;
+        this.feedUserId = undefined;
     }
 
     /**
@@ -202,11 +300,14 @@ export class CloudBackend implements Backend {
 
     /**
      * @inheritdoc
-     * Also cancels any pending push, clears the durable local copies, and
-     * forgets the current user.
+     * Also cancels any pending push, closes the row feed, clears the durable
+     * local copies, and forgets the current user. Subscribers are kept: they
+     * belong to the caller, not to the session, and a later load() as some
+     * other user will report to them again.
      */
     public reset(): void {
         this.cancelScheduledPush();
+        this.unwatchRemote();
 
         this.cache = [];
         this.lastSynced = [];
@@ -215,6 +316,18 @@ export class CloudBackend implements Backend {
         this.syncedDurable.reset();
 
         this.userId = undefined;
+    }
+
+    /**
+     * @inheritdoc
+     * Fires when another device or tab writes this user's rows, which the
+     * server reports over a Realtime channel opened by load().
+     */
+    public subscribe(listener: () => void): () => void {
+        this.listeners.add(listener);
+        return () => {
+            this.listeners.delete(listener);
+        };
     }
 
     /**

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CloudBackend, type CloudClient } from './cloudBackend';
+import { CloudBackend, type CloudClient, type RemoteWatcher } from './cloudBackend';
 import { LocalBackend, type KeyValueStore } from './localBackend';
 import type { WeekPlan, Weeks } from '../core/types';
 
@@ -100,9 +100,29 @@ function rowOf(plan: WeekPlan, userId = 'u1'): Row {
     };
 }
 
-function makeBackend(client: FakeClient = new FakeClient()) {
+// A RemoteWatcher standing in for the Supabase channel: records how many
+// feeds were opened and closed, and lets a test fire one by hand.
+function fakeFeed() {
+    const state = {
+        userId: undefined as string | undefined,
+        opens: 0,
+        closes: 0,
+        fire: () => {},
+    };
+    const watcher: RemoteWatcher = (userId, onChange) => {
+        state.userId = userId;
+        state.opens += 1;
+        state.fire = onChange;
+        return () => {
+            state.closes += 1;
+        };
+    };
+    return { watcher, state };
+}
+
+function makeBackend(client: FakeClient = new FakeClient(), openFeed?: RemoteWatcher) {
     const storage = new FakeStorage();
-    const backend = new CloudBackend(client, storage);
+    const backend = new CloudBackend(client, storage, openFeed);
     return { backend, storage, client };
 }
 
@@ -333,6 +353,128 @@ describe('CloudBackend', () => {
             await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
 
             expect(client.upsertCalls).toEqual([[rowOf(week1)]]);
+        });
+    });
+
+    describe('the remote feed', () => {
+        /*
+         * Testing strategy
+         *   partition on what the feed reports: a change that alters the
+         *     merged result | one that does not (this client's own write
+         *     echoing back)
+         *   partition on feed lifecycle: opened on load | not reopened for
+         *     the same user | replaced when the user changes | closed by
+         *     reset | never opened when no watcher was injected
+         *   partition on subscribers: one listening | after unsubscribing
+         */
+
+        it('covers a remote change: pulls, merges, and wakes subscribers', async () => {
+            const feed = fakeFeed();
+            const { backend, client } = makeBackend(new FakeClient(), feed.watcher);
+            client.rows = [rowOf(week1)];
+            await backend.load();
+
+            const seen: Weeks[] = [];
+            backend.subscribe(() => seen.push(backend.getWeeks()));
+
+            client.rows = [rowOf(week1), rowOf(week2)]; // another device added week2
+            feed.state.fire();
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(backend.getWeeks()).toEqual([week1, week2]);
+            // The listener sees the NEW value, per subscribe's postcondition
+            expect(seen).toEqual([[week1, week2]]);
+        });
+
+        it('covers a report that changes nothing: subscribers are not woken', async () => {
+            const feed = fakeFeed();
+            const { backend, client } = makeBackend(new FakeClient(), feed.watcher);
+            client.rows = [rowOf(week1)];
+            await backend.load();
+
+            let woken = 0;
+            backend.subscribe(() => {
+                woken += 1;
+            });
+
+            feed.state.fire(); // e.g. this client's own push echoing back
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(woken).toBe(0);
+        });
+
+        it('covers unsubscribing: the listener stops being called', async () => {
+            const feed = fakeFeed();
+            const { backend, client } = makeBackend(new FakeClient(), feed.watcher);
+            client.rows = [rowOf(week1)];
+            await backend.load();
+
+            let woken = 0;
+            const off = backend.subscribe(() => {
+                woken += 1;
+            });
+
+            client.rows = [rowOf(week1), rowOf(week2)];
+            feed.state.fire();
+            await vi.advanceTimersByTimeAsync(0);
+            expect(woken).toBe(1);
+
+            off();
+            client.rows = [rowOf(week1), rowOf(week2), rowOf(week3)];
+            feed.state.fire();
+            await vi.advanceTimersByTimeAsync(0);
+            expect(woken).toBe(1);
+        });
+
+        it('covers the feed lifecycle: opened once per user, replaced when the user changes', async () => {
+            const feed = fakeFeed();
+            const { backend, client } = makeBackend(new FakeClient(), feed.watcher);
+
+            await backend.load();
+            expect(feed.state.opens).toBe(1);
+            expect(feed.state.userId).toBe('u1');
+
+            await backend.load(); // same user: nothing to redo
+            expect(feed.state.opens).toBe(1);
+            expect(feed.state.closes).toBe(0);
+
+            client.session = { user: { id: 'u2' } };
+            await backend.load();
+            expect(feed.state.closes).toBe(1); // u1's feed must not keep running
+            expect(feed.state.opens).toBe(2);
+            expect(feed.state.userId).toBe('u2');
+        });
+
+        it('covers signing out and reset: the feed is closed', async () => {
+            const feed = fakeFeed();
+            const { backend, client } = makeBackend(new FakeClient(), feed.watcher);
+            await backend.load();
+            expect(feed.state.opens).toBe(1);
+
+            backend.reset();
+            expect(feed.state.closes).toBe(1);
+
+            client.session = null;
+            await backend.load();
+            expect(feed.state.opens).toBe(1); // no session, nothing to watch
+        });
+
+        it('covers no watcher injected: subscribing is harmless and nothing is reported', async () => {
+            const { backend, client } = makeBackend();
+            client.rows = [rowOf(week1)];
+            await backend.load();
+
+            let woken = 0;
+            const off = backend.subscribe(() => {
+                woken += 1;
+            });
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            expect(woken).toBe(0);
+            expect(() => {
+                off();
+                off();
+            }).not.toThrow();
         });
     });
 

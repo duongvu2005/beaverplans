@@ -34,4 +34,23 @@ export interface Backend {
      * afterward every getter returns its empty value.
      */
     reset(): void;
+
+    /**
+     * Registers a listener for changes this client did not make.
+     *
+     * getWeeks' postcondition — the value most recently set or loaded — holds
+     * only while this client is the sole writer. A backend shared with another
+     * device or tab can change underneath it, and this is how a caller hears
+     * about that; without it, such a change is invisible until the next load.
+     *
+     * Not called for a change this client made through setWeeks, nor for
+     * load(), since the caller of those already knows.
+     *
+     * @param listener called after getWeeks has begun returning the new value,
+     *        so a listener that reads getWeeks sees the change rather than the
+     *        one it replaced
+     * @returns a function removing this listener. Safe to call more than once,
+     *          and safe to call on a backend that never reports anything.
+     */
+    subscribe(listener: () => void): () => void;
 }
