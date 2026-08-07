@@ -1,6 +1,7 @@
 import type { WeekPlan, Weeks } from '../core/types';
 import type { Backend } from './backend';
-import { putWeek } from '../core/weeks';
+import { isEmptyWeek } from '../core/weeks';
+import { mergeWeeks } from '../core/mergeWeeks';
 import { diffWeeks } from './diffWeeks';
 import { LocalBackend, type KeyValueStore } from './localBackend';
 import { rowToWeekPlan, type PlannerWeekRow } from './plannerWeekRow';
@@ -78,6 +79,25 @@ function restoreReferences(synced: Weeks, current: Weeks): Weeks {
     return restored;
 }
 
+/**
+ * Reads the rows of a `planner_weeks` select into a Weeks.
+ *
+ * Empty entries are dropped rather than carried: rowToWeekPlan falls back to
+ * no projects for a row whose stored JSON does not satisfy isValidPlan, and
+ * Weeks holds no empty entry — so keeping one would make the whole collection
+ * fail isValidWeeks, and LocalBackend discards an invalid collection wholesale
+ * on the next read. One unreadable row must not cost the entire baseline.
+ *
+ * @param rows the rows returned by the select, in any order
+ * @returns a valid Weeks: the readable rows, sorted ascending by weekStart
+ */
+function toWeeks(rows: ReadonlyArray<unknown>): Weeks {
+    return rows
+        .map((row) => rowToWeekPlan(row as PlannerWeekRow))
+        .filter((plan) => !isEmptyWeek(plan))
+        .sort((a, b) => (a.weekStart < b.weekStart ? -1 : a.weekStart > b.weekStart ? 1 : 0));
+}
+
 export class CloudBackend implements Backend {
     private readonly client: CloudClient;
     private readonly currentDurable: LocalBackend;
@@ -109,13 +129,14 @@ export class CloudBackend implements Backend {
     /**
      * @inheritdoc
      * Also discovers the current user from the client's session, and
-     * reconciles the durable local copy against the server: any week that
-     * differs between the durable local copy and its last-known-synced
-     * baseline (a locally pending, unconfirmed change) keeps the local copy;
-     * every other week adopts the server's copy. If the server is
-     * unreachable, or there is no session, falls back to the durable local
-     * copy unchanged. If there were pending local changes and the server was
-     * reachable, schedules a push for them before this promise resolves.
+     * reconciles the durable local copy against the server by three-way
+     * merging them against the last-known-synced baseline (see mergeWeeks):
+     * a change made on only one side is kept whatever the other side holds,
+     * and a genuine disagreement resolves in this device's favour. If the
+     * server is unreachable, or there is no session, falls back to the
+     * durable local copy unchanged. Whatever the merge produces that the
+     * server has not got — which includes the merge itself, after a conflict
+     * — is scheduled as a push before this promise resolves.
      */
     public async load(): Promise<void> {
         // load up the durables (this must always be done regardless of the auth status)
@@ -139,25 +160,24 @@ export class CloudBackend implements Backend {
             return;
         }
 
-        // merge & resolve conflict
-        const { upserts, deletes } = diffWeeks(this.cache, this.lastSynced);
-        const pendingWeekStarts = new Set([...upserts.map((plan) => plan.weekStart), ...deletes]);
+        const serverWeeks = toWeeks(data);
 
-        let mergedCache = this.cache;
-        let mergedSynced = this.lastSynced;
-        for (const row of data) {
-            const serverPlan = rowToWeekPlan(row as PlannerWeekRow);
-            if (!pendingWeekStarts.has(serverPlan.weekStart)) {
-                mergedCache = putWeek(mergedCache, serverPlan);
-                mergedSynced = putWeek(mergedSynced, serverPlan);
-            }
-        }
-        this.cache = mergedCache;
-        this.lastSynced = mergedSynced;
+        // Three-way merge, not a per-week choice of one side: lastSynced is the
+        // state both copies last agreed on, so it can tell an edit from a
+        // non-edit and keep changes made on either device.
+        this.cache = restoreReferences(
+            serverWeeks,
+            mergeWeeks(this.lastSynced, this.cache, serverWeeks),
+        );
+        // The server holds serverWeeks, NOT the merge — nothing has been pushed
+        // yet. Recording what the server actually has is what makes the diff
+        // below exactly the work still owed to it.
+        this.lastSynced = serverWeeks;
         this.currentDurable.setWeeks(this.cache);
         this.syncedDurable.setWeeks(this.lastSynced);
 
-        if (pendingWeekStarts.size > 0) {
+        const { upserts, deletes } = diffWeeks(this.lastSynced, this.cache);
+        if (upserts.length > 0 || deletes.length > 0) {
             this.schedulePush();
         }
     }

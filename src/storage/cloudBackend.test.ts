@@ -125,14 +125,17 @@ describe('CloudBackend', () => {
      *   partition on load() reachability: server reachable, no pending local
      *     changes | server reachable, pending local changes with the server
      *     untouched | server reachable, pending local changes where the
-     *     server ALSO changed the same week (conflict — local still wins,
-     *     per the policy deferred to piece 4) | server unreachable | no
-     *     session
+     *     server ALSO changed the same week (a real conflict — three-way
+     *     merged, so both sides survive; mergeWeeks.test.ts owns the merge
+     *     rules themselves, this file only proves load() applies them) |
+     *     server unreachable | no session
      *   partition on load()'s merge granularity: a single call covering one
      *     pending-untouched week, one conflicting week, and one week new on
      *     the server but absent locally, all at once (proves the merge is
      *     per-week, not per-array) | after a load() with pending changes,
-     *     assert a push is actually scheduled rather than inferring it
+     *     assert a push is actually scheduled rather than inferring it |
+     *     after a CONFLICTING load, assert the merge itself is pushed back,
+     *     since the server has never seen it
      *   partition on setWeeks: effect on cache | effect on the durable
      *     local copy | does NOT touch lastSynced or its durable copy | two
      *     rapid calls before the timer fires — the eventual push reflects
@@ -167,7 +170,7 @@ describe('CloudBackend', () => {
             expect(backend.getWeeks()).toEqual([week1]);
         });
 
-        it('covers server reachable, pending local changes where the server also changed the same week: local still wins', async () => {
+        it('covers server reachable, pending local changes where the server also changed the same week: both edits survive the merge', async () => {
             const { backend, storage, client } = makeBackend();
             const origWeek1: WeekPlan = {
                 weekStart: '2026-07-06',
@@ -190,7 +193,67 @@ describe('CloudBackend', () => {
             client.rows = [rowOf(serverWeek1)];
 
             await backend.load();
-            expect(backend.getWeeks()).toEqual([editedWeek1]);
+            // Both sides replaced p0, so p0 is gone and each side's own
+            // project is an addition. Under the old last-write-wins the
+            // server's edit was simply discarded here.
+            expect(backend.getWeeks()).toEqual([
+                {
+                    weekStart: '2026-07-06',
+                    ended: false,
+                    projects: [
+                        { id: 'p1', name: 'Local edit', tasks: [] },
+                        { id: 'p2', name: 'Server edit', tasks: [] },
+                    ],
+                },
+            ]);
+        });
+
+        it('covers the merged result being owed to the server: the push carries it back', async () => {
+            const { backend, storage, client } = makeBackend();
+            const orig: WeekPlan = {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [{ id: 'p0', name: 'Original', tasks: [] }],
+            };
+            const localEdit: WeekPlan = {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [
+                    { id: 'p0', name: 'Original', tasks: [] },
+                    { id: 'p1', name: 'Local', tasks: [] },
+                ],
+            };
+            const serverEdit: WeekPlan = {
+                weekStart: '2026-07-06',
+                ended: false,
+                projects: [
+                    { id: 'p0', name: 'Original', tasks: [] },
+                    { id: 'p2', name: 'Server', tasks: [] },
+                ],
+            };
+
+            new LocalBackend(storage, SYNCED_KEY).setWeeks([orig]);
+            new LocalBackend(storage, CURRENT_KEY).setWeeks([localEdit]);
+            client.rows = [rowOf(serverEdit)];
+
+            await backend.load();
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+            // lastSynced is what the server actually holds, so the diff is
+            // exactly the merge the server has not seen yet.
+            expect(client.upsertCalls).toEqual([
+                [
+                    rowOf({
+                        weekStart: '2026-07-06',
+                        ended: false,
+                        projects: [
+                            { id: 'p0', name: 'Original', tasks: [] },
+                            { id: 'p1', name: 'Local', tasks: [] },
+                            { id: 'p2', name: 'Server', tasks: [] },
+                        ],
+                    }),
+                ],
+            ]);
         });
 
         it('covers server unreachable: falls back to the durable local copy unchanged', async () => {
@@ -246,7 +309,19 @@ describe('CloudBackend', () => {
             client.rows = [rowOf(serverEditedB), rowOf(serverOnlyC)];
 
             await backend.load();
-            expect(backend.getWeeks()).toEqual([localOnlyA, localEditedB, serverOnlyC]);
+            expect(backend.getWeeks()).toEqual([
+                localOnlyA, // ours alone: kept
+                {
+                    // both changed it: descends to the projects and keeps each
+                    weekStart: '2026-07-13',
+                    ended: false,
+                    projects: [
+                        { id: 'p1', name: 'Local', tasks: [] },
+                        { id: 'p2', name: 'Server', tasks: [] },
+                    ],
+                },
+                serverOnlyC, // theirs alone: kept
+            ]);
         });
 
         it('covers pending changes after load: a push is actually scheduled, not just inferred from state', async () => {
