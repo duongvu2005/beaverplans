@@ -154,3 +154,63 @@ describe('Store', () => {
         expect(settled).toBe(true);
     });
 });
+
+describe('Store guest migration helpers', () => {
+    /*
+     * Testing strategy
+     *   hasLocalData: local empty | local has data | local has data but this
+     *     LocalBackend instance's own cache hasn't loaded it yet (proves the
+     *     reload — the case of a device that was signed in from the start)
+     *   localSnapshot: returns local's Weeks; does not touch cloud
+     *   clearLocal: empties local; cloud untouched
+     *   mergeLocalIntoCloud: cloud.setWeeks receives cloud folded with local
+     *     (via mergeGuestWeeks), then local is cleared
+     */
+
+    it('hasLocalData: false when the local backend holds nothing', async () => {
+        const store = new Store(new LocalBackend(new FakeStorage()), new SpyBackend(cloudWeeks));
+        expect(await store.hasLocalData()).toBe(false);
+    });
+
+    it('hasLocalData: true when the local backend holds data', async () => {
+        const { store } = makeStore();
+        expect(await store.hasLocalData()).toBe(true);
+    });
+
+    it('hasLocalData: true even when this LocalBackend instance has not loaded yet, as long as the shared storage already has guest data', async () => {
+        const storage = new FakeStorage();
+        new LocalBackend(storage).setWeeks(localWeeks); // written in an "earlier session"
+        const freshLocal = new LocalBackend(storage); // cache starts empty; load() never called
+        const store = new Store(freshLocal, new SpyBackend(cloudWeeks));
+        expect(await store.hasLocalData()).toBe(true);
+    });
+
+    it('localSnapshot: returns the local backend’s Weeks without touching cloud', async () => {
+        const { store, cloud } = makeStore();
+        expect(await store.localSnapshot()).toEqual(localWeeks);
+        expect(cloud.setWeeksCalls).toEqual([]);
+    });
+
+    it('clearLocal: empties the local backend, leaves cloud untouched', () => {
+        const { store, local, cloud } = makeStore();
+        store.clearLocal();
+        expect(local.getWeeks()).toEqual([]);
+        expect(cloud.resetCalls).toBe(0);
+    });
+
+    it('mergeLocalIntoCloud: folds local into cloud via mergeGuestWeeks, then clears local', async () => {
+        const { store, local, cloud } = makeStore();
+        let n = 0;
+        await store.mergeLocalIntoCloud(() => `new-${++n}`);
+
+        expect(cloud.setWeeksCalls).toHaveLength(1);
+        const merged = cloud.setWeeksCalls[0]!;
+        // cloud's own week (no collision with local's) is untouched...
+        expect(merged.find((w) => w.weekStart === '2026-07-20')?.projects).toEqual(
+            cloudWeeks[0]!.projects,
+        );
+        // ...and local's week lands wholesale, re-identified.
+        expect(merged.find((w) => w.weekStart === '2026-07-13')?.projects[0]?.id).toBe('new-1');
+        expect(local.getWeeks()).toEqual([]);
+    });
+});
