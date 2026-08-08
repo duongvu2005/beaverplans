@@ -1,4 +1,4 @@
-import type { Project } from '../core/types';
+import type { Project } from '@/core/types';
 import { ProjectList } from './ProjectList';
 import styles from './ProjectView.module.css';
 

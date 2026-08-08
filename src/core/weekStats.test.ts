@@ -11,7 +11,7 @@ import {
 import type { WeekProgress } from './weekStats';
 import { WEEK } from './types';
 import type { WeekPlan, Project, Task, Subtask, DayOfWeek, Weeks } from './types';
-import { sampleArchive } from '../fixtures/sampleArchive';
+import { sampleArchive } from '@/fixtures/sampleArchive';
 
 function wp(weekStart: string, done: number, total: number): WeekProgress {
     return { weekStart, progress: { done, total } };

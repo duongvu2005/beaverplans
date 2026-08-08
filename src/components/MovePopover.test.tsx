@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MovePopover } from './MovePopover';
-import type { Subtask } from '../core/types';
+import type { Subtask } from '@/core/types';
 
 describe('MovePopover', () => {
     /*

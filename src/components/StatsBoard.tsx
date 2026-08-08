@@ -1,6 +1,6 @@
-import type { DateKey, DayOfWeek, Weeks } from '../core/types';
-import { todayKey, weekStartOf } from '../core/dates';
-import { percentOf } from '../core/math';
+import type { DateKey, DayOfWeek, Weeks } from '@/core/types';
+import { todayKey, weekStartOf } from '@/core/dates';
+import { percentOf } from '@/core/math';
 import {
     bestWeek,
     currentStreak,
@@ -9,14 +9,14 @@ import {
     weekHistory,
     weekTrend,
     weekdayHistory,
-} from '../core/weekStats';
+} from '@/core/weekStats';
 import { WeekSpark } from './WeekSpark';
 import { weekdayColumns } from './sparkColumns';
 import { WeekTrend } from './WeekTrend';
 import { WeekRef } from './WeekRef';
 import { Heatmap, HeatmapLegend } from './Heatmap';
 import { heatColumns } from './heatColumns';
-import { useContainerWidth } from '../hooks/useContainerWidth';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import styles from './StatsBoard.module.css';
 
 /** A week counts toward the streak at half its planned weight or better. */

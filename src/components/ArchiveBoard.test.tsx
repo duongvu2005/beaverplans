@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ArchiveBoard } from './ArchiveBoard';
-import type { Weeks, WeekPlan } from '../core/types';
+import type { Weeks, WeekPlan } from '@/core/types';
 
 /*
  * Testing strategy

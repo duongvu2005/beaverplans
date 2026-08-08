@@ -1,9 +1,9 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Project } from '../core/types';
-import { projectProgress } from '../core/progress';
-import { isProjectDone } from '../core/projects';
+import type { Project } from '@/core/types';
+import { projectProgress } from '@/core/progress';
+import { isProjectDone } from '@/core/projects';
 import { TaskRow } from './TaskRow';
 import { Grip } from './Grip';
 import { DeadlineIcon } from './DeadlineIcon';

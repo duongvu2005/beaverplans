@@ -1,5 +1,5 @@
-import type { DayEntry } from '../core/daySchedule';
-import type { DateKey, DayOfWeek } from '../core/types';
+import type { DayEntry } from '@/core/daySchedule';
+import type { DateKey, DayOfWeek } from '@/core/types';
 import { DayCell } from './DayCell';
 import styles from './FocusedDay.module.css';
 

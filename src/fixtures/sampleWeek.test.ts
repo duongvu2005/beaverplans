@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidPlan } from '../core/projects';
+import { isValidPlan } from '@/core/projects';
 import { sampleWeek } from './sampleWeek';
 
 describe('sampleWeek fixture', () => {

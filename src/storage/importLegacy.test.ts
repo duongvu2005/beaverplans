@@ -14,9 +14,9 @@ import {
     type LegacyTask,
     type LegacyArchive,
 } from './importLegacy';
-import type { Task, Project, WeekPlan } from '../core/types';
-import { overallProgress, progressByDay } from '../core/progress';
-import { isValidWeeks } from '../core/weeks';
+import type { Task, Project, WeekPlan } from '@/core/types';
+import { overallProgress, progressByDay } from '@/core/progress';
+import { isValidWeeks } from '@/core/weeks';
 
 describe('toSubtask', () => {
     /*

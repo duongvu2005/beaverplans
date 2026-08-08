@@ -2,15 +2,15 @@ import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vite
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
-import { overallProgress } from './core/progress';
-import { earliestActiveWeek, endedWeeks, isValidWeeks, putWeek } from './core/weeks';
-import { sampleWeek } from './fixtures/sampleWeek';
-import { sampleArchive } from './fixtures/sampleArchive';
-import { STORAGE_KEY } from './storage/localBackend';
-import type { Weeks } from './core/types';
-import { supabase } from './storage/supabaseClient';
-import { cloudBackend, store } from './storage/instance';
-import { APP_CONTAINER_SELECTOR, DESKTOP_MIN_WIDTH } from './hooks/useContainerWidth';
+import { overallProgress } from '@/core/progress';
+import { earliestActiveWeek, endedWeeks, isValidWeeks, putWeek } from '@/core/weeks';
+import { sampleWeek } from '@/fixtures/sampleWeek';
+import { sampleArchive } from '@/fixtures/sampleArchive';
+import { STORAGE_KEY } from '@/storage/localBackend';
+import type { Weeks } from '@/core/types';
+import { supabase } from '@/storage/supabaseClient';
+import { cloudBackend, store } from '@/storage/instance';
+import { APP_CONTAINER_SELECTOR, DESKTOP_MIN_WIDTH } from '@/hooks/useContainerWidth';
 
 // App now calls useAuth, which talks to the real Supabase client — these
 // tests must stay hermetic (no real network, no timing dependent on it).
@@ -25,7 +25,7 @@ import { APP_CONTAINER_SELECTOR, DESKTOP_MIN_WIDTH } from './hooks/useContainerW
 // `from`/`rpc`/`channel` are on it because a signed-in App runs on CloudBackend
 // (see storage/instance.ts), which reaches all three. They answer as a small
 // fake server — see `server` below.
-vi.mock('./storage/supabaseClient', () => ({
+vi.mock('@/storage/supabaseClient', () => ({
     supabase: {
         auth: {
             getSession: vi.fn(),

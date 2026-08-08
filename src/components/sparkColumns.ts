@@ -1,5 +1,5 @@
-import type { DayOfWeek } from '../core/types';
-import type { DayProgress } from '../core/progress';
+import type { DayOfWeek } from '@/core/types';
+import type { DayProgress } from '@/core/progress';
 
 /**
  * One bar's worth of a WeekSpark. `key` is separate from `label` because

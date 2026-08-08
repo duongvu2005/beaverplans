@@ -1,8 +1,8 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { isTaskDone } from '../core/projects';
-import { taskProgress } from '../core/progress';
-import type { Task } from '../core/types';
+import { isTaskDone } from '@/core/projects';
+import { taskProgress } from '@/core/progress';
+import type { Task } from '@/core/types';
 import { Grip } from './Grip';
 import { EditIcon } from './EditIcon';
 import { CloseIcon } from './CloseIcon';

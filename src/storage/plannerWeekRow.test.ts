@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rowToWeekPlan, weekPlanToRow, type PlannerWeekRow } from './plannerWeekRow';
-import type { WeekPlan } from '../core/types';
+import type { WeekPlan } from '@/core/types';
 
 describe('rowToWeekPlan', () => {
     /*

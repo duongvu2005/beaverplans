@@ -3,7 +3,7 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Dialog } from './Dialog';
 import { CloseIcon } from './CloseIcon';
 import { EyeIcon, EyeOffIcon } from './EyeIcon';
-import { useContainerWidth } from '../hooks/useContainerWidth';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import shell from './dialogShell.module.css';
 import styles from './AuthForm.module.css';
 

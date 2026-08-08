@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Grip } from './Grip';
 import { CloseIcon } from './CloseIcon';
 import { WeightChip } from './WeightChip';
-import type { Subtask } from '../core/types';
+import type { Subtask } from '@/core/types';
 import styles from './SubtaskRow.module.css';
 
 type SubtaskRowProps = {

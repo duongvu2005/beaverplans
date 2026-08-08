@@ -1,5 +1,5 @@
-import { percentOf } from '../core/math';
-import type { Progress } from '../core/progress';
+import { percentOf } from '@/core/math';
+import type { Progress } from '@/core/progress';
 import styles from './ProgressBar.module.css';
 
 type ProgressBarProps = Progress & {

@@ -1,11 +1,11 @@
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 import type { Backend } from './backend';
 import type { LocalBackend } from './localBackend';
 import { mergeGuestWeeks } from './mergeGuest';
 // Not crypto.randomUUID directly: that is undefined outside a secure context
 // (the dev server reached over http from a phone is the real case), and newId
 // already carries the fallback for it.
-import { newId as defaultNewId } from '../utils/newId';
+import { newId as defaultNewId } from '@/utils/newId';
 
 export type BackendName = 'local' | 'cloud';
 

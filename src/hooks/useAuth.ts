@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import { supabase } from '../storage/supabaseClient';
-import { store } from '../storage/instance';
-import { cloudBackend } from '../storage/instance';
+import { supabase } from '@/storage/supabaseClient';
+import { store } from '@/storage/instance';
+import { cloudBackend } from '@/storage/instance';
 
 export type AuthUser = {
     id: string;

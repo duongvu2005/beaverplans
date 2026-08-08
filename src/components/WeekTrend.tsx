@@ -1,6 +1,6 @@
-import { monthAndDay } from '../core/dates';
-import { percentOf } from '../core/math';
-import type { TrendItem } from '../core/weekStats';
+import { monthAndDay } from '@/core/dates';
+import { percentOf } from '@/core/math';
+import type { TrendItem } from '@/core/weekStats';
 import spark from './WeekSpark.module.css';
 import styles from './WeekTrend.module.css';
 

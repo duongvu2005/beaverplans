@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { DateKey, WeekPlan, Weeks } from './core/types';
+import type { DateKey, WeekPlan, Weeks } from '@/core/types';
 import {
     FIRST_WEEK_START,
     LAST_WEEK_START,
@@ -9,7 +9,7 @@ import {
     todayKey,
     weekRangeLabel,
     weekStartOf,
-} from './core/dates';
+} from '@/core/dates';
 import {
     canEndWeek,
     carryForward,
@@ -23,32 +23,32 @@ import {
     moveWeek,
     putWeek,
     weekAt,
-} from './core/weeks';
-import { exportFilename, exportJson } from './storage/exportData';
-import { downloadText } from './utils/downloadText';
-import { newId } from './utils/newId';
-import { overallProgress } from './core/progress';
-import { WeekBoard } from './components/WeekBoard';
-import { ArchiveBoard } from './components/ArchiveBoard';
-import { StatsBoard } from './components/StatsBoard';
-import { ConfirmDialog } from './components/ConfirmDialog';
-import { DataPrivacyDialog } from './components/DataPrivacyDialog';
-import { GuestMergeDialog } from './components/GuestMergeDialog';
-import { GuestMergeSheet } from './components/GuestMergeSheet';
-import { WeekHeader } from './components/WeekHeader';
-import { WeekRef } from './components/WeekRef';
-import { TopBar, type View } from './components/TopBar';
-import { AuthForm, type AuthMode } from './components/AuthForm';
-import { ChangePasswordForm } from './components/ChangePasswordForm';
-import { AccountSettings } from './components/AccountSettings';
-import { ChangeEmailForm } from './components/ChangeEmailForm';
-import { RecoveryScreen } from './components/RecoveryScreen';
-import { useAuth } from './hooks/useAuth';
-import { useGuestMigration } from './hooks/useGuestMigration';
-import { useIsDesktop } from './hooks/useContainerWidth';
-import shell from './components/dialogShell.module.css';
+} from '@/core/weeks';
+import { exportFilename, exportJson } from '@/storage/exportData';
+import { downloadText } from '@/utils/downloadText';
+import { newId } from '@/utils/newId';
+import { overallProgress } from '@/core/progress';
+import { WeekBoard } from '@/components/WeekBoard';
+import { ArchiveBoard } from '@/components/ArchiveBoard';
+import { StatsBoard } from '@/components/StatsBoard';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { DataPrivacyDialog } from '@/components/DataPrivacyDialog';
+import { GuestMergeDialog } from '@/components/GuestMergeDialog';
+import { GuestMergeSheet } from '@/components/GuestMergeSheet';
+import { WeekHeader } from '@/components/WeekHeader';
+import { WeekRef } from '@/components/WeekRef';
+import { TopBar, type View } from '@/components/TopBar';
+import { AuthForm, type AuthMode } from '@/components/AuthForm';
+import { ChangePasswordForm } from '@/components/ChangePasswordForm';
+import { AccountSettings } from '@/components/AccountSettings';
+import { ChangeEmailForm } from '@/components/ChangeEmailForm';
+import { RecoveryScreen } from '@/components/RecoveryScreen';
+import { useAuth } from '@/hooks/useAuth';
+import { useGuestMigration } from '@/hooks/useGuestMigration';
+import { useIsDesktop } from '@/hooks/useContainerWidth';
+import shell from '@/components/dialogShell.module.css';
 import './App.css';
-import { useWeeks } from './hooks/useWeeks';
+import { useWeeks } from '@/hooks/useWeeks';
 
 export default function App() {
     const auth = useAuth();

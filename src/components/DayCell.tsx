@@ -1,6 +1,6 @@
-import type { DayEntry } from '../core/daySchedule';
-import type { DateKey, DayOfWeek } from '../core/types';
-import { dayStatusOf, weekStatusOf } from '../core/dates';
+import type { DayEntry } from '@/core/daySchedule';
+import type { DateKey, DayOfWeek } from '@/core/types';
+import { dayStatusOf, weekStatusOf } from '@/core/dates';
 import { MoveIcon } from './MoveIcon';
 import { CloseIcon } from './CloseIcon';
 import check from './checkbox.module.css';

@@ -48,9 +48,9 @@
  * forever with nothing to show for it.
  */
 
-import type { Subtask, Task, Project, WeekPlan, DateKey, DayOfWeek, Weeks } from '../core/types';
-import { toDateKey } from '../core/dates';
-import { putWeek } from '../core/weeks';
+import type { Subtask, Task, Project, WeekPlan, DateKey, DayOfWeek, Weeks } from '@/core/types';
+import { toDateKey } from '@/core/dates';
+import { putWeek } from '@/core/weeks';
 
 // can be mapped to a Subtask in beaverplans
 export type LegacySlot = {

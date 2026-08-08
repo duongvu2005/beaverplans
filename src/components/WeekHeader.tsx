@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import type { DateKey } from '../core/types';
-import type { Progress } from '../core/progress';
-import { percentOf } from '../core/math';
-import { addWeeks, monthAndDay, weekRangeLabel, weeksBetween } from '../core/dates';
+import type { DateKey } from '@/core/types';
+import type { Progress } from '@/core/progress';
+import { percentOf } from '@/core/math';
+import { addWeeks, monthAndDay, weekRangeLabel, weeksBetween } from '@/core/dates';
 import { relativeWeekName } from './weekLabels';
 import { ChevronIcon } from './ChevronIcon';
 import { WeekActionsSheet } from './WeekActionsSheet';

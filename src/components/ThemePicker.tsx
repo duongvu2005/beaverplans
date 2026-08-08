@@ -1,4 +1,4 @@
-import type { ThemePref } from '../hooks/useTheme';
+import type { ThemePref } from '@/hooks/useTheme';
 import styles from './ThemePicker.module.css';
 
 const OPTIONS: ReadonlyArray<{ value: ThemePref; label: string }> = [

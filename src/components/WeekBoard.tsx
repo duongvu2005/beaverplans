@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { DayOfWeek, Task, WeekPlan } from '../core/types';
+import type { DayOfWeek, Task, WeekPlan } from '@/core/types';
 import {
     addMissedDay,
     addProject,
@@ -16,10 +16,10 @@ import {
     setTaskName,
     toggleSubtask,
     toggleTask,
-} from '../core/projects';
-import { todayKey } from '../core/dates';
-import { isEnded } from '../core/weeks';
-import { newId } from '../utils/newId';
+} from '@/core/projects';
+import { todayKey } from '@/core/dates';
+import { isEnded } from '@/core/weeks';
+import { newId } from '@/utils/newId';
 import { ProjectView } from './ProjectView';
 import { WeekView } from './WeekView';
 import { TaskEditor } from './TaskEditor';

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
-import type { ThemePref } from '../hooks/useTheme';
+import type { ThemePref } from '@/hooks/useTheme';
 import { ThemePicker } from './ThemePicker';
 import styles from './AccountMenu.module.css';
 

@@ -1,5 +1,5 @@
-import { isValidPlan } from '../core/projects';
-import type { WeekPlan } from '../core/types';
+import { isValidPlan } from '@/core/projects';
+import type { WeekPlan } from '@/core/types';
 
 /**
  * One row of the `planner_weeks` table, as read back from Supabase.

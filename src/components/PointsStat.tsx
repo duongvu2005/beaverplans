@@ -1,4 +1,4 @@
-import type { Progress } from '../core/progress';
+import type { Progress } from '@/core/progress';
 import styles from './PointsStat.module.css';
 
 type PointsStatProps = Progress & { showPoint?: boolean };

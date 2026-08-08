@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 import { importLegacyForUser, type LegacyClient, type LegacyStateRow } from './migrateLegacy';
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 
 class FakeLegacyClient implements LegacyClient {
     public row: LegacyStateRow | null = null;

@@ -1,4 +1,4 @@
-import type { DateKey, WeekPlan, Weeks } from '../core/types';
+import type { DateKey, WeekPlan, Weeks } from '@/core/types';
 
 /**
  * The changes needed to bring persisted storage from previous to next.

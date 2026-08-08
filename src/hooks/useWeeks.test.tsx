@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useWeeks } from './useWeeks';
-import { store } from '../storage/instance';
-import type { Weeks } from '../core/types';
+import { store } from '@/storage/instance';
+import type { Weeks } from '@/core/types';
 
 // useWeeks talks to the real store singleton, which in turn talks to real
 // localStorage/Supabase — mocked here down to just the Backend methods this
 // hook actually calls, so `load()` can be held open and resolved by hand to
 // observe the state in between. A method missing from this factory is
 // undefined at the call site, so it has to keep up with the hook.
-vi.mock('../storage/instance', () => ({
+vi.mock('@/storage/instance', () => ({
     store: {
         load: vi.fn(),
         getWeeks: vi.fn(),

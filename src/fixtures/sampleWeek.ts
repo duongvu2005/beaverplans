@@ -1,4 +1,4 @@
-import type { WeekPlan } from '../core/types';
+import type { WeekPlan } from '@/core/types';
 
 /** Hand-built sample plan for rendering panes (day 11+) and derivation tests.
  *  Covers: project with/without deadline, a leaf task (isDone), subtasks across

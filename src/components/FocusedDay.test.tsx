@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { FocusedDay } from './FocusedDay';
-import type { DayEntry } from '../core/daySchedule';
-import type { Subtask } from '../core/types';
+import type { DayEntry } from '@/core/daySchedule';
+import type { Subtask } from '@/core/types';
 
 describe('FocusedDay', () => {
     /*

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CopyWeekDialog } from './CopyWeekDialog';
-import type { Project, WeekPlan } from '../core/types';
+import type { Project, WeekPlan } from '@/core/types';
 
 /*
  * Testing strategy

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGuestMigration } from './useGuestMigration';
-import { store } from '../storage/instance';
-import type { Weeks } from '../core/types';
+import { store } from '@/storage/instance';
+import type { Weeks } from '@/core/types';
 
 // Mocked down to just the Store methods this hook actually calls — same
 // approach as useWeeks.test.tsx. A method missing here reads as undefined and
 // throws on call, which the hook's catch would swallow into "gave up quietly",
 // so this list has to keep up with the hook.
-vi.mock('../storage/instance', () => ({
+vi.mock('@/storage/instance', () => ({
     store: {
         hasLocalData: vi.fn(),
         cloudSnapshot: vi.fn(),

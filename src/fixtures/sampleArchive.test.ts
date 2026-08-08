@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isValidPlan } from '../core/projects';
-import { isValidWeekStart } from '../core/dates';
+import { isValidPlan } from '@/core/projects';
+import { isValidWeekStart } from '@/core/dates';
 import { sampleArchive } from './sampleArchive';
 
 describe('sampleArchive fixture', () => {

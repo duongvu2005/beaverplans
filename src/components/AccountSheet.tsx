@@ -1,5 +1,5 @@
-import type { ThemePref } from '../hooks/useTheme';
-import type { AuthUser } from '../hooks/useAuth';
+import type { ThemePref } from '@/hooks/useTheme';
+import type { AuthUser } from '@/hooks/useAuth';
 import { Dialog } from './Dialog';
 import { ThemePicker } from './ThemePicker';
 import shell from './dialogShell.module.css';

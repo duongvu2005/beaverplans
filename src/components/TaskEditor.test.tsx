@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TaskEditor } from './TaskEditor';
-import type { Task, Subtask, DayOfWeek } from '../core/types';
+import type { Task, Subtask, DayOfWeek } from '@/core/types';
 
 describe('TaskEditor', () => {
     /*

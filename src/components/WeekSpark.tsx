@@ -1,4 +1,4 @@
-import { percentOf } from '../core/math';
+import { percentOf } from '@/core/math';
 import type { SparkColumn } from './sparkColumns';
 import styles from './WeekSpark.module.css';
 

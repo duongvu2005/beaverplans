@@ -1,4 +1,4 @@
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 
 /**
  * Tags what an export file is, so a future importer can refuse a file it does

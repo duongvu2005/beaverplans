@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { Weeks } from '../core/types';
-import { store } from '../storage/instance';
-import { decideMigration } from '../storage/mergeGuest';
+import type { Weeks } from '@/core/types';
+import { store } from '@/storage/instance';
+import { decideMigration } from '@/storage/mergeGuest';
 
 type UseGuestMigrationResult = {
     /** true while the "unsaved guest work found" dialog should be shown */

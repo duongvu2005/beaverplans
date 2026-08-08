@@ -1,12 +1,12 @@
-import type { WeekPlan } from '../core/types';
+import type { WeekPlan } from '@/core/types';
 import {
     overallProgress,
     progressByDay,
     projectProgress,
     taskMisses,
     taskProgress,
-} from '../core/progress';
-import { percentOf } from '../core/math';
+} from '@/core/progress';
+import { percentOf } from '@/core/math';
 import { Dialog } from './Dialog';
 import { WeekSpark } from './WeekSpark';
 import { weekdayColumns } from './sparkColumns';

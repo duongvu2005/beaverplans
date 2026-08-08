@@ -1,5 +1,5 @@
-import type { DateKey } from '../core/types';
-import { weeksBetween } from '../core/dates';
+import type { DateKey } from '@/core/types';
+import { weeksBetween } from '@/core/dates';
 
 /**
  * Names a week relative to the week containing today.

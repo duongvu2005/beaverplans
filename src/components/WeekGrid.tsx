@@ -1,6 +1,6 @@
-import type { DateKey, DayOfWeek } from '../core/types';
-import type { DaySchedule } from '../core/daySchedule';
-import type { DayProgress } from '../core/progress';
+import type { DateKey, DayOfWeek } from '@/core/types';
+import type { DaySchedule } from '@/core/daySchedule';
+import type { DayProgress } from '@/core/progress';
 import { DayColumn } from './DayColumn';
 import styles from './WeekGrid.module.css';
 

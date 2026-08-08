@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Store, type BackendName } from './store';
 import { LocalBackend, type KeyValueStore } from './localBackend';
 import type { Backend } from './backend';
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 
 // --- fakes ---
 class FakeStorage implements KeyValueStore {

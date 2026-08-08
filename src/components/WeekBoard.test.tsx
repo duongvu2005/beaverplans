@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WeekBoard } from './WeekBoard';
-import type { Project, Subtask, Task, WeekPlan, DayOfWeek } from '../core/types';
+import type { Project, Subtask, Task, WeekPlan, DayOfWeek } from '@/core/types';
 
 describe('WeekBoard', () => {
     /*

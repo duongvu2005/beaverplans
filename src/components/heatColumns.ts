@@ -1,6 +1,6 @@
-import { addWeeks, dateKeyForDay, MONTHS } from '../core/dates';
-import { WEEK } from '../core/types';
-import type { DateKey } from '../core/types';
+import { addWeeks, dateKeyForDay, MONTHS } from '@/core/dates';
+import { WEEK } from '@/core/types';
+import type { DateKey } from '@/core/types';
 
 /** How many week-columns the heatmap draws, its most recent week last. */
 export const HEAT_WEEKS = 52;

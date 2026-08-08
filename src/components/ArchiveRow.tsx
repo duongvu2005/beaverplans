@@ -1,6 +1,6 @@
-import type { WeekPlan } from '../core/types';
-import { overallProgress, progressByDay } from '../core/progress';
-import { percentOf } from '../core/math';
+import type { WeekPlan } from '@/core/types';
+import { overallProgress, progressByDay } from '@/core/progress';
+import { percentOf } from '@/core/math';
 import { WeekSpark } from './WeekSpark';
 import { weekdayColumns } from './sparkColumns';
 import { CopyIcon } from './CopyIcon';

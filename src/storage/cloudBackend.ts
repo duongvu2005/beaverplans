@@ -1,7 +1,7 @@
-import type { WeekPlan, Weeks } from '../core/types';
+import type { WeekPlan, Weeks } from '@/core/types';
 import type { Backend } from './backend';
-import { isEmptyWeek } from '../core/weeks';
-import { mergeWeeks } from '../core/mergeWeeks';
+import { isEmptyWeek } from '@/core/weeks';
+import { mergeWeeks } from '@/core/mergeWeeks';
 import { diffWeeks } from './diffWeeks';
 import { LocalBackend, type KeyValueStore } from './localBackend';
 import { rowToWeekPlan, type PlannerWeekRow } from './plannerWeekRow';

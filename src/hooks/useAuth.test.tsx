@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useAuth } from './useAuth';
-import { supabase } from '../storage/supabaseClient';
-import { store, cloudBackend } from '../storage/instance';
+import { supabase } from '@/storage/supabaseClient';
+import { store, cloudBackend } from '@/storage/instance';
 
 // The supabase-js surface this hook touches. signIn/resetPassword/updatePassword
 // are deliberately not exercised below: each is a three-line pass-through whose
@@ -12,7 +12,7 @@ import { store, cloudBackend } from '../storage/instance';
 // are the ones that decide something on top of the call — signUp's return,
 // verifyPassword's error triage, signOut's ordering, cancelRecovery's refusal
 // to clear the gate on failure.
-vi.mock('../storage/supabaseClient', () => ({
+vi.mock('@/storage/supabaseClient', () => ({
     supabase: {
         auth: {
             getSession: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock('../storage/supabaseClient', () => ({
     },
 }));
 
-vi.mock('../storage/instance', () => ({
+vi.mock('@/storage/instance', () => ({
     store: { useBackend: vi.fn() },
     cloudBackend: { reset: vi.fn() },
 }));

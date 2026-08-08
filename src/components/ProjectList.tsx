@@ -17,8 +17,8 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import type { Project } from '../core/types';
-import { isProjectDone, isTaskDone, reorderTask } from '../core/projects';
+import type { Project } from '@/core/types';
+import { isProjectDone, isTaskDone, reorderTask } from '@/core/projects';
 import { ProjectCard } from './ProjectCard';
 import { Grip } from './Grip';
 import { beforeIdForDrop } from './dndReorder';

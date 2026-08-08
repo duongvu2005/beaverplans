@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Project, WeekPlan } from '../core/types';
+import type { Project, WeekPlan } from '@/core/types';
 import { ConfirmDialog } from './ConfirmDialog';
 import shell from './dialogShell.module.css';
 import check from './checkbox.module.css';

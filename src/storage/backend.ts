@@ -1,4 +1,4 @@
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 
 export interface Backend {
     /**

@@ -5,8 +5,8 @@ import { Avatar } from './Avatar';
 import { ChevronIcon } from './ChevronIcon';
 import { HeartIcon } from './HeartIcon';
 import { UserIcon } from './UserIcon';
-import { useTheme } from '../hooks/useTheme';
-import type { AuthUser } from '../hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
+import type { AuthUser } from '@/hooks/useAuth';
 import styles from './TopBar.module.css';
 
 export type View = 'plan' | 'stats' | 'archive';

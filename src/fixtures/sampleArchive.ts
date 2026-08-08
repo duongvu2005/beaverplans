@@ -1,4 +1,4 @@
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 
 /** Hand-built sample archive for rendering the archive pane and stats views.
  *  Six ended weeks, deliberately varied so the list and its derived numbers have

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { exportJson, exportFilename, EXPORT_FORMAT, type ExportEnvelope } from './exportData';
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 
 const week = (weekStart: string, ended: boolean): Weeks[number] => ({
     weekStart,

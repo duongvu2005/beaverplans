@@ -11,7 +11,7 @@
  * moving.
  */
 
-import { weekStartOf } from '../core/dates';
+import { weekStartOf } from '@/core/dates';
 import { importLegacy, type LegacyArchive, type LegacyTask } from './importLegacy';
 
 /**

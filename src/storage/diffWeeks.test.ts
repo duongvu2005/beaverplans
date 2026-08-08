@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { diffWeeks } from './diffWeeks';
-import type { WeekPlan, Weeks } from '../core/types';
+import type { WeekPlan, Weeks } from '@/core/types';
 
 describe('diffWeeks', () => {
     /*

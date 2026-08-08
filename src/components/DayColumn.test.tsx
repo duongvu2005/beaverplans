@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DayColumn } from './DayColumn';
-import type { DaySchedule, DayEntry } from '../core/daySchedule';
-import type { Subtask } from '../core/types';
+import type { DaySchedule, DayEntry } from '@/core/daySchedule';
+import type { Subtask } from '@/core/types';
 
 describe('DayColumn', () => {
     /*

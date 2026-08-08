@@ -1,5 +1,5 @@
-import type { DayOfWeek } from '../core/types';
-import type { DayProgress } from '../core/progress';
+import type { DayOfWeek } from '@/core/types';
+import type { DayProgress } from '@/core/progress';
 import styles from './DayRail.module.css';
 import { ProgressBar } from './ProgressBar';
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog } from './Dialog';
-import { parseDeadline } from '../core/deadline';
-import type { Project } from '../core/types';
+import { parseDeadline } from '@/core/deadline';
+import type { Project } from '@/core/types';
 import shell from './dialogShell.module.css';
 import styles from './ProjectEditor.module.css';
 

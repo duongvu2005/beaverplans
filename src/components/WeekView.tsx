@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { DayOfWeek, Project } from '../core/types';
-import { scheduleByDay } from '../core/daySchedule';
-import { progressByDay } from '../core/progress';
-import { todayInWeek } from '../core/dates';
+import type { DayOfWeek, Project } from '@/core/types';
+import { scheduleByDay } from '@/core/daySchedule';
+import { progressByDay } from '@/core/progress';
+import { todayInWeek } from '@/core/dates';
 import { WeekGrid } from './WeekGrid';
 import { DayRail } from './DayRail';
 import { FocusedDay } from './FocusedDay';

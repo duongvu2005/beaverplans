@@ -1,6 +1,6 @@
-import type { Weeks } from '../core/types';
+import type { Weeks } from '@/core/types';
 import type { Backend } from './backend';
-import { isValidWeeks } from '../core/weeks';
+import { isValidWeeks } from '@/core/weeks';
 
 export const STORAGE_KEY = 'beaverplans.state.v1';
 

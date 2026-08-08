@@ -1,6 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import type { Weeks } from '../core/types';
-import { store } from '../storage/instance';
+import type { Weeks } from '@/core/types';
+import { store } from '@/storage/instance';
 
 /**
  * @param epoch bumped by useAuth whenever the active backend actually

@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DayRail } from './DayRail';
-import { WEEK } from '../core/types';
-import type { DayProgress } from '../core/progress';
+import { WEEK } from '@/core/types';
+import type { DayProgress } from '@/core/progress';
 
 describe('DayRail', () => {
     /*

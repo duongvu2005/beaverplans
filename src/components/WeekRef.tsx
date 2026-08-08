@@ -1,5 +1,5 @@
-import type { DateKey } from '../core/types';
-import { weekRangeLabel } from '../core/dates';
+import type { DateKey } from '@/core/types';
+import { weekRangeLabel } from '@/core/dates';
 import styles from './WeekRef.module.css';
 
 type WeekRefProps = {

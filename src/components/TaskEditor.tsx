@@ -20,12 +20,12 @@ import {
 } from '@dnd-kit/sortable';
 import { getEventCoordinates } from '@dnd-kit/utilities';
 import { Dialog } from './Dialog';
-import { buildTask } from '../core/buildTask';
-import { canMoveSubtaskTo } from '../core/projects';
-import { parseDeadline } from '../core/deadline';
-import { WEEK } from '../core/types';
-import type { Task, Subtask, DayOfWeek } from '../core/types';
-import { newId } from '../utils/newId';
+import { buildTask } from '@/core/buildTask';
+import { canMoveSubtaskTo } from '@/core/projects';
+import { parseDeadline } from '@/core/deadline';
+import { WEEK } from '@/core/types';
+import type { Task, Subtask, DayOfWeek } from '@/core/types';
+import { newId } from '@/utils/newId';
 import styles from './TaskEditor.module.css';
 import subStyles from './SubtaskRow.module.css';
 import { SubtaskRow } from './SubtaskRow';
@@ -38,7 +38,7 @@ import {
     removeSubtasksOnDay,
     setSubtaskNote as setNoteInDraft,
     setSubtaskWeight as setWeightInDraft,
-} from '../core/subtaskDraft';
+} from '@/core/subtaskDraft';
 import { beforeIdForDrop } from './dndReorder';
 
 type TaskEditorProps = {

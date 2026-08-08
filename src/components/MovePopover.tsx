@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Dialog } from './Dialog';
-import { dayStatusOf } from '../core/dates';
-import { canMoveSubtaskTo } from '../core/projects';
-import { WEEK } from '../core/types';
-import type { DateKey, DayOfWeek, Subtask } from '../core/types';
+import { dayStatusOf } from '@/core/dates';
+import { canMoveSubtaskTo } from '@/core/projects';
+import { WEEK } from '@/core/types';
+import type { DateKey, DayOfWeek, Subtask } from '@/core/types';
 import check from './checkbox.module.css';
 import shell from './dialogShell.module.css';
 import styles from './moveUi.module.css';

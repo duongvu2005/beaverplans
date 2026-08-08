@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { DateKey, Project, WeekPlan, Weeks } from '../core/types';
-import { removeWeek } from '../core/weeks';
-import { weekRangeLabel } from '../core/dates';
+import type { DateKey, Project, WeekPlan, Weeks } from '@/core/types';
+import { removeWeek } from '@/core/weeks';
+import { weekRangeLabel } from '@/core/dates';
 import { ArchiveRow } from './ArchiveRow';
 import { ArchiveQuickLook } from './ArchiveQuickLook';
 import { ConfirmDialog } from './ConfirmDialog';

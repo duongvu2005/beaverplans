@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { decideMigration, mergeGuestWeeks } from './mergeGuest';
-import { isValidWeeks, weekAt } from '../core/weeks';
-import type { DateKey, Project, Task, WeekPlan, Weeks } from '../core/types';
+import { isValidWeeks, weekAt } from '@/core/weeks';
+import type { DateKey, Project, Task, WeekPlan, Weeks } from '@/core/types';
 
 const JUL06 = '2026-07-06';
 const JUL13 = '2026-07-13';

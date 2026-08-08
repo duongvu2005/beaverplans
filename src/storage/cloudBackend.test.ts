@@ -6,7 +6,7 @@ import {
     type RemoteWatcher,
 } from './cloudBackend';
 import { LocalBackend, type KeyValueStore } from './localBackend';
-import type { WeekPlan, Weeks } from '../core/types';
+import type { WeekPlan, Weeks } from '@/core/types';
 
 const DEBOUNCE_MS = 500;
 const CURRENT_KEY = 'beaverplans.cloudCache.current.v1';

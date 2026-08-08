@@ -14,8 +14,8 @@
  * here tries to guess which tasks "are" the same one.
  */
 
-import type { Project, Subtask, Task, WeekPlan, Weeks } from '../core/types';
-import { putWeek } from '../core/weeks';
+import type { Project, Subtask, Task, WeekPlan, Weeks } from '@/core/types';
+import { putWeek } from '@/core/weeks';
 
 function reIdSubtask(subtask: Subtask, newId: () => string): Subtask {
     return { ...subtask, id: newId() };
