@@ -5,9 +5,9 @@ import type { Project } from '@/core/types';
 import { projectProgress } from '@/core/progress';
 import { isProjectDone } from '@/core/projects';
 import { TaskRow } from './TaskRow';
-import { Grip } from './Grip';
-import { DeadlineIcon } from './DeadlineIcon';
-import { CloseIcon } from './CloseIcon';
+import { Grip } from '@/components/shared/icons/Grip';
+import { DeadlineIcon } from '@/components/shared/icons/DeadlineIcon';
+import { CloseIcon } from '@/components/shared/icons/CloseIcon';
 import styles from './ProjectCard.module.css';
 import { ProgressBar } from './ProgressBar';
 

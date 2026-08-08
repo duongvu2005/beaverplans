@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Dialog } from './Dialog';
-import { ChevronIcon } from './ChevronIcon';
+import { ChevronIcon } from '@/components/shared/icons/ChevronIcon';
 import { Avatar } from './Avatar';
 import shell from './dialogShell.module.css';
 import styles from './AccountSettings.module.css';

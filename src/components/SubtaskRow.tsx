@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Grip } from './Grip';
-import { CloseIcon } from './CloseIcon';
+import { Grip } from '@/components/shared/icons/Grip';
+import { CloseIcon } from '@/components/shared/icons/CloseIcon';
 import { WeightChip } from './WeightChip';
 import type { Subtask } from '@/core/types';
 import styles from './SubtaskRow.module.css';

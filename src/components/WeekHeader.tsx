@@ -4,7 +4,7 @@ import type { Progress } from '@/core/progress';
 import { percentOf } from '@/core/math';
 import { addWeeks, monthAndDay, weekRangeLabel, weeksBetween } from '@/core/dates';
 import { relativeWeekName } from './weekLabels';
-import { ChevronIcon } from './ChevronIcon';
+import { ChevronIcon } from '@/components/shared/icons/ChevronIcon';
 import { WeekActionsSheet } from './WeekActionsSheet';
 import styles from './WeekHeader.module.css';
 

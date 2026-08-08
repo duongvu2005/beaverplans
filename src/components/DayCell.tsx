@@ -1,8 +1,8 @@
 import type { DayEntry } from '@/core/daySchedule';
 import type { DateKey, DayOfWeek } from '@/core/types';
 import { dayStatusOf, weekStatusOf } from '@/core/dates';
-import { MoveIcon } from './MoveIcon';
-import { CloseIcon } from './CloseIcon';
+import { MoveIcon } from '@/components/shared/icons/MoveIcon';
+import { CloseIcon } from '@/components/shared/icons/CloseIcon';
 import check from './checkbox.module.css';
 import styles from './DayCell.module.css';
 

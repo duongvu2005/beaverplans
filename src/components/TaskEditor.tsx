@@ -29,7 +29,7 @@ import { newId } from '@/utils/newId';
 import styles from './TaskEditor.module.css';
 import subStyles from './SubtaskRow.module.css';
 import { SubtaskRow } from './SubtaskRow';
-import { Grip } from './Grip';
+import { Grip } from '@/components/shared/icons/Grip';
 import shell from './dialogShell.module.css';
 import {
     addSubtaskOn as addSubtaskToDraft,

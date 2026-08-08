@@ -3,8 +3,8 @@ import { overallProgress, progressByDay } from '@/core/progress';
 import { percentOf } from '@/core/math';
 import { WeekSpark } from './WeekSpark';
 import { weekdayColumns } from './sparkColumns';
-import { CopyIcon } from './CopyIcon';
-import { CloseIcon } from './CloseIcon';
+import { CopyIcon } from '@/components/shared/icons/CopyIcon';
+import { CloseIcon } from '@/components/shared/icons/CloseIcon';
 import styles from './ArchiveRow.module.css';
 
 type ArchiveRowProps = {

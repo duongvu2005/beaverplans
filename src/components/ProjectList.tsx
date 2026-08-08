@@ -20,7 +20,7 @@ import {
 import type { Project } from '@/core/types';
 import { isProjectDone, isTaskDone, reorderTask } from '@/core/projects';
 import { ProjectCard } from './ProjectCard';
-import { Grip } from './Grip';
+import { Grip } from '@/components/shared/icons/Grip';
 import { beforeIdForDrop } from './dndReorder';
 import styles from './ProjectList.module.css';
 import cardStyles from './ProjectCard.module.css';

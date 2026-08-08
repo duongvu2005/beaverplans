@@ -47,8 +47,8 @@ export default defineConfig({
 
                 // Static SVG paths with no props but className. A test could
                 // only re-type the path data.
-                'src/components/*Icon.tsx',
-                'src/components/Grip.tsx',
+                'src/components/shared/icons/*Icon.tsx',
+                'src/components/shared/icons/Grip.tsx',
 
                 // Test-only sample data, exercised by every test that imports it.
                 'src/fixtures/**',

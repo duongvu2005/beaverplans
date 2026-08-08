@@ -1,8 +1,8 @@
 import { useRef, useState, type SubmitEvent, type ReactNode } from 'react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Dialog } from './Dialog';
-import { CloseIcon } from './CloseIcon';
-import { EyeIcon, EyeOffIcon } from './EyeIcon';
+import { CloseIcon } from '@/components/shared/icons/CloseIcon';
+import { EyeIcon, EyeOffIcon } from '@/components/shared/icons/EyeIcon';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import shell from './dialogShell.module.css';
 import styles from './AuthForm.module.css';
