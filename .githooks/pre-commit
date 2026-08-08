@@ -10,7 +10,7 @@ if ! npx tsc -b; then
     exit 1
 fi
 
-if ! npx prettier --check src; then
-    printf '\npre-commit: formatting. Fix with: npx prettier --write src\n'
+if ! npm run --silent format:check; then
+    printf '\npre-commit: formatting. Fix with: npm run format\n'
     exit 1
 fi
