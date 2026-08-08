@@ -56,18 +56,19 @@ export type LegacyStateRow = {
  *          already migrated, or a failure. Never throws: a failure leaves
  *          migrated_at null, so the next sign-in simply tries again.
  */
-export async function importLegacyForUser(
-    client: LegacyClient,
-    userId: string,
-): Promise<boolean> {
+export async function importLegacyForUser(client: LegacyClient, userId: string): Promise<boolean> {
     try {
         const { data, error } = await client
             .from('old_planner_state')
             .select('tasks, archives, week_start, migrated_at')
             .eq('user_id', userId)
             .maybeSingle();
-        if (error !== null || data === null || data.migrated_at !== null) {
+        if (error !== null) {
+            warn('reading the legacy row failed', error);
             return false;
+        }
+        if (data === null || data.migrated_at !== null) {
+            return false; // nothing to do, and not worth reporting
         }
 
         const weeks = importLegacy({
@@ -80,8 +81,24 @@ export async function importLegacyForUser(
         // migrated, and an empty legacy row is still a row that should stop
         // being read on every future sign-in.
         const { error: rpcError } = await client.rpc('migrate_old_planner', { weeks });
-        return rpcError === null;
-    } catch {
+        if (rpcError !== null) {
+            warn('the import rpc failed', rpcError);
+            return false;
+        }
+        return true;
+    } catch (thrown) {
+        // Most likely the converter meeting a legacy shape it does not expect.
+        warn('converting the legacy row threw', thrown);
         return false;
     }
+}
+
+/**
+ * Reports a failure without making it the user's problem. The import is
+ * designed to fail quietly and retry on the next load, but failing quietly
+ * AND invisibly leaves a once-per-user event with no way to find out why it
+ * did not happen.
+ */
+function warn(what: string, detail: unknown): void {
+    console.warn(`[legacy import] ${what}:`, detail);
 }

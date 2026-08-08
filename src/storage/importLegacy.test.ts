@@ -613,3 +613,119 @@ describe('importLegacy — real export from a fake account', () => {
         }
     });
 });
+
+describe('importLegacy — malformed legacy shapes', () => {
+    /*
+     * Testing strategy
+     *   partition on which collection is missing: subs | slots | snapshot |
+     *     missed
+     *   partition on the consequence if it were trusted: the node's own
+     *     conversion throws | the whole import aborts
+     *
+     * These are not hypothetical: the old app writes `archive.snapshot || []`
+     * in four places, so it defends against exactly these rows. Being strict
+     * costs a user their entire history, because one throw aborts the import
+     * and the caller reports failure silently.
+     */
+
+    const ids = () => {
+        let n = 0;
+        return () => `id${++n}`;
+    };
+
+    it('covers a project with no subs: becomes a project with no tasks', () => {
+        const weeks = importLegacy(
+            {
+                tasks: [{ id: 'a', title: 'Thesis', deadline: null } as unknown as LegacyTask],
+                archives: [],
+                week_start: '2026-08-03',
+            },
+            ids(),
+        );
+        expect(weeks[0]?.projects).toEqual([
+            expect.objectContaining({ name: 'Thesis', tasks: [] }),
+        ]);
+    });
+
+    it('covers a sub with no slots: becomes a leaf task, isDone defaulting to false', () => {
+        const weeks = importLegacy(
+            {
+                tasks: [
+                    {
+                        id: 'a',
+                        title: 'Thesis',
+                        deadline: null,
+                        subs: [{ id: 'b', title: 'Read', desc: '' } as unknown as LegacySub],
+                    },
+                ],
+                archives: [],
+                week_start: '2026-08-03',
+            },
+            ids(),
+        );
+        expect(weeks[0]?.projects[0]?.tasks[0]).toEqual(
+            expect.objectContaining({ name: 'Read', isDone: false, subtasks: [] }),
+        );
+    });
+
+    it('covers a slot with no missed: becomes a subtask with no missed days', () => {
+        const weeks = importLegacy(
+            {
+                tasks: [
+                    {
+                        id: 'a',
+                        title: 'Thesis',
+                        deadline: null,
+                        subs: [
+                            {
+                                id: 'b',
+                                title: 'Read',
+                                desc: '',
+                                done: false,
+                                deadline: null,
+                                slots: [{ day: 'mon', done: true } as unknown as LegacySlot],
+                            },
+                        ],
+                    },
+                ],
+                archives: [],
+                week_start: '2026-08-03',
+            },
+            ids(),
+        );
+        expect(weeks[0]?.projects[0]?.tasks[0]?.subtasks[0]).toEqual(
+            expect.objectContaining({ assignedDay: 'mon', isDone: true, missedDays: [] }),
+        );
+    });
+
+    it('covers an archive with no snapshot: dropped as an empty week, rest still imported', () => {
+        const weeks = importLegacy(
+            {
+                tasks: [{ id: 'a', title: 'Live', deadline: null, subs: [] }],
+                archives: [
+                    { start: new Date(2026, 6, 27).toISOString() } as unknown as LegacyArchive,
+                ],
+                week_start: '2026-08-03',
+            },
+            ids(),
+        );
+        // The malformed archive converts to an empty week, which Weeks forbids,
+        // so putWeek drops it -- but the live week survives, which is the point.
+        expect(weeks.map((w) => w.weekStart)).toEqual(['2026-08-03']);
+    });
+
+    it('covers one malformed entry among good ones: does not abort the import', () => {
+        const weeks = importLegacy(
+            {
+                tasks: [
+                    { id: 'a', title: 'Good', deadline: null, subs: [] },
+                    { id: 'b', title: 'Bad', deadline: null } as unknown as LegacyTask,
+                ],
+                archives: [],
+                week_start: '2026-08-03',
+            },
+            ids(),
+        );
+        expect(weeks[0]?.projects.map((p) => p.name)).toEqual(['Good', 'Bad']);
+    });
+});

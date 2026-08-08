@@ -36,6 +36,16 @@
  *
  * Ids: every new node gets a fresh id via the injected newId(); old ids are
  * ignored (slots never had one), which guarantees the uniqueness RI.
+ *
+ * Missing collections (`subs`, `slots`, `snapshot`, `missed`) and a missing
+ * `done` are treated as empty/false rather than trusted to be present, even
+ * though the types above declare them required. The types describe well-formed
+ * legacy data; what actually arrives is JSON from years of a schemaless store,
+ * and the old app itself writes `archive.snapshot || []` in four places, so
+ * those rows exist. Being strict here does not surface a bad row, it discards
+ * a whole account's history: one throw aborts the entire import, and since the
+ * caller reports failure quietly, that user would retry and fail on every load
+ * forever with nothing to show for it.
  */
 
 import type { Subtask, Task, Project, WeekPlan, DateKey, DayOfWeek, Weeks } from '../core/types';
@@ -100,9 +110,9 @@ export function toSubtask(slot: LegacySlot, newId: () => string): Subtask {
     return {
         id: newId(),
         assignedDay: slot.day as DayOfWeek,
-        isDone: slot.done,
+        isDone: slot.done ?? false,
         weight: 1,
-        missedDays: slot.missed as DayOfWeek[],
+        missedDays: (slot.missed ?? []) as DayOfWeek[],
         ...(slot.desc ? { description: slot.desc } : {}),
     };
 }
@@ -122,11 +132,12 @@ export function toSubtask(slot: LegacySlot, newId: () => string): Subtask {
  *          - description = sub.desc if non-empty (else omitted)
  */
 export function toTask(sub: LegacySub, newId: () => string): Task {
+    const slots = sub.slots ?? [];
     return {
         id: newId(),
         name: sub.title,
-        ...(!sub.slots.length ? { isDone: sub.done } : {}),
-        subtasks: sub.slots.map((slot) => toSubtask(slot, newId)),
+        ...(!slots.length ? { isDone: sub.done ?? false } : {}),
+        subtasks: slots.map((slot) => toSubtask(slot, newId)),
         ...(sub.deadline ? { deadline: sub.deadline } : {}),
         ...(sub.desc ? { description: sub.desc } : {}),
     };
@@ -148,7 +159,7 @@ export function toProject(task: LegacyTask, newId: () => string): Project {
     return {
         id: newId(),
         name: task.title,
-        tasks: task.subs.map((sub) => toTask(sub, newId)),
+        tasks: (task.subs ?? []).map((sub) => toTask(sub, newId)),
         ...(task.deadline ? { deadline: task.deadline } : {}),
     };
 }
@@ -212,7 +223,7 @@ export function activeToWeekPlan(
 export function archiveToWeekPlan(archive: LegacyArchive, newId: () => string): WeekPlan {
     return {
         weekStart: weekStartFromIso(archive.start),
-        projects: archive.snapshot.map((task) => toProject(task, newId)),
+        projects: (archive.snapshot ?? []).map((task) => toProject(task, newId)),
         ended: true,
     };
 }
