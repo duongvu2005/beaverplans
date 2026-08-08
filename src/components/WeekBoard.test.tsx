@@ -107,9 +107,7 @@ describe('WeekBoard', () => {
     });
 
     it('asks before deleting a project that has tasks', async () => {
-        const { onChange, user } = board(
-            plan([project('p1', 'English', [task('t1', 'Essay')])]),
-        );
+        const { onChange, user } = board(plan([project('p1', 'English', [task('t1', 'Essay')])]));
 
         await user.click(tree().getByRole('button', { name: 'Delete project' }));
 
@@ -200,9 +198,7 @@ describe('WeekBoard', () => {
     });
 
     it('dismissing the delete changes nothing', async () => {
-        const { onChange, user } = board(
-            plan([project('p1', 'English', [task('t1', 'Essay')])]),
-        );
+        const { onChange, user } = board(plan([project('p1', 'English', [task('t1', 'Essay')])]));
 
         await user.click(tree().getByRole('button', { name: 'Delete project' }));
         await user.click(screen.getByRole('button', { name: 'Cancel' }));

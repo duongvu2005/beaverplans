@@ -298,12 +298,10 @@ describe('useAuth', () => {
     // Safari's private mode throws on localStorage rather than returning null.
     // The marker is a convenience; the app is not.
     it('storage that throws costs the marker, not the boot', async () => {
-        const getItem = vi
-            .spyOn(Storage.prototype, 'getItem')
-            .mockImplementation((key: string) => {
-                if (key === RECOVERY_KEY) throw new Error('denied');
-                return null;
-            });
+        const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key: string) => {
+            if (key === RECOVERY_KEY) throw new Error('denied');
+            return null;
+        });
 
         const { result } = await mountWith(sessionFor('u1'));
 
@@ -414,7 +412,9 @@ describe('useAuth', () => {
         await result.current.signUp('a@b.c', 'pw', '  duong  ', 'tok');
 
         expect(supabase.auth.signUp).toHaveBeenCalledWith(
-            expect.objectContaining({ options: expect.objectContaining({ data: { username: 'duong' } }) }),
+            expect.objectContaining({
+                options: expect.objectContaining({ data: { username: 'duong' } }),
+            }),
         );
     });
 

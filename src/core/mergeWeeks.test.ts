@@ -250,9 +250,7 @@ describe('mergeWeeks', () => {
     it('a deadline set differently on both devices keeps ours', () => {
         const withDeadline = (deadline: string): Weeks => [
             week(JUL13, [
-                project('pA', [
-                    { ...task('tA', [subtask('sA1'), subtask('sA2')]), deadline },
-                ]),
+                project('pA', [{ ...task('tA', [subtask('sA1'), subtask('sA2')]), deadline }]),
                 project('pB', [task('tB', [])]),
             ]),
         ];

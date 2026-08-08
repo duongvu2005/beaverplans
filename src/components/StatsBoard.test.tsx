@@ -148,10 +148,7 @@ describe('StatsBoard', () => {
     /* ---- the streak's three states ---- */
 
     it('a live streak says how the run is counted', () => {
-        show([
-            week('2026-07-13', [sub('mon', true)]),
-            week('2026-07-20', [sub('mon', true)]),
-        ]);
+        show([week('2026-07-13', [sub('mon', true)]), week('2026-07-20', [sub('mon', true)])]);
 
         expect(screen.getByText('in a row at 50%+')).toBeInTheDocument();
     });
@@ -180,10 +177,7 @@ describe('StatsBoard', () => {
     // only one that is a link. A tie keeps the LATER week (a tie reads as a new
     // record), which is why both weeks here are 100%.
     it('the best week is a link, and a tie names the more recent one', () => {
-        show([
-            week('2026-07-13', [sub('mon', true)]),
-            week('2026-07-20', [sub('mon', true)]),
-        ]);
+        show([week('2026-07-13', [sub('mon', true)]), week('2026-07-20', [sub('mon', true)])]);
 
         expect(screen.getByRole('button', { name: /^Go to Jul 20/ })).toBeInTheDocument();
     });
