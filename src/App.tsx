@@ -30,7 +30,7 @@ import { newId } from '@/utils/newId';
 import { overallProgress } from '@/core/progress';
 import { WeekBoard } from '@/components/week/WeekBoard';
 import { ArchiveBoard } from '@/components/archive/ArchiveBoard';
-import { StatsBoard } from '@/components/StatsBoard';
+import { StatsBoard } from '@/components/stats/StatsBoard';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { DataPrivacyDialog } from '@/components/DataPrivacyDialog';
 import { GuestMergeDialog } from '@/components/GuestMergeDialog';
