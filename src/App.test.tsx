@@ -418,4 +418,195 @@ describe('App under the weeks model', () => {
 
         expect(screen.getByRole('dialog')).toBeTruthy();
     });
+
+    /*
+     * The whole-week actions App owns. Every one of these is destructive or
+     * moves the view, and each is reachable only through the dialog that owns
+     * it — which is why App's function coverage was the lowest in the codebase
+     * despite its statements being middling.
+     *
+     *   partition on the action: end (unfinished | all done) | reopen | clear
+     *       board | move work (allowed | blocked destination)
+     *   partition on the confirm: confirmed | dismissed
+     */
+
+    /** Steps back one week, onto sampleWeek's own week, which is active. */
+    async function stepBackToSampleWeek(user: ReturnType<typeof userEvent.setup>) {
+        await user.click(screen.getByLabelText('Previous week'));
+    }
+
+    async function openManageSheet(user: ReturnType<typeof userEvent.setup>) {
+        await user.click(screen.getByRole('button', { name: 'Manage' }));
+    }
+
+    // Clearing wipes a live board with no archive record kept — the one
+    // destructive week action that leaves nothing behind — so it must ask, and
+    // dismissing must genuinely leave the work alone.
+    it('clearing the board is offered behind a confirm, and dismissing keeps the work', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+        await stepBackToSampleWeek(user);
+
+        await openManageSheet(user);
+        await user.click(screen.getByText('Clear this board'));
+        await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+        expect(screen.queryByText(/Nothing planned yet/)).toBeNull();
+    });
+
+    it('confirming the clear empties that week and leaves the archive alone', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+        await stepBackToSampleWeek(user);
+        const archivedBefore = endedWeeks(seed).length;
+
+        await openManageSheet(user);
+        await user.click(screen.getByText('Clear this board'));
+        await user.click(screen.getByRole('button', { name: 'Clear the board' }));
+
+        expect(screen.getByText(/Nothing planned yet/)).toBeTruthy();
+        await user.click(screen.getByRole('button', { name: 'archive' }));
+        expect(screen.getAllByRole('button', { name: /^Open archived week/ })).toHaveLength(
+            archivedBefore,
+        );
+    });
+
+    // Mis-ending a week is an easy slip, and the fix has to exist — otherwise
+    // one wrong click permanently freezes a week's worth of work.
+    it('an ended week can be reopened, and becomes editable again', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+        await stepBackToSampleWeek(user);
+        await user.click(screen.getByRole('button', { name: /^End week/ }));
+        await user.click(screen.getByRole('button', { name: 'Clear all' }));
+        await stepBackToSampleWeek(user); // back onto the week just ended
+        expect(document.querySelector('.projectView')?.hasAttribute('inert')).toBe(true);
+
+        await user.click(screen.getByRole('button', { name: 'Reopen…' }));
+        await user.click(screen.getByRole('button', { name: 'Reopen week' }));
+
+        expect(document.querySelector('.projectView')?.hasAttribute('inert')).toBe(false);
+    });
+
+    it('dismissing the reopen leaves the week frozen', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+        await stepBackToSampleWeek(user);
+        await user.click(screen.getByRole('button', { name: /^End week/ }));
+        await user.click(screen.getByRole('button', { name: 'Clear all' }));
+        await stepBackToSampleWeek(user);
+
+        await user.click(screen.getByRole('button', { name: 'Reopen…' }));
+        await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+        expect(document.querySelector('.projectView')?.hasAttribute('inert')).toBe(true);
+    });
+
+    // Moving relabels a whole week's plan onto another week. The view has to
+    // follow it — a move that left you looking at the now-empty week you moved
+    // out of reads as if the work was deleted.
+    it('moving a week relabels the work and takes the view with it', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+        await stepBackToSampleWeek(user);
+        expect(screen.getByText('Jul 20 – Jul 26')).toBeTruthy();
+
+        await user.click(screen.getByRole('button', { name: /work/i }));
+        // armed: the arrows now aim a destination rather than change the view.
+        // Forward onto the current week, which the fixtures leave empty — Jul 13
+        // behind it is an ended week and so occupied (see the blocked case below).
+        await user.click(screen.getByLabelText('Later destination'));
+        await user.click(screen.getByRole('button', { name: /work onto Jul 27/ }));
+
+        expect(screen.getByText('Jul 27 – Aug 02')).toBeTruthy();
+        // and the week it came from is empty now, not a second copy
+        await user.click(screen.getByLabelText('Previous week'));
+        expect(screen.getByText(/Nothing planned yet/)).toBeTruthy();
+    });
+
+    // moveWeek refuses a destination that already holds work, and the header
+    // says so in place of the destination note. Without the explanation the
+    // Move button just goes dead and the refusal looks like a bug.
+    it('a destination that already has work explains itself instead of going quiet', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+        await stepBackToSampleWeek(user);
+
+        await user.click(screen.getByRole('button', { name: /work/i }));
+        // Jul 13 is the last ended week in the fixtures, so it is occupied.
+        await user.click(screen.getByLabelText('Earlier destination'));
+
+        expect(screen.getByText('This week already has work in it.')).toBeTruthy();
+        expect(screen.getByRole('button', { name: /^Cannot move here/ })).toBeDisabled();
+    });
+
+    // The all-done end is a different dialog from the unfinished one, with no
+    // carry-forward offered — there is nothing left to carry. Needs its own
+    // seed: an empty week cannot be ended at all (canEndWeek), so "finished"
+    // has to mean every subtask ticked, not an empty board.
+    it('ending a finished week offers no carry-forward', async () => {
+        const user = userEvent.setup();
+        const doneWeek: Weeks = [
+            {
+                weekStart: '2026-07-20',
+                ended: false,
+                projects: [
+                    {
+                        id: 'p1',
+                        name: 'English',
+                        tasks: [
+                            {
+                                id: 't1',
+                                name: 'Essay',
+                                subtasks: [
+                                    {
+                                        id: 's1',
+                                        isDone: true,
+                                        assignedDay: 'mon',
+                                        missedDays: [],
+                                        weight: 1,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ];
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ weeks: doneWeek }));
+        render(<App />);
+        await screen.findByText('Jul 27 – Aug 02');
+        await stepBackToSampleWeek(user);
+
+        await user.click(screen.getByRole('button', { name: /^End week/ }));
+
+        expect(screen.getByText(/Everything/)).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Carry forward' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull();
+    });
+
+    // The Archive tab edits a SUBSET of the weeks — only the ended ones — and
+    // its updater's result is merged back over the active weeks. Getting that
+    // merge wrong would drop every unended week the moment anything in the
+    // archive was touched.
+    it('deleting from the archive leaves the active weeks untouched', async () => {
+        const user = userEvent.setup();
+        await renderLoaded();
+        const archivedBefore = endedWeeks(seed).length;
+
+        await user.click(screen.getByRole('button', { name: 'archive' }));
+        const rows = screen.getAllByRole('button', { name: /^Open archived week/ });
+        expect(rows).toHaveLength(archivedBefore);
+        await user.click(screen.getAllByRole('button', { name: /^Delete week/ })[0]!);
+        await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+        expect(screen.getAllByRole('button', { name: /^Open archived week/ })).toHaveLength(
+            archivedBefore - 1,
+        );
+
+        // the active week survived the archive edit
+        await user.click(screen.getByRole('button', { name: 'plan' }));
+        await stepBackToSampleWeek(user);
+        expect(screen.queryByText(/Nothing planned yet/)).toBeNull();
+    });
 });
