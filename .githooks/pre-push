@@ -1,0 +1,23 @@
+#!/bin/sh
+# Runs once per push, so it can afford what pre-commit cannot: the full suite,
+# i.e. everything CI will run, before the commits leave this machine.
+
+if ! npm run build; then
+    printf '\npre-push: build failed.\n'
+    exit 1
+fi
+
+if ! npm run lint; then
+    printf '\npre-push: lint failed.\n'
+    exit 1
+fi
+
+if ! npm run format:check; then
+    printf '\npre-push: formatting. Fix with: npx prettier --write .\n'
+    exit 1
+fi
+
+if ! npm test; then
+    printf '\npre-push: tests failed.\n'
+    exit 1
+fi

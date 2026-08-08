@@ -1,0 +1,38 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - run: npm ci
+
+            # tsc -b, then the vite bundle. This is the gate vitest does not
+            # provide: vitest never typechecks, so type errors in *.test.ts(x)
+            # only surface here.
+            - name: Typecheck and build
+              run: npm run build
+
+            # always(): report every failing gate in one run, not just the first.
+            - name: Lint
+              if: ${{ !cancelled() }}
+              run: npm run lint
+
+            - name: Format
+              if: ${{ !cancelled() }}
+              run: npm run format:check
+
+            - name: Test
+              if: ${{ !cancelled() }}
+              run: npm test
