@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { AccountMenu } from './AccountMenu';
-import { AccountSheet } from './AccountSheet';
-import { Avatar } from './Avatar';
+import { AccountMenu } from '@/components/account/AccountMenu';
+import { AccountSheet } from '@/components/account/AccountSheet';
+import { Avatar } from '@/components/account/Avatar';
 import { ChevronIcon } from '@/components/shared/icons/ChevronIcon';
 import { HeartIcon } from '@/components/shared/icons/HeartIcon';
 import { UserIcon } from '@/components/shared/icons/UserIcon';
