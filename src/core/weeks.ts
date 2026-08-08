@@ -208,6 +208,24 @@ export function removeWeek(weeks: Weeks, weekStart: DateKey): Weeks {
 }
 
 /**
+ * Empty a week's board, keeping the week itself.
+ *
+ * Distinct from removeWeek in intent but not in outcome: a stored entry is never
+ * empty, so clearing the last project out of a week necessarily leaves no entry
+ * behind. The two are kept apart anyway because only this one is refused on an
+ * ended week — the archive is frozen, and deleting an archived record is the
+ * Archive tab's own separate, explicitly-confirmed action.
+ *
+ * @param weeks any Weeks
+ * @param weekStart the week to empty
+ * @returns a new collection identical to weeks but with no entry at weekStart;
+ *          or weeks unchanged when that entry is ended
+ */
+export function clearWeek(weeks: Weeks, weekStart: DateKey): Weeks {
+    return putWeek(weeks, { ...weekAt(weeks, weekStart), projects: [] });
+}
+
+/**
  * Relabel a week: move a whole plan onto a different week, unchanged.
  *
  * This is the "this plan belongs on a different week" operation, and it loses

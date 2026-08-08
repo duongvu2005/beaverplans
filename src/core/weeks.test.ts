@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     canEndWeek,
     carryForward,
+    clearWeek,
     earliestActiveWeek,
     endWeek,
     endedWeeks,
@@ -201,6 +202,52 @@ describe('removeWeek', () => {
     it('no entry with that weekStart: unchanged', () => {
         const before: Weeks = [week(JUL06, 'a')];
         expect(removeWeek(before, JUL13)).toEqual(before);
+    });
+});
+
+describe('clearWeek', () => {
+    /*
+     * Testing strategy
+     *   partition on the target: holds work | already empty | no entry at all
+     *   partition on ended: open (clears) | ended (frozen, refuses)
+     *   the other weeks are never touched
+     *   an emptied week leaves no entry behind, since a stored entry is never empty
+     */
+
+    it('drops the entry entirely, since an empty week is stored as no entry', () => {
+        const weeks = clearWeek([week(JUL06, 'a'), week(JUL13, 'b')], JUL06);
+        expect(starts(weeks)).toEqual([JUL13]);
+    });
+
+    it('leaves the other weeks exactly as they were', () => {
+        const other = week(JUL13, 'b');
+        const weeks = clearWeek([week(JUL06, 'a'), other], JUL06);
+        expect(weeks).toEqual([other]);
+    });
+
+    it('an ended week is frozen: unchanged', () => {
+        const before: Weeks = [week(JUL06, 'a', true)];
+        expect(clearWeek(before, JUL06)).toEqual(before);
+    });
+
+    it('a week with no entry: unchanged', () => {
+        const before: Weeks = [week(JUL13, 'b')];
+        expect(clearWeek(before, JUL06)).toEqual(before);
+    });
+
+    it('an empty collection: still empty', () => {
+        expect(clearWeek([], JUL06)).toEqual([]);
+    });
+
+    it('does not mutate its argument', () => {
+        const weeks: Weeks = [week(JUL06, 'a'), week(JUL13, 'b')];
+        const before = structuredClone(weeks) as Weeks;
+        clearWeek(weeks, JUL06);
+        expect(weeks).toEqual(before);
+    });
+
+    it('the result is still a valid collection', () => {
+        expect(isValidWeeks(clearWeek([week(JUL06, 'a'), week(JUL13, 'b')], JUL06))).toBe(true);
     });
 });
 
