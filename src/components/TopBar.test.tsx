@@ -387,6 +387,27 @@ describe('TopBar', () => {
         expect(chip.querySelector('svg')).not.toHaveClass(/cat/);
     });
 
+    // Not a CSS test — jsdom applies no stylesheet, and asserting on a hashed
+    // module class would be brittle. It guards the STRUCTURAL precondition two
+    // CSS rules silently depend on: `.account svg:last-child` sets the caret's
+    // 13px size and its open-state rotate, and both were written as :last-child
+    // only because an unscoped `.account svg` caught the avatar too — turning
+    // the cat upside down on every menu open and clamping it to 13px whatever
+    // size prop it was passed (see TopBar.module.css). Append any icon after
+    // the chevron and both rules move onto it, reviving both bugs against a
+    // stylesheet no one edited. That is what this fails on.
+    it('the chevron is the last icon in the chip, which is what the caret CSS targets', () => {
+        renderBar({ user: SIGNED_IN });
+        const chip = screen.getByRole('button', { name: /^Account: duong/ });
+        const icons = [...chip.querySelectorAll('svg')];
+
+        // avatar first, caret last — the caret is the 16-box chevron, the
+        // avatar the 100-box drawing, so neither needs a hashed class to spot
+        expect(icons).toHaveLength(2);
+        expect(icons.at(-1)).toHaveAttribute('viewBox', '0 0 16 16');
+        expect(icons[0]).toHaveAttribute('viewBox', '0 0 100 100');
+    });
+
     it('the phone sheet header names the person, with the address beneath', async () => {
         const { user } = renderBar({ user: SIGNED_IN });
         await user.click(screen.getByRole('button', { name: 'Account' }));
