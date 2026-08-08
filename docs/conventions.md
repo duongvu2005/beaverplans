@@ -154,6 +154,34 @@ transaction. Those go in a shell script beside it (`supabase/tests/race.sh`, run
 - Immutable by default: domain data is `readonly`; state updates return new objects rather
   than mutating in place.
 
+## Comments — project convention
+
+A comment is written for someone reading the file cold, with no memory of how it came to
+look that way. Two kinds earn their place:
+
+- **What the code does**, where the names alone do not carry it — a non-obvious invariant,
+  a precondition the caller must respect, why a branch is unreachable, why a `!` is safe.
+- **Why this shape and not the obvious one** — name the alternative a reader would reach
+  for and what rules it out.
+
+Everything else belongs in `docs/`, in the commit message, or nowhere:
+
+- **Change narration.** "This previously did X", "no longer gates Y", "used to be a
+  `Record`". That is a note to whoever reviewed the change. A later reader does not know
+  what X was and cannot tell whether the note is still true.
+- **Status and dates.** "Currently", "for now", "as of today". Code is in the present
+  tense; a comment claiming otherwise goes stale in silence.
+- **Restating a good name.** If the comment and the identifier say the same thing, delete
+  the comment.
+
+Note that "no longer" is fine when it describes *runtime* state — "a session that is no
+longer current", "the day will no longer count as missed". The rule is about the history
+of the code, not the history of the data.
+
+The test: delete the comment and ask what a stranger loses. If what they lose is context
+about how the project got here rather than about the code in front of them, it belongs in
+`docs/` — `known-issues.md` for a hazard, this file for a rule.
+
 ## Storage — 6.102 reading 08
 
 `storage/` exposes one interface (`Backend`) and one or more implementations behind it,
