@@ -20,10 +20,10 @@ import {
 import { todayKey } from '@/core/dates';
 import { isEnded } from '@/core/weeks';
 import { newId } from '@/utils/newId';
-import { ProjectView } from './ProjectView';
+import { ProjectView } from '@/components/ProjectView';
 import { WeekView } from './WeekView';
-import { TaskEditor } from './TaskEditor';
-import { ProjectEditor } from './ProjectEditor';
+import { TaskEditor } from '@/components/TaskEditor';
+import { ProjectEditor } from '@/components/ProjectEditor';
 import { MovePopover } from './MovePopover';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import shell from '@/components/shared/dialogShell.module.css';
