@@ -12,7 +12,7 @@ import {
 } from '@/core/weekStats';
 import { WeekSpark } from '@/components/shared/WeekSpark';
 import { weekdayColumns } from '@/components/shared/sparkColumns';
-import { WeekTrend } from '@/components/shared/WeekTrend';
+import { WeekTrend } from './WeekTrend';
 import { WeekRef } from '@/components/shared/WeekRef';
 import { Heatmap, HeatmapLegend } from './Heatmap';
 import { heatColumns } from './heatColumns';
