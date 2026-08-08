@@ -37,7 +37,7 @@ import { GuestMergeDialog } from '@/components/auth/GuestMergeDialog';
 import { GuestMergeSheet } from '@/components/auth/GuestMergeSheet';
 import { WeekHeader } from '@/components/week/WeekHeader';
 import { WeekRef } from '@/components/shared/WeekRef';
-import { TopBar, type View } from '@/components/TopBar';
+import { TopBar, type View } from '@/components/shell/TopBar';
 import { AuthForm, type AuthMode } from '@/components/auth/AuthForm';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm';
 import { AccountSettings } from '@/components/account/AccountSettings';
