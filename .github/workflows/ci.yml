@@ -18,13 +18,13 @@ jobs:
 
             - run: npm ci
 
-            # tsc -b, then the vite bundle. This is the gate vitest does not
-            # provide: vitest never typechecks, so type errors in *.test.ts(x)
-            # only surface here.
+            # vitest never typechecks, so type errors in *.test.ts(x) surface
+            # only here.
             - name: Typecheck and build
               run: npm run build
 
-            # always(): report every failing gate in one run, not just the first.
+            # Run even after an earlier failure, so one run reports every
+            # failing gate rather than just the first.
             - name: Lint
               if: ${{ !cancelled() }}
               run: npm run lint

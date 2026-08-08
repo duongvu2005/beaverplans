@@ -1,9 +1,7 @@
 #!/bin/sh
 # Fast gates only — lint and the test suite run in CI (.github/workflows/ci.yml).
-#
-# This checks the WORKING TREE, not just what is staged. When another session
-# has unrelated work in progress, `git commit --no-verify` is the escape hatch;
-# CI is still the backstop.
+# Checks the working tree, not the staged snapshot, so unrelated unfinished work
+# blocks a commit too; `git commit --no-verify` skips it.
 
 if ! npx tsc -b; then
     printf '\npre-commit: typecheck failed. vitest does not typecheck, so this is the only local gate on type errors in tests.\n'

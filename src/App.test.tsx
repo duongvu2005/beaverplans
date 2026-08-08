@@ -60,8 +60,8 @@ vi.mock('@hcaptcha/react-hcaptcha', () => ({
  * the client for is pinned by the tests themselves.
  */
 const fake = supabase as unknown as {
-    // Named rather than Record<string, Mock>: under noUncheckedIndexedAccess an
-    // index signature makes every one of these possibly-undefined at each use.
+    // Spelled out rather than an index signature: under noUncheckedIndexedAccess
+    // that would make every method possibly-undefined at each use.
     auth: {
         getSession: Mock;
         onAuthStateChange: Mock;
