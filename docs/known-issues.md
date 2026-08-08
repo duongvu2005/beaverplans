@@ -6,6 +6,10 @@ can assert is only ever "not reproducing".
 Each entry gives the symptom, a repro, the cause, the fix, and the regression risk. Status
 is **fixed**, **watching** (fixed, but nothing would fail if it came back), or **open**.
 
+It also carries **hazards**: things review has established no test can catch, which have
+not gone wrong yet. They are here rather than in a code comment because the comment would
+sit in the file that is correct, and the mistake happens in the one that changes.
+
 Companion documents: [architecture.md](./architecture.md) for the React layer,
 [conventions.md](./conventions.md) for coding rules.
 
@@ -67,3 +71,55 @@ the one older iOS Safari required, so reaching for it again reintroduces the ban
 **iOS.** Locking `<html>`'s overflow is honored from iOS Safari 15.4, and the scrim carries
 `overscroll-behavior: contain` so a scroll reaching the end of the sheet does not chain to
 the page. Unverified on a physical device.
+
+---
+
+## Hazard: the realtime resubscribe handler is not reachable by any test
+
+**Status:** open, accepted — recorded 2026-08-08.
+
+**What.** [`storage/instance.ts`](../src/storage/instance.ts) binds the Realtime channel and
+re-fetches on every `SUBSCRIBED`, not only on a row event. That is real recovery logic with
+a real failure mode: while the socket was down no event could arrive, and the ones fired
+meanwhile are gone for good, so without the re-fetch a slept laptop stays stale until it is
+reloaded.
+
+**Why nothing covers it.** The callback is welded to the module-level `supabase` singleton
+this file exists to construct, so there is no seam to inject a fake through. The file is
+excluded from coverage in [`vite.config.ts`](../vite.config.ts) with that reason written in.
+
+**The risk.** Every other name on that exclusion list is there because it has no behaviour —
+static SVG, a mount call, types erased at compile time. This one is there despite having
+behaviour, so it is the single place where "excluded" and "nothing to test" have come apart.
+A future edit to the callback inherits the exclusion silently.
+
+**What to do about it.** Nothing now — the callback is four lines and the binding it needs is
+genuinely at the composition root. But it must not grow in place: anything more than "an
+event happened, go look" moves into a testable module first, the way `RemoteWatcher` is
+already injected into `CloudBackend` for exactly this reason.
+
+---
+
+## Hazard: both week panes hang off one container-query name
+
+**Status:** open, accepted — recorded 2026-08-08.
+
+**What.** [`App.css`](../src/App.css) renders `.weekGridPane` and `.focusPane` both, always;
+which one is visible is decided entirely by `@container app (…)` rules. Drop or rename the
+`app` container on the root element and neither rule matches, so **both panes render at
+once** — the full seven-column grid and the focus pane stacked, every subtask control on
+screen twice.
+
+**Why nothing covers it.** jsdom applies no stylesheet, so it already shows both. The broken
+state is indistinguishable from the normal test environment, which means no assertion can
+tell them apart — including one written specifically to try.
+
+**The risk.** Low likelihood, loud symptom, and a single point of failure with nothing
+guarding it. The container name is also load-bearing in JS:
+[`useContainerWidth.ts`](../src/hooks/useContainerWidth.ts) measures the same
+`[data-app-container]` box, so the two would break together and for one reason.
+
+**What to do about it.** Know this before refactoring the container root. If the panes ever
+stop being purely CSS-selected, the honest fix is to choose between them in the component —
+`useIsDesktop` already does exactly that for the guest-merge prompt — rather than to render
+both and hide one.

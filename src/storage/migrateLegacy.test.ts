@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 import { importLegacyForUser, type LegacyClient, type LegacyStateRow } from './migrateLegacy';
 import type { Weeks } from '../core/types';
 
@@ -55,10 +55,27 @@ function sentWeeks(client: FakeLegacyClient): Weeks {
 
 describe('importLegacyForUser', () => {
     let client: FakeLegacyClient;
+    // The warning is part of this function's contract, not decoration: the
+    // import is designed to fail quietly and retry, so the console line is the
+    // ONLY way anyone finds out why a once-per-user, effectively unrepeatable
+    // migration did not happen (see warn()'s comment in migrateLegacy.ts).
+    // Asserted below rather than merely silenced — until it was, all three
+    // warn() calls could be deleted with this suite still fully green.
+    let warned: MockInstance;
 
     beforeEach(() => {
         client = new FakeLegacyClient();
+        warned = vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
+
+    afterEach(() => {
+        warned.mockRestore();
+    });
+
+    /** what warn() prints: a "[legacy import] …" line carrying the cause. */
+    function reported(cause: unknown) {
+        return [expect.stringContaining('[legacy import]') as unknown, cause];
+    }
 
     // --- nothing to do ---
 
@@ -72,26 +89,32 @@ describe('importLegacyForUser', () => {
         client.row = rowWith({ migrated_at: '2026-08-08T00:00:00Z' });
         expect(await importLegacyForUser(client, 'u1')).toBe(false);
         expect(client.rpcCalls).toEqual([]);
+        // The ordinary case — every sign-in after the first takes this path, so
+        // reporting it would put a line in everyone's console forever.
+        expect(warned).not.toHaveBeenCalled();
     });
 
     // --- failures, all reported as false so the caller carries on ---
 
-    it('select error: reports false, does not import', async () => {
+    it('select error: reports false, does not import, and says why', async () => {
         client.selectError = { message: 'nope' };
         expect(await importLegacyForUser(client, 'u1')).toBe(false);
         expect(client.rpcCalls).toEqual([]);
+        expect(warned).toHaveBeenCalledWith(...reported(client.selectError));
     });
 
-    it('rpc error (e.g. lost the claim race): reports false', async () => {
+    it('rpc error (e.g. lost the claim race): reports false, and says why', async () => {
         client.row = rowWith();
         client.rpcError = { message: 'already migrated, or no legacy row' };
         expect(await importLegacyForUser(client, 'u1')).toBe(false);
         expect(client.rpcCalls).toHaveLength(1);
+        expect(warned).toHaveBeenCalledWith(...reported(client.rpcError));
     });
 
-    it('a throwing client is caught, not propagated', async () => {
+    it('a throwing client is caught, not propagated, and reported', async () => {
         client.throwOnSelect = true;
         await expect(importLegacyForUser(client, 'u1')).resolves.toBe(false);
+        expect(warned).toHaveBeenCalledWith(...reported(new Error('boom')));
     });
 
     // --- the import itself ---

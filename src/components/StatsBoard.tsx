@@ -74,7 +74,13 @@ export function StatsBoard({ archive, onOpenWeek }: StatsBoardProps) {
     // weighs a 2-unit break week the same as a 16-unit finals week.
     const pooledDone = history.reduce((sum, week) => sum + week.progress.done, 0);
     const pooledTotal = history.reduce((sum, week) => sum + week.progress.total, 0);
-    const best = bestWeek(history);
+    // bestWeek answers undefined only for an empty history, and the guard above
+    // has already returned on that — so this is an invariant, not a hope.
+    // Asserted rather than defended with a `best === undefined ? '—'` fallback:
+    // that branch could never be taken, so no test could ever cover it, and
+    // left in silently it costs every later reader the same proof that it is
+    // dead before they can give up on the coverage gap it caused.
+    const best = bestWeek(history)!;
     const streak = currentStreak(history, STREAK_THRESHOLD);
     const longest = longestStreak(history, STREAK_THRESHOLD);
 
@@ -147,20 +153,14 @@ export function StatsBoard({ archive, onOpenWeek }: StatsBoardProps) {
                 </div>
                 <div className={styles.stat}>
                     <span className={styles.big}>
-                        {best === undefined
-                            ? '—'
-                            : `${Math.round(percentOf(best.progress.done, best.progress.total))}%`}
+                        {Math.round(percentOf(best.progress.done, best.progress.total))}%
                     </span>
                     <span className={styles.statLabel}>Best week</span>
                     {/* The one figure on this pane that names a particular week,
                         so the one that can be opened. Every other caption here
                         describes a weekday or a span. */}
                     <span className={styles.statSub}>
-                        {best === undefined ? (
-                            'no data'
-                        ) : (
-                            <WeekRef weekStart={best.weekStart} onView={onOpenWeek} />
-                        )}
+                        <WeekRef weekStart={best.weekStart} onView={onOpenWeek} />
                     </span>
                 </div>
                 <div className={styles.stat}>

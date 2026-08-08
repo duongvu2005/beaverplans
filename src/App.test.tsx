@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import { overallProgress } from './core/progress';
@@ -9,31 +9,37 @@ import { sampleArchive } from './fixtures/sampleArchive';
 import { STORAGE_KEY } from './storage/localBackend';
 import type { Weeks } from './core/types';
 import { supabase } from './storage/supabaseClient';
+import { cloudBackend, store } from './storage/instance';
+import { APP_CONTAINER_SELECTOR, DESKTOP_MIN_WIDTH } from './hooks/useContainerWidth';
 
 // App now calls useAuth, which talks to the real Supabase client — these
 // tests must stay hermetic (no real network, no timing dependent on it).
-// onAuthStateChange's mock fires its callback synchronously (unlike the real
-// one) specifically so `loading` resolves to false within the same render()
-// call, matching every existing test's synchronous assertions below.
 //
-// signInWithPassword/signUp are vi.fn() (not inline arrows) so individual
-// tests can override one call's resolved value with mockResolvedValueOnce —
-// in particular, signup's session-established-vs-not distinction, which
-// AuthForm/App branch on.
+// EVERY method here is a vi.fn(), with no behaviour of its own: the defaults
+// are installed in beforeEach instead (see signedOut()). That is deliberate —
+// an inline arrow cannot be overridden, and hard-coding a signed-out session
+// here is what previously made every signed-in surface in App unreachable from
+// its own test file, including the one action that deletes every week the
+// account has.
+//
+// `from`/`rpc`/`channel` are on it because a signed-in App runs on CloudBackend
+// (see storage/instance.ts), which reaches all three. They answer as a small
+// fake server — see `server` below.
 vi.mock('./storage/supabaseClient', () => ({
     supabase: {
         auth: {
-            getSession: () => Promise.resolve({ data: { session: null } }),
-            onAuthStateChange: (callback: (event: string, session: null) => void) => {
-                callback('INITIAL_SESSION', null);
-                return { data: { subscription: { unsubscribe: () => {} } } };
-            },
-            signInWithPassword: vi.fn(() => Promise.resolve({ error: null })),
-            signUp: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
-            resetPasswordForEmail: () => Promise.resolve({ error: null }),
-            updateUser: () => Promise.resolve({ error: null }),
-            signOut: () => Promise.resolve({ error: null }),
+            getSession: vi.fn(),
+            onAuthStateChange: vi.fn(),
+            signInWithPassword: vi.fn(),
+            signUp: vi.fn(),
+            resetPasswordForEmail: vi.fn(),
+            updateUser: vi.fn(),
+            signOut: vi.fn(),
         },
+        from: vi.fn(),
+        rpc: vi.fn(),
+        channel: vi.fn(),
+        removeChannel: vi.fn(),
     },
 }));
 
@@ -46,6 +52,108 @@ vi.mock('@hcaptcha/react-hcaptcha', () => ({
         </button>
     ),
 }));
+
+/**
+ * The mock above, typed as what it actually is. supabase-js's own types
+ * describe a surface far wider than this app touches, and threading them
+ * through every override costs more than it checks — what App actually asks
+ * the client for is pinned by the tests themselves.
+ */
+const fake = supabase as unknown as {
+    // Named rather than Record<string, Mock>: under noUncheckedIndexedAccess an
+    // index signature makes every one of these possibly-undefined at each use.
+    auth: {
+        getSession: Mock;
+        onAuthStateChange: Mock;
+        signInWithPassword: Mock;
+        signUp: Mock;
+        resetPasswordForEmail: Mock;
+        updateUser: Mock;
+        signOut: Mock;
+    };
+    from: Mock;
+    rpc: Mock;
+    channel: Mock;
+    removeChannel: Mock;
+};
+
+/** A session, shaped as much of one as useAuth reads (see usernameOf). */
+function sessionFor(id: string, email: string, username?: string) {
+    return { user: { id, email, user_metadata: username === undefined ? {} : { username } } };
+}
+
+/** Fires an auth event at the app's listener, the way supabase-js would. */
+let emit: (event: string, session: unknown) => void;
+
+/**
+ * Points the client at `session`: both the initial read and the listener's
+ * first event report it, which is how useAuth seeds (whichever lands first).
+ * The listener fires synchronously — unlike the real one — so `loading`
+ * resolves within render() and the synchronous assertions below still hold.
+ */
+function authAs(session: unknown) {
+    fake.auth.getSession.mockImplementation(() => Promise.resolve({ data: { session } }));
+    fake.auth.onAuthStateChange.mockImplementation((callback: typeof emit) => {
+        emit = callback;
+        callback('INITIAL_SESSION', session);
+        return { data: { subscription: { unsubscribe: () => {} } } };
+    });
+}
+
+/**
+ * The stand-in for the two Supabase tables a signed-in App reaches through
+ * CloudBackend: what the server holds, and what it was asked to write. Reads
+ * are answered from `weeks`; writes are recorded rather than applied, since
+ * every assertion here is about what the app SENT.
+ */
+const server = {
+    weeks: [] as { week_start: string; ended: boolean; projects: unknown }[],
+    upserts: [] as unknown[],
+    deletes: [] as string[],
+};
+
+function installFakeServer() {
+    server.weeks = [];
+    server.upserts = [];
+    server.deletes = [];
+    fake.from.mockImplementation((table: string) => {
+        if (table === 'planner_weeks') {
+            return {
+                select: () => Promise.resolve({ data: server.weeks, error: null }),
+                upsert: (rows: unknown[]) => {
+                    server.upserts.push(...rows);
+                    return Promise.resolve({ error: null });
+                },
+                delete: () => ({
+                    in: (_column: string, values: string[]) => {
+                        server.deletes.push(...values);
+                        return Promise.resolve({ error: null });
+                    },
+                }),
+            };
+        }
+        // old_planner_state — nobody in these tests has legacy data to import;
+        // migrateLegacy.test.ts is where that path is exercised.
+        return {
+            select: () => ({
+                eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+            }),
+        };
+    });
+    // The Realtime feed: opened by CloudBackend.load, never fired here.
+    const channel = { on: () => channel, subscribe: () => channel };
+    fake.channel.mockImplementation(() => channel);
+    fake.removeChannel.mockImplementation(() => Promise.resolve('ok'));
+}
+
+/** Puts `weeks` on the fake server, as rows. */
+function seedServer(weeks: Weeks) {
+    server.weeks = weeks.map((week) => ({
+        week_start: week.weekStart,
+        ended: week.ended,
+        projects: week.projects,
+    }));
+}
 
 // The app's state is one collection of weeks, past, present and future alike,
 // active and ended together (see the Weeks ADT in core/types.ts). These cover
@@ -62,11 +170,23 @@ describe('App under the weeks model', () => {
     const seed: Weeks = [sampleWeek, ...sampleArchive].reduce<Weeks>(putWeek, []);
 
     beforeEach(() => {
-        // The auth mocks are module-level vi.fn()s shared by every test in the
-        // file, so their call records survive across tests unless cleared —
-        // which matters for any assertion that a call did NOT happen.
-        vi.mocked(supabase.auth.signUp).mockClear();
-        vi.mocked(supabase.auth.signInWithPassword).mockClear();
+        // The mocks are module-level vi.fn()s shared by every test in the file,
+        // so both their call records and any per-test behaviour survive unless
+        // reset — the records matter for any assertion that a call did NOT
+        // happen, and the behaviour matters because a signed-in test would
+        // otherwise leak its session into the next one.
+        for (const method of Object.values(fake.auth)) method.mockReset();
+        fake.auth.signInWithPassword.mockResolvedValue({ error: null });
+        fake.auth.signUp.mockResolvedValue({ data: { session: null }, error: null });
+        fake.auth.resetPasswordForEmail.mockResolvedValue({ error: null });
+        fake.auth.updateUser.mockResolvedValue({ error: null });
+        fake.auth.signOut.mockResolvedValue({ error: null });
+        authAs(null); // signed out unless a test says otherwise
+        installFakeServer();
+        // Its cache, its durable copies and any armed push all outlive one
+        // test — it is a module singleton, and App uses the real one.
+        cloudBackend.reset();
+        store.useBackend('local');
         vi.useFakeTimers({ toFake: ['Date'] });
         vi.setSystemTime(new Date('2026-07-29T12:00:00'));
         // App now loads from real storage (useWeeks -> Store -> LocalBackend)
@@ -76,6 +196,10 @@ describe('App under the weeks model', () => {
     });
 
     afterEach(() => {
+        // Before the timers go back to real: a signed-in test leaves a debounced
+        // push armed, and letting it fire into the next test's mocks is the kind
+        // of cross-test bleed that shows up as an unrelated failure.
+        cloudBackend.reset();
         vi.useRealTimers();
         window.localStorage.clear();
     });
@@ -310,11 +434,10 @@ describe('App under the weeks model', () => {
         });
 
         it('signup that establishes a session immediately closes the dialog', async () => {
-            vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
-                data: { session: { user: { id: 'u1' } } },
+            fake.auth.signUp.mockResolvedValueOnce({
+                data: { session: sessionFor('u1', 'new@example.com') },
                 error: null,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any);
+            });
             const user = userEvent.setup();
             await renderLoaded();
             const dialog = await openAuthDialog(user);
@@ -608,5 +731,321 @@ describe('App under the weeks model', () => {
         await user.click(screen.getByRole('button', { name: 'plan' }));
         await stepBackToSampleWeek(user);
         expect(screen.queryByText(/Nothing planned yet/)).toBeNull();
+    });
+
+    /*
+     * The signed-in half of the app: everything App only mounts once
+     * auth.user is non-null, plus the recovery gate that replaces it entirely.
+     * None of it was reachable while the client mock hard-coded a signed-out
+     * session — including handleConfirmClearAll, which deletes every week the
+     * account has, on every device, with no undo.
+     *
+     * The board itself is the same board, so these do not re-test it. What is
+     * asserted here is what only exists when there is an account: the panels,
+     * the handoffs between them, and what the destructive ones actually do.
+     *
+     *   partition on the surface: data & privacy | account settings |
+     *       guest merge | recovery gate
+     *   partition on the destructive action: dismissed | confirmed
+     *   partition on the merge prompt's form factor: phone (sheet) | desktop
+     *       (dialog)
+     */
+    describe('signed in', () => {
+        const account = sessionFor('u1', 'you@example.com', 'duong');
+
+        beforeEach(() => {
+            // No guest data on this device: leftover local weeks would raise
+            // the merge prompt over everything. The two tests that want it
+            // seed it back deliberately.
+            window.localStorage.removeItem(STORAGE_KEY);
+            seedServer(seed);
+            authAs(account);
+        });
+
+        /** Renders and waits for the account chip, which only the signed-in,
+         *  fully-loaded app has (App renders null until both settle). */
+        async function renderSignedIn() {
+            const user = userEvent.setup();
+            render(<App />);
+            await screen.findByRole('button', { name: /^Account: duong/ });
+            return user;
+        }
+
+        async function openAccountMenu(user: ReturnType<typeof userEvent.setup>) {
+            await user.click(screen.getByRole('button', { name: /^Account: duong/ }));
+        }
+
+        async function openDataPanel(user: ReturnType<typeof userEvent.setup>) {
+            await openAccountMenu(user);
+            await user.click(screen.getByRole('menuitem', { name: /Data & privacy/ }));
+        }
+
+        // The panel is the app's answer to "what are you holding on me" — so
+        // naming the wrong account, or offering to act on a count that is not
+        // the real one, is the whole failure. The count is also what the
+        // erasure confirm below quotes back.
+        it('Data & privacy names the account and the number of weeks it would act on', async () => {
+            const user = await renderSignedIn();
+            await openDataPanel(user);
+
+            expect(screen.getByText(/\(you@example\.com\)/)).toBeTruthy();
+            expect(screen.getByText(`${seed.length} weeks stored`)).toBeTruthy();
+        });
+
+        // Every other destructive action in this app leaves something behind —
+        // ending a week archives it, clearing a board leaves the archive. This
+        // one leaves nothing, so a dismissal has to be a genuine no-op rather
+        // than a delete that already happened behind the dialog.
+        it('deleting everything asks first, and dismissing keeps every week', async () => {
+            const user = await renderSignedIn();
+            await openDataPanel(user);
+
+            await user.click(screen.getByRole('button', { name: /Delete all my data/ }));
+            // handed off, not stacked: the panel closes on the way
+            expect(screen.getByText('Delete every week?')).toBeTruthy();
+            expect(screen.queryByText(/Nothing stored yet/)).toBeNull();
+
+            await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+            expect(screen.queryByText('Delete every week?')).toBeNull();
+            expect(store.getWeeks()).toHaveLength(seed.length);
+            await user.click(screen.getByRole('button', { name: 'archive' }));
+            expect(screen.getAllByRole('button', { name: /^Open archived week/ })).toHaveLength(
+                endedWeeks(seed).length,
+            );
+        });
+
+        // The single most destructive action in the app, and the one that has
+        // to reach past this device: weeks left on the server would come back
+        // on the next load, which reads as the deletion silently failing.
+        it('confirming the delete empties the app and asks the server to drop every week', async () => {
+            const user = await renderSignedIn();
+            await openDataPanel(user);
+
+            await user.click(screen.getByRole('button', { name: /Delete all my data/ }));
+            // The confirm quotes the count it is about to destroy — consent for
+            // "all 7 of your weeks" is not consent for some other number.
+            expect(screen.getByText(new RegExp(`all ${seed.length} of your weeks`))).toBeTruthy();
+            await user.click(screen.getByRole('button', { name: 'Delete everything' }));
+
+            expect(screen.getByText(/Nothing planned yet/)).toBeTruthy();
+            await user.click(screen.getByRole('button', { name: 'archive' }));
+            expect(screen.queryAllByRole('button', { name: /^Open archived week/ })).toHaveLength(
+                0,
+            );
+
+            // The push is debounced (CloudBackend.DEBOUNCE_MS), so this waits
+            // on the real timer rather than assuming the write is immediate.
+            await waitFor(
+                () =>
+                    expect([...server.deletes].sort()).toEqual(
+                        seed.map((week) => week.weekStart).sort(),
+                    ),
+                { timeout: 3000 },
+            );
+        });
+
+        // The panel offers two ways to take a copy before it offers erasure,
+        // so the copy has to be the real thing: everything, in the format the
+        // app claims, named for the day it was taken.
+        it('Download as JSON hands the browser every week, named for today', async () => {
+            const blobs: Blob[] = [];
+            const names: string[] = [];
+            // jsdom has neither: downloadText is the one place the app leaves
+            // the DOM it can assert on.
+            URL.createObjectURL = vi.fn((blob: Blob) => {
+                blobs.push(blob);
+                return 'blob:test';
+            });
+            URL.revokeObjectURL = vi.fn();
+            const click = vi
+                .spyOn(HTMLAnchorElement.prototype, 'click')
+                .mockImplementation(function (this: HTMLAnchorElement) {
+                    names.push(this.download);
+                });
+
+            try {
+                const user = await renderSignedIn();
+                await openDataPanel(user);
+                await user.click(screen.getByRole('button', { name: /Download as JSON/ }));
+
+                expect(names).toEqual(['beaverplans-2026-07-29.json']);
+                const written = JSON.parse(await blobs[0]!.text()) as { weeks: Weeks };
+                expect(written.weeks.map((week) => week.weekStart)).toEqual(
+                    seed.map((week) => week.weekStart),
+                );
+            } finally {
+                click.mockRestore();
+            }
+        });
+
+        // Both flows are owned by App rather than nested inside the panel that
+        // offers them, so the handoff is the thing that can break: a panel left
+        // mounted behind the screen it opened is one you dismiss twice.
+        it('Account settings hands off to Change password, closing itself on the way', async () => {
+            const user = await renderSignedIn();
+            await openAccountMenu(user);
+            await user.click(screen.getByRole('menuitem', { name: /Account settings/ }));
+            expect(screen.getByText('duong')).toBeTruthy();
+
+            await user.click(screen.getByRole('button', { name: /Password/ }));
+
+            expect(screen.getByText('Change password')).toBeTruthy();
+            expect(screen.queryByText('Account settings')).toBeNull();
+        });
+
+        it('Account settings hands off to Change email, which says it is not finished', async () => {
+            const user = await renderSignedIn();
+            await openAccountMenu(user);
+            await user.click(screen.getByRole('menuitem', { name: /Account settings/ }));
+
+            await user.click(screen.getByRole('button', { name: 'Change email' }));
+
+            expect(screen.getByText('Change email')).toBeTruthy();
+            expect(screen.getByText(/Currently you@example\.com/)).toBeTruthy();
+            // it admits it rather than pretending — see ChangeEmailForm
+            expect(screen.getByRole('button', { name: 'Not available yet' })).toBeDisabled();
+            expect(screen.queryByText('Account settings')).toBeNull();
+        });
+
+        // Signing out has to take the account's data off the screen with it,
+        // not just the chip: the next person at this browser is a guest.
+        it('signing out drops back to the guest board', async () => {
+            const user = await renderSignedIn();
+            await openAccountMenu(user);
+
+            await user.click(screen.getByRole('menuitem', { name: /Sign out/ }));
+            // supabase-js reports the sign-out as an event; the mock does not
+            // fire one on its own.
+            emit('SIGNED_OUT', null);
+
+            expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
+            expect(screen.queryByRole('button', { name: /^Account: duong/ })).toBeNull();
+            expect(screen.getByText(/Nothing planned yet/)).toBeTruthy();
+        });
+
+        /*
+         * The recovery gate. Following a reset-password link signs the browser
+         * in with a live session, so without this the app would drop someone
+         * straight into their account having never set a new password — with
+         * the old one still valid.
+         */
+        it('a recovery link replaces the app with the new-password screen, board and all', async () => {
+            await renderSignedIn();
+
+            emit('PASSWORD_RECOVERY', account);
+
+            expect(await screen.findByText('Choose a new password')).toBeTruthy();
+            expect(screen.queryByRole('button', { name: 'plan' })).toBeNull();
+            expect(screen.queryByRole('button', { name: /^Account: duong/ })).toBeNull();
+        });
+
+        it('setting the new password releases the gate into the app', async () => {
+            const user = await renderSignedIn();
+            emit('PASSWORD_RECOVERY', account);
+            await screen.findByText('Choose a new password');
+
+            await user.type(screen.getByLabelText('New password'), 'newpassword');
+            await user.type(screen.getByLabelText('Confirm password'), 'newpassword');
+            await user.click(screen.getByRole('button', { name: 'Set new password' }));
+
+            expect(fake.auth.updateUser).toHaveBeenCalledWith({ password: 'newpassword' });
+            expect(await screen.findByRole('button', { name: 'plan' })).toBeTruthy();
+        });
+
+        // The opposite failure to the one above: cancelling must sign out, and
+        // must NOT drop the gate if that sign-out did not happen — the recovery
+        // session would still be live, which is the whole thing the screen is
+        // there to prevent.
+        it('cancelling the recovery signs out; a failed sign-out keeps the gate up', async () => {
+            fake.auth.signOut.mockResolvedValueOnce({ error: { message: 'Offline' } });
+            const user = await renderSignedIn();
+            emit('PASSWORD_RECOVERY', account);
+            await screen.findByText('Choose a new password');
+
+            await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+            expect(fake.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+            expect(await screen.findByText('Offline')).toBeTruthy();
+            expect(screen.getByText('Choose a new password')).toBeTruthy();
+
+            await user.click(screen.getByRole('button', { name: 'Cancel' }));
+            await waitFor(() => expect(screen.queryByText('Choose a new password')).toBeNull());
+        });
+
+        /*
+         * The guest-work prompt. Raised when this browser holds guest weeks and
+         * the account already has weeks of its own — the one case where neither
+         * silently adopting nor silently dropping them is defensible.
+         */
+        const guestWeeks: Weeks = [
+            {
+                weekStart: '2026-07-27', // the landing week, empty in the fixtures
+                ended: false,
+                projects: [{ id: 'g1', name: 'Planned as a guest', tasks: [] }],
+            },
+        ];
+
+        function seedGuestWork() {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ weeks: guestWeeks }));
+        }
+
+        it('guest work plus an account that already has weeks raises the prompt, and merging keeps both', async () => {
+            seedGuestWork();
+            const user = await renderSignedIn();
+
+            expect(await screen.findByText('Unsaved guest work found')).toBeTruthy();
+            // jsdom measures every box at zero, so this is the phone's form of
+            // the question — rows you tap, not buttons in a foot (see the
+            // desktop test below for the other half of that pair)
+            expect(screen.getByText(/Added below what you already have/)).toBeTruthy();
+            await user.click(screen.getByRole('button', { name: /Merge into my plan/ }));
+
+            // it lands on the week it was planned for, which is the one on
+            // screen — and the account's own weeks are still there beside it
+            expect(await screen.findByDisplayValue('Planned as a guest')).toBeTruthy();
+            expect(store.getWeeks()).toHaveLength(seed.length + 1);
+            // and the guest copy is gone, so the next sign-in does not ask again
+            expect(window.localStorage.getItem(STORAGE_KEY)).toContain('"weeks":[]');
+        });
+
+        it('discarding the guest work drops it and leaves the account untouched', async () => {
+            seedGuestWork();
+            const user = await renderSignedIn();
+            await screen.findByText('Unsaved guest work found');
+
+            await user.click(screen.getByRole('button', { name: /Discard guest work/ }));
+
+            expect(screen.queryByText('Unsaved guest work found')).toBeNull();
+            expect(screen.queryByDisplayValue('Planned as a guest')).toBeNull();
+            expect(store.getWeeks()).toHaveLength(seed.length);
+        });
+
+        // The one prompt in the app whose two form factors are different
+        // COMPONENTS rather than the same one restyled (see App's isDesktop),
+        // so a width that picks the wrong one is a real failure and not a
+        // cosmetic one: the sheet's choices are rows you tap, the dialog's are
+        // buttons in a foot.
+        it('at desktop width the same question is asked as a dialog, not a sheet', async () => {
+            seedGuestWork();
+            const container = document.createElement('div');
+            container.setAttribute('data-app-container', '');
+            container.getBoundingClientRect = () =>
+                ({ width: DESKTOP_MIN_WIDTH }) as unknown as DOMRect;
+            document.body.appendChild(container);
+            expect(document.querySelector(APP_CONTAINER_SELECTOR)).toBe(container);
+
+            const user = userEvent.setup();
+            render(<App />, { container });
+            await screen.findByText('Unsaved guest work found');
+
+            expect(screen.getByText(/Merging adds it below what you already have/)).toBeTruthy();
+            expect(screen.queryByText(/Deletes what you planned as a guest/)).toBeNull();
+
+            // Decide later is not a cancel: it keeps the guest work for next time
+            await user.click(screen.getByRole('button', { name: 'Decide later' }));
+            expect(screen.queryByText('Unsaved guest work found')).toBeNull();
+            expect(window.localStorage.getItem(STORAGE_KEY)).toContain('Planned as a guest');
+        });
     });
 });
