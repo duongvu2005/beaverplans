@@ -175,6 +175,8 @@ describe('Store subscribe', () => {
      *     follow it, and the outgoing backend must stop being relayed
      *   partition on unsubscribing: stops delivery; the last unsubscribe also
      *     releases the underlying subscription
+     *   partition on how many listeners remain after one unsubscribes: none
+     *     (release the backend) | some (keep it, keep delivering)
      */
 
     it('relays the active backend, and ignores the inactive one', () => {
@@ -220,6 +222,27 @@ describe('Store subscribe', () => {
 
         expect(woken).toBe(1);
         expect(cloud.listeners.size).toBe(0); // not merely ignored — detached
+    });
+
+    // The release is gated on the LAST listener leaving. Dropping that guard —
+    // detaching whenever anyone unsubscribes — would silence every remaining
+    // listener the moment one component unmounted, and the symptom would be a
+    // board that quietly stops seeing another device's edits rather than
+    // anything that looks like an error.
+    it('one listener leaving does not cut off the others', () => {
+        const { store, cloud } = makeStore();
+        store.useBackend('cloud');
+        let stillHere = 0;
+        const off = store.subscribe(() => {});
+        store.subscribe(() => {
+            stillHere += 1;
+        });
+
+        off();
+        cloud.emitChange();
+
+        expect(stillHere).toBe(1);
+        expect(cloud.listeners.size).toBe(1); // still attached, for the survivor
     });
 });
 

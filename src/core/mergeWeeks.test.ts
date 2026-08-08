@@ -179,6 +179,89 @@ describe('mergeWeeks', () => {
         expect(merged?.subtasks[0]).toEqual(ourSubtask);
     });
 
+    // mergeScalar's last line, and the only arbitrary decision in the module:
+    // three distinct values, so no comparison can say who is right. The local
+    // device wins because it is the one with a user looking at it. Everything
+    // above it in mergeScalar is a rule; this is a choice, which is exactly why
+    // it needs pinning — a "tidy-up" that reordered those guards could flip it
+    // to theirs and silently overwrite whatever is on screen.
+    it('a field both sides renamed DIFFERENTLY keeps ours — the one arbitrary tie-break', () => {
+        const ours: Weeks = [
+            week(JUL13, [
+                { ...project('pA', [task('tA', [subtask('sA1'), subtask('sA2')])]), name: 'ours' },
+                project('pB', [task('tB', [])]),
+            ]),
+        ];
+        const theirs: Weeks = [
+            week(JUL13, [
+                {
+                    ...project('pA', [task('tA', [subtask('sA1'), subtask('sA2')])]),
+                    name: 'theirs',
+                },
+                project('pB', [task('tB', [])]),
+            ]),
+        ];
+
+        const merged = mergeWeeks(BASE, ours, theirs);
+
+        expect(weekAt(merged, JUL13).projects[0]?.name).toBe('ours');
+        // and it is a genuine three-way conflict, not one side matching base
+        expect(weekAt(BASE, JUL13).projects[0]?.name).toBe('pA');
+    });
+
+    // The optional fields are spread conditionally on each level, so a merge
+    // that reconciled them correctly but spread the wrong variable would drop
+    // them entirely — losing a deadline or a note with no conflict involved and
+    // nothing on screen to explain it.
+    it('optional fields added on either side survive the merge, at both levels', () => {
+        // Both sides must touch the SAME task, or the keyed merge short-circuits
+        // to whichever side changed it and mergeTask never runs.
+        const ours: Weeks = [
+            week(JUL13, [
+                project('pA', [
+                    { ...task('tA', [subtask('sA1'), subtask('sA2')]), description: 'our note' },
+                ]),
+                project('pB', [task('tB', [])]),
+            ]),
+        ];
+        const theirs: Weeks = [
+            week(JUL13, [
+                {
+                    ...project('pA', [
+                        { ...task('tA', [subtask('sA1'), subtask('sA2')]), name: 'their name' },
+                    ]),
+                    deadline: '2026-07-19',
+                },
+                project('pB', [task('tB', [])]),
+            ]),
+        ];
+
+        const merged = mergeWeeks(BASE, ours, theirs);
+
+        // each side's edit to a different field of the same task is kept
+        expect(taskAt(merged, JUL13, 'pA', 'tA')?.description).toBe('our note');
+        expect(taskAt(merged, JUL13, 'pA', 'tA')?.name).toBe('their name');
+        expect(weekAt(merged, JUL13).projects[0]?.deadline).toBe('2026-07-19');
+    });
+
+    // The same tie-break, one level down and on a nullable field, since
+    // deadline's undefined-vs-value transitions are where a scalar merge is
+    // easiest to get subtly wrong.
+    it('a deadline set differently on both devices keeps ours', () => {
+        const withDeadline = (deadline: string): Weeks => [
+            week(JUL13, [
+                project('pA', [
+                    { ...task('tA', [subtask('sA1'), subtask('sA2')]), deadline },
+                ]),
+                project('pB', [task('tB', [])]),
+            ]),
+        ];
+
+        const merged = mergeWeeks(BASE, withDeadline('2026-07-17'), withDeadline('2026-07-19'));
+
+        expect(taskAt(merged, JUL13, 'pA', 'tA')?.deadline).toBe('2026-07-17');
+    });
+
     it('assignedDay and missedDays move together — a field-wise merge here would be invalid', () => {
         // Ours pulls the subtask back to tuesday; theirs pushes it to friday
         // and records misses on wed/thu. Taking ours' day with theirs' misses

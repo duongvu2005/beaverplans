@@ -82,6 +82,49 @@ describe('ArchiveRow', () => {
         expect(onOpen).toHaveBeenCalledTimes(1);
     });
 
+    // The row is a div with role="button", so the keyboard activation a real
+    // <button> gives for free has to be written out — and if it regresses, an
+    // archived week becomes unreachable without a mouse, silently. Space also
+    // has to preventDefault, or activating a row scrolls the page under it.
+    it.each(['{Enter}', ' '])('opens from the keyboard with %s', async (key) => {
+        const user = userEvent.setup();
+        const onOpen = vi.fn();
+        render(
+            <ArchiveRow
+                entry={samplePlan()}
+                label="Jul 13 – 19"
+                onOpen={onOpen}
+                onCopy={() => {}}
+                onDelete={() => {}}
+            />,
+        );
+
+        screen.getByRole('button', { name: /open archived week/i }).focus();
+        await user.keyboard(key);
+
+        expect(onOpen).toHaveBeenCalledTimes(1);
+    });
+
+    // Any other key must fall through, or the row swallows Tab and traps focus.
+    it('an unrelated key does not open it', async () => {
+        const user = userEvent.setup();
+        const onOpen = vi.fn();
+        render(
+            <ArchiveRow
+                entry={samplePlan()}
+                label="Jul 13 – 19"
+                onOpen={onOpen}
+                onCopy={() => {}}
+                onDelete={() => {}}
+            />,
+        );
+
+        screen.getByRole('button', { name: /open archived week/i }).focus();
+        await user.keyboard('a');
+
+        expect(onOpen).not.toHaveBeenCalled();
+    });
+
     it('covers copy button: calls onCopy only, not onOpen', async () => {
         const user = userEvent.setup();
         const onOpen = vi.fn();
