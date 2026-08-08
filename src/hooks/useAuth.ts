@@ -125,6 +125,18 @@ export function useAuth(): UseAuthResult {
             if (switchedAccount) {
                 cloudBackend.reset();
             }
+            // Whether the app is showing a different person's data than it was.
+            // Not every event is: supabase-js refreshes the token whenever a tab
+            // regains focus, and that arrives here as an ordinary event carrying
+            // the same user. Gates the epoch bump at the end, and only that.
+            //
+            // Weaker than switchedAccount above, on purpose. That one means one
+            // signed-in account replaced another, which is the only case where
+            // CloudBackend holds the wrong user's cache and must be reset. This
+            // one also counts signing in and signing out (undefined <-> an id),
+            // because the backend is a function of the id — none -> local, any
+            // id -> cloud — and either direction changes which one to load from.
+            const switchedUser = nextUserId !== lastUserId.current;
             lastUserId.current = nextUserId;
             setUser(session === null ? null : { id: session.user.id, email: session.user.email });
 
@@ -145,7 +157,13 @@ export function useAuth(): UseAuthResult {
             }
 
             store.useBackend(session === null ? 'local' : 'cloud');
-            setEpoch((n) => n + 1);
+            // Only on a real switch. Bumping on every event made a token
+            // refresh — i.e. switching back to the window — indistinguishable
+            // from signing in as someone else: useWeeks dropped to unloaded and
+            // App rendered null, blanking the board and unmounting every child
+            // mid-edit. Nothing needs reloading when the user has not changed;
+            // remote edits arrive through store.subscribe instead.
+            if (switchedUser) setEpoch((n) => n + 1);
         }
 
         function seed(session: Session | null, event: AuthChangeEvent | undefined) {
@@ -214,10 +232,9 @@ export function useAuth(): UseAuthResult {
     //
     // Signing in again is how that gets proven, and it is deliberately not
     // destructive either way. A correct password re-issues a session for the
-    // SAME user, so applySession sees no account switch and resets nothing;
-    // the reload its epoch bump triggers goes through CloudBackend.load, which
-    // keeps unpushed local edits. A wrong password fails the request outright
-    // and leaves the existing session untouched.
+    // SAME user, so applySession sees no switch: it resets nothing and does not
+    // bump, so no reload happens at all. A wrong password fails the request
+    // outright and leaves the existing session untouched.
     //
     // Takes a captcha token because this project enforces captcha on the
     // password grant — checked against the live endpoint, which rejects a
