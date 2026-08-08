@@ -25,6 +25,10 @@
    visible scrim to tap, and left reads as "out of here". */
 .close {
     align-self: flex-start;
+    /* .wrap is a column, so a short screen shrinks its items before it scrolls —
+       and a 44px box with no content floor is the first to give, flattening the
+       circle to an ellipse. Same reason Avatar carries flex: none. */
+    flex: none;
     display: grid;
     place-items: center;
     width: 44px;
