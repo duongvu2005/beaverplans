@@ -1,8 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
-import type { Theme } from '../hooks/useTheme';
+import type { ThemePref } from '../hooks/useTheme';
+import { ThemePicker } from './ThemePicker';
 import styles from './AccountMenu.module.css';
 
-function LockIcon() {
+/* A person, not a gear. The panel behind this row is about who the account is —
+   name, address, password — and a gear is the generic glyph for app preferences,
+   which is the one thing in this menu it does NOT open (the theme sits above it).
+   Head-and-shoulders matches UserIcon, the same mark the account chip already
+   uses, redrawn on the 24 grid the rest of this menu is on. */
+function PersonIcon() {
     return (
         <svg
             viewBox="0 0 24 24"
@@ -13,8 +19,24 @@ function LockIcon() {
             strokeLinejoin="round"
             aria-hidden="true"
         >
-            <rect x="5" y="11" width="14" height="9" rx="2" />
-            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            <circle cx="12" cy="8.4" r="3.6" />
+            <path d="M5.2 19.8a6.8 6.8 0 0 1 13.6 0" />
+        </svg>
+    );
+}
+
+function ShieldIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <path d="M12 3l7 3v6c0 4-3 7.2-7 9-4-1.8-7-5-7-9V6l7-3z" />
         </svg>
     );
 }
@@ -42,12 +64,18 @@ type AccountMenuProps = {
     trigger: ReactNode;
     open: boolean;
     onClose: () => void;
-    theme: Theme;
-    onToggleTheme: () => void;
-    /** omitted for a guest trigger: there is no account yet for these two to act on */
+    themePref: ThemePref;
+    onPickTheme: (pref: ThemePref) => void;
+    /**
+     * omitted for a guest trigger: there is nothing here for a guest to act on.
+     * Data & privacy belongs to this group and not beside the theme, because a
+     * guest's weeks never leave their browser — there is no custodian to ask for
+     * a copy and nothing on a server to erase.
+     */
     accountActions?: {
-        onChangePassword: () => void;
+        onOpenSettings: () => void;
         onSignOut: () => void;
+        onOpenData: () => void;
     };
     /** goes on the anchor, so the bar can hide the whole thing on a phone */
     className?: string;
@@ -81,8 +109,8 @@ export function AccountMenu({
     trigger,
     open,
     onClose,
-    theme,
-    onToggleTheme,
+    themePref,
+    onPickTheme,
     accountActions,
     className,
 }: AccountMenuProps) {
@@ -129,36 +157,7 @@ export function AccountMenu({
                     }
                     role="menu"
                 >
-                    <div className={styles.themeRow} role="group" aria-label="Theme">
-                        <button
-                            type="button"
-                            className={
-                                theme === 'light'
-                                    ? `${styles.themeBtn} ${styles.themeOn}`
-                                    : styles.themeBtn
-                            }
-                            aria-pressed={theme === 'light'}
-                            onClick={() => {
-                                if (theme !== 'light') onToggleTheme();
-                            }}
-                        >
-                            Light
-                        </button>
-                        <button
-                            type="button"
-                            className={
-                                theme === 'dark'
-                                    ? `${styles.themeBtn} ${styles.themeOn}`
-                                    : styles.themeBtn
-                            }
-                            aria-pressed={theme === 'dark'}
-                            onClick={() => {
-                                if (theme !== 'dark') onToggleTheme();
-                            }}
-                        >
-                            Dark
-                        </button>
-                    </div>
+                    <ThemePicker pref={themePref} onPick={onPickTheme} className={styles.theme} />
                     {accountActions && (
                         <>
                             <div className={styles.sep} role="separator" />
@@ -166,10 +165,20 @@ export function AccountMenu({
                                 type="button"
                                 role="menuitem"
                                 className={styles.item}
-                                onClick={accountActions.onChangePassword}
+                                onClick={accountActions.onOpenData}
                             >
-                                <LockIcon />
-                                Change password
+                                <ShieldIcon />
+                                Data &amp; privacy
+                            </button>
+                            <div className={styles.sep} role="separator" />
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className={styles.item}
+                                onClick={accountActions.onOpenSettings}
+                            >
+                                <PersonIcon />
+                                Account settings
                             </button>
                             <div className={styles.sep} role="separator" />
                             <button

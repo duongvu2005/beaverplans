@@ -175,12 +175,27 @@
     text-overflow: ellipsis;
 }
 
-/* Email addresses aren't a caps-and-tracked LABEL the way "Guest" is — the
-   chip's uppercase/letter-spacing was designed for that one static word, not
-   variable-length mixed-case text. */
-.guestEmail {
+/* A chosen name isn't a caps-and-tracked LABEL the way "Guest" is — the chip's
+   uppercase/letter-spacing was designed for that one static word, not
+   variable-length mixed-case text. Sans rather than mono for the same reason:
+   mono is this app's chrome voice, and a person's name is not chrome. */
+.guestName {
     text-transform: none;
     letter-spacing: normal;
+    font-family: var(--sans);
+    font-size: var(--fs-body);
+    color: var(--ink-soft);
+    max-width: 140px;
+}
+
+/* Avatar draws its own circle (the ring is the cat's head), so it needs no frame
+   here. At 26px inside a 30px chip with a 1px border it clears the top and bottom
+   by 1px, and the -8px pull takes it out through the chip's 10px left padding to
+   sit 2px in from the border — which makes it concentric with the pill's own 15px
+   left cap rather than a circle parked inside a wider one. */
+.avatar {
+    margin-left: -9px;
+    margin-right: 1px;
 }
 
 /* The same chip, now a trigger either way: a chip that opens something has to
@@ -214,11 +229,14 @@
     color: var(--ink-soft);
 }
 
-.account[aria-expanded='true'] svg {
+/* :last-child, because the chevron is no longer the only svg in here — the
+   avatar is one too, and an unscoped `.account svg` turned the cat upside down
+   every time the menu opened. */
+.account[aria-expanded='true'] svg:last-child {
     transform: rotate(180deg);
 }
 
-.account svg {
+.account svg:last-child {
     transition: transform 0.15s;
 }
 
@@ -232,7 +250,10 @@
     outline-offset: 2px;
 }
 
-.account svg {
+/* The chevron's size, and the chevron's only — same reason as above. Unscoped,
+   this clamped the avatar to 13px no matter what size prop it was given, which is
+   why enlarging it appeared to do nothing at all. */
+.account svg:last-child {
     flex: none;
     width: 13px;
     height: 13px;
@@ -344,9 +365,15 @@
         cursor: pointer;
     }
 
+    /* flex: none + aspect-ratio for the same reason as Avatar's own .cat: a
+       border-radius: 50% box that gets squeezed by a pixel stops being a circle
+       and starts being an egg, and the guest's frame is as much a circle as the
+       cat that replaces it. */
     .you span {
+        flex: none;
         width: 26px;
         height: 26px;
+        aspect-ratio: 1;
         display: grid;
         place-items: center;
         border-radius: 50%;

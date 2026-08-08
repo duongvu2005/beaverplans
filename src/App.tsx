@@ -13,6 +13,7 @@ import {
 import {
     canEndWeek,
     carryForward,
+    clearWeek,
     earliestActiveWeek,
     endWeek,
     reopenWeek,
@@ -23,12 +24,15 @@ import {
     putWeek,
     weekAt,
 } from './core/weeks';
+import { exportFilename, exportJson } from './storage/exportData';
+import { downloadText } from './utils/downloadText';
 import { newId } from './utils/newId';
 import { overallProgress } from './core/progress';
 import { WeekBoard } from './components/WeekBoard';
 import { ArchiveBoard } from './components/ArchiveBoard';
 import { StatsBoard } from './components/StatsBoard';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { DataPrivacyDialog } from './components/DataPrivacyDialog';
 import { GuestMergeDialog } from './components/GuestMergeDialog';
 import { GuestMergeSheet } from './components/GuestMergeSheet';
 import { WeekHeader } from './components/WeekHeader';
@@ -36,6 +40,8 @@ import { WeekRef } from './components/WeekRef';
 import { TopBar, type View } from './components/TopBar';
 import { AuthForm, type AuthMode } from './components/AuthForm';
 import { ChangePasswordForm } from './components/ChangePasswordForm';
+import { AccountSettings } from './components/AccountSettings';
+import { ChangeEmailForm } from './components/ChangeEmailForm';
 import { RecoveryScreen } from './components/RecoveryScreen';
 import { useAuth } from './hooks/useAuth';
 import { useGuestMigration } from './hooks/useGuestMigration';
@@ -49,6 +55,8 @@ export default function App() {
     const [view, setView] = useState<View>('plan');
     const [authOpen, setAuthOpen] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [changingEmail, setChangingEmail] = useState(false);
     const [weeks, setWeeks, weeksLoaded] = useWeeks(auth.epoch);
     const guestMigration = useGuestMigration(auth.user?.id, weeksLoaded, setWeeks);
     // The guest-work prompt is the one place two form factors want different
@@ -63,6 +71,9 @@ export default function App() {
     const [viewing, setViewing] = useState<DateKey>(currentWeek);
     const [confirmingEndWeek, setConfirmingEndWeek] = useState(false);
     const [confirmingReopen, setConfirmingReopen] = useState(false);
+    const [confirmingClearBoard, setConfirmingClearBoard] = useState(false);
+    const [confirmingClearAll, setConfirmingClearAll] = useState(false);
+    const [dataOpen, setDataOpen] = useState(false);
 
     const plan = weekAt(weeks, viewing);
     const overall = overallProgress(plan.projects);
@@ -165,6 +176,25 @@ export default function App() {
         setConfirmingEndWeek(false);
     }
 
+    // No flash bar yet, so the only feedback a download gives is the browser's own.
+    // That is the strongest signal available and arguably the right one anyway —
+    // it is the thing the person asked for, appearing. Copy has its own in-place
+    // "Copied", inside the dialog where the button is.
+    function handleExportData() {
+        const now = new Date();
+        downloadText(exportFilename(now), exportJson(weeks, now), 'application/json');
+    }
+
+    function handleConfirmClearBoard() {
+        setWeeks((current) => clearWeek(current, viewing));
+        setConfirmingClearBoard(false);
+    }
+
+    function handleConfirmClearAll() {
+        setWeeks([]);
+        setConfirmingClearAll(false);
+    }
+
     // Reopening leaves the viewed week where it is: you are looking at the week
     // you want back, and it stays under you — only its frozen-ness changes.
     function handleConfirmReopen() {
@@ -181,6 +211,7 @@ export default function App() {
         mode: AuthMode,
         email: string,
         password: string,
+        username: string,
         captchaToken: string,
     ): Promise<{ confirmationRequired: boolean }> {
         if (mode === 'signin') {
@@ -188,7 +219,7 @@ export default function App() {
             setAuthOpen(false);
             return { confirmationRequired: false };
         } else if (mode === 'signup') {
-            const sessionEstablished = await auth.signUp(email, password, captchaToken);
+            const sessionEstablished = await auth.signUp(email, password, username, captchaToken);
             if (sessionEstablished) setAuthOpen(false);
             return { confirmationRequired: !sessionEstablished };
         } else {
@@ -226,8 +257,9 @@ export default function App() {
                 onView={setView}
                 user={auth.user}
                 onOpenAuth={() => setAuthOpen(true)}
-                onChangePassword={() => setChangingPassword(true)}
+                onOpenSettings={() => setSettingsOpen(true)}
                 onSignOut={() => void auth.signOut()}
+                onOpenData={() => setDataOpen(true)}
             />
             <main className="pane">
                 {view === 'plan' && (
@@ -247,6 +279,8 @@ export default function App() {
                             onMoveWork={handleMoveWork}
                             onEndWeek={handleEndWeek}
                             onReopenWeek={() => setConfirmingReopen(true)}
+                            canClear={!ended && !isEmptyWeek(plan)}
+                            onClearBoard={() => setConfirmingClearBoard(true)}
                         />
                         <WeekBoard plan={plan} onChange={handlePlanChange} />
                     </>
@@ -321,6 +355,64 @@ export default function App() {
                     </p>
                 </ConfirmDialog>
             )}
+            {confirmingClearBoard && (
+                <ConfirmDialog
+                    eyebrow={weekRangeLabel(viewing)}
+                    title="Clear this board?"
+                    confirmLabel="Clear the board"
+                    confirmTone="danger"
+                    onConfirm={handleConfirmClearBoard}
+                    onClose={() => setConfirmingClearBoard(false)}
+                >
+                    <p className={shell.text}>
+                        Removes every project on this week, finished or not. Other weeks and your
+                        archive are untouched — and unlike ending the week, this keeps no record of
+                        what was here.
+                    </p>
+                </ConfirmDialog>
+            )}
+            {/* Signed-in only, like the row that opens it: there is no server-held
+                copy of a guest's weeks to hand over or erase. */}
+            {dataOpen && auth.user !== null && (
+                <DataPrivacyDialog
+                    email={auth.user.email}
+                    weekCount={weeks.length}
+                    onClose={() => setDataOpen(false)}
+                    onDownload={handleExportData}
+                    exportText={() => exportJson(weeks, new Date())}
+                    // Hands off rather than stacking a confirm on top of the panel
+                    // it was opened from, the same way every other row in the
+                    // account surfaces does.
+                    onClearAll={() => {
+                        setDataOpen(false);
+                        setConfirmingClearAll(true);
+                    }}
+                />
+            )}
+            {/* Named by what it costs rather than by the button that opened it. The
+                panel behind it offers two ways to keep a copy first, and this copy
+                says so plainly: it is the one action in the app with nothing
+                behind it. */}
+            {confirmingClearAll && (
+                <ConfirmDialog
+                    eyebrow="Data &amp; privacy"
+                    title="Delete every week?"
+                    confirmLabel="Delete everything"
+                    confirmTone="danger"
+                    onConfirm={handleConfirmClearAll}
+                    onClose={() => setConfirmingClearAll(false)}
+                >
+                    <p className={shell.text}>
+                        This deletes all {weeks.length} of your weeks from the server, planned and
+                        archived alike, on every device you are signed in on. Your account and
+                        sign-in stay exactly as they are — only the weeks go.
+                    </p>
+                    <p className={shell.text}>
+                        There is no undo. If you have not taken a copy yet, cancel and do that
+                        first.
+                    </p>
+                </ConfirmDialog>
+            )}
             {authOpen && (
                 <AuthForm
                     initialMode="signin"
@@ -328,8 +420,31 @@ export default function App() {
                     onSubmit={handleAuthSubmit}
                 />
             )}
-            {/* Owned here rather than by the menu it is opened from, the same
-                way AuthForm is: the menu closes on the way. The email is a
+            {/* Signed-in only, like the row that opens it. Both of the flows it
+                hands off to are owned here rather than nested inside it, for the
+                same reason every other handoff in this app is: a panel left
+                mounted behind the thing it opened is a panel you dismiss twice. */}
+            {settingsOpen && auth.user !== null && (
+                <AccountSettings
+                    username={auth.user.username}
+                    email={auth.user.email}
+                    onClose={() => setSettingsOpen(false)}
+                    onSaveUsername={auth.updateUsername}
+                    onChangePassword={() => {
+                        setSettingsOpen(false);
+                        setChangingPassword(true);
+                    }}
+                    onChangeEmail={() => {
+                        setSettingsOpen(false);
+                        setChangingEmail(true);
+                    }}
+                />
+            )}
+            {changingEmail && auth.user !== null && (
+                <ChangeEmailForm email={auth.user.email} onClose={() => setChangingEmail(false)} />
+            )}
+            {/* Owned here rather than by the panel it is opened from, the same
+                way AuthForm is: that panel closes on the way. The email is a
                 precondition, not something the screen copes with being absent —
                 and signing out while it is open takes auth.user away, which is
                 what closes it. */}

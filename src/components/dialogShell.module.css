@@ -23,6 +23,17 @@
     color: var(--ink);
 }
 
+/* Optional line UNDER the title, for a second identifier the title itself is not
+   (an email under a display name). The eyebrow above is a mono kicker naming the
+   context; this is ordinary text naming the same thing more precisely, so it
+   deliberately does not borrow that treatment. */
+.sub {
+    margin: 2px 0 0;
+    font: var(--fs-body) / 1.4 var(--sans);
+    color: var(--ink-faint);
+    overflow-wrap: anywhere; /* a long address must not widen the panel */
+}
+
 .body {
     padding: var(--sp-4);
     overflow-y: auto;

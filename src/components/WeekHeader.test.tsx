@@ -18,6 +18,7 @@ function setup(overrides: Partial<Parameters<typeof WeekHeader>[0]> = {}) {
     const onMoveWork = vi.fn();
     const onEndWeek = vi.fn();
     const onReopenWeek = vi.fn();
+    const onClearBoard = vi.fn();
     const view = render(
         <WeekHeader
             weekStart={THIS_WEEK}
@@ -25,6 +26,8 @@ function setup(overrides: Partial<Parameters<typeof WeekHeader>[0]> = {}) {
             progress={{ done: 5, total: 13 }}
             canMove
             canEnd
+            canClear
+            onClearBoard={onClearBoard}
             minWeekStart="2026-06-01"
             maxWeekStart="2026-10-19"
             destinationBlockedReason={() => undefined}
@@ -36,7 +39,15 @@ function setup(overrides: Partial<Parameters<typeof WeekHeader>[0]> = {}) {
         />,
     );
     root = view.container;
-    return { ...view, onView, onMoveWork, onEndWeek, onReopenWeek, user: userEvent.setup() };
+    return {
+        ...view,
+        onView,
+        onMoveWork,
+        onEndWeek,
+        onReopenWeek,
+        onClearBoard,
+        user: userEvent.setup(),
+    };
 }
 
 const back = () => within(root).getByRole('button', { name: /previous week|earlier destination/i });
@@ -52,6 +63,7 @@ const sheet = () => screen.getByRole('dialog');
 const sheetMove = () => within(sheet()).getByRole('button', { name: /move this week/i });
 const sheetEnd = () => within(sheet()).getByRole('button', { name: /^end week/i });
 const sheetCancel = () => within(sheet()).getByRole('button', { name: /^cancel$/i });
+const sheetClear = () => within(sheet()).getByRole('button', { name: /clear this board/i });
 
 describe('WeekHeader', () => {
     /*
@@ -262,13 +274,42 @@ describe('WeekHeader', () => {
         await user.click(manage());
         expect(sheetMove()).toBeDisabled();
         expect(sheetEnd()).toBeEnabled();
+        expect(sheetClear()).toBeEnabled();
     });
 
-    it('covers Manage: dead only when neither action is available', () => {
-        setup({ canMove: false, canEnd: false });
+    it('covers the sheet: picking Clear this board closes it and hands off', async () => {
+        const { user, onClearBoard } = setup();
+        await user.click(manage());
+        await user.click(sheetClear());
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(onClearBoard).toHaveBeenCalledOnce();
+    });
+
+    it('covers canClear false: Clear this board is disabled, not hidden', async () => {
+        const { user, onClearBoard } = setup({ canClear: false });
+        await user.click(manage());
+        expect(sheetClear()).toBeDisabled();
+        await user.click(sheetClear());
+        expect(onClearBoard).not.toHaveBeenCalled();
+    });
+
+    // An archived week is frozen, so the row explains where to go instead
+    // rather than just going grey with no reason given.
+    it('covers ended: the clear row says what to do instead', async () => {
+        const { user } = setup({ ended: true, canClear: false });
+        await user.click(manage());
+        expect(sheetClear()).toHaveTextContent(/reopen it first/i);
+    });
+
+    it('covers Manage: dead only when no action at all is available', () => {
+        setup({ canMove: false, canEnd: false, canClear: false });
         expect(manage()).toBeDisabled();
         cleanup();
         setup({ canMove: false });
+        expect(manage()).toBeEnabled();
+        cleanup();
+        // Clearing alone is enough to keep the way in open.
+        setup({ canMove: false, canEnd: false, canClear: true });
         expect(manage()).toBeEnabled();
     });
 

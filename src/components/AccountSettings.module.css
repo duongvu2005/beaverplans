@@ -1,0 +1,158 @@
+/* Account settings: editable fields at the top, hand-off rows below. The split is
+   by whether a change has to prove who you are — a username does not, a password
+   and an address do — and the rule between the two groups is what says so. */
+
+.body {
+    padding: var(--sp-4) var(--sp-5) var(--sp-5);
+    overflow-y: auto;
+}
+
+.field {
+    display: block;
+    margin-bottom: var(--sp-5);
+}
+
+.label {
+    display: block;
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: var(--sp-2);
+}
+
+/* The input and its Save button on one line: the button is part of the field, not
+   a form-wide action, and putting it underneath would make one small edit look
+   like it needed the same ceremony as the whole panel. */
+.editRow {
+    display: flex;
+    gap: var(--sp-2);
+}
+
+.input {
+    flex: 1;
+    min-width: 0; /* or a long value pushes Save out of the panel */
+    font: var(--fs-row) var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    padding: 8px 10px;
+}
+
+.input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+}
+
+.save {
+    flex: none;
+    appearance: none;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+    border-radius: var(--r-chip);
+    padding: 8px 14px;
+    font: 600 var(--fs-body) var(--sans);
+    cursor: pointer;
+}
+
+.save:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+/* Disabled is the resting state here — nothing to save until something changes —
+   so it must not read as broken: ghost rather than greyed-out accent. */
+.save:disabled {
+    border-color: var(--line);
+    background: none;
+    color: var(--ink-faint);
+    cursor: default;
+}
+
+.note {
+    display: block;
+    margin-top: var(--sp-2);
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+.saved {
+    color: var(--good);
+}
+
+.error {
+    color: var(--accent);
+}
+
+.rows {
+    border-top: 1px solid var(--line);
+    padding-top: var(--sp-4);
+}
+
+/* A destination, not a control: these open something else, so they read as list
+   rows and carry a chevron rather than looking like the Save button above. */
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    text-align: left;
+    appearance: none;
+    background: none;
+    border: 0;
+    border-radius: var(--r);
+    padding: var(--sp-3) var(--sp-2);
+    cursor: pointer;
+}
+
+.row:hover {
+    background: var(--hover-neutral);
+}
+
+.rowText {
+    flex: 1;
+    min-width: 0;
+}
+
+.rowTitle {
+    display: block;
+    font: 600 var(--fs-row) / 1.4 var(--display);
+    color: var(--ink);
+}
+
+.rowSub {
+    display: block;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-faint);
+    overflow-wrap: anywhere;
+}
+
+.chevron {
+    flex: none;
+    color: var(--ink-faint);
+}
+
+/* Not built yet, and saying so is better than hiding the row: it tells you the
+   app knows the feature should exist. Inert rather than disabled — there is no
+   action to disable, only an explanation. */
+.soon {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.soon:hover {
+    background: none;
+}
+
+.soonTag {
+    flex: none;
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 8px;
+}

@@ -22,9 +22,15 @@ type AuthFormProps = {
         mode: AuthMode,
         email: string,
         password: string,
+        /** collected on signup only; empty string for the other two modes */
+        username: string,
         captchaToken: string,
     ) => Promise<AuthOutcome>;
 };
+
+// Long enough to be a name, short enough for the account chip not to have to
+// ellipsize it in the common case.
+const USERNAME_MAX = 24;
 
 const HCAPTCHA_SITEKEY = import.meta.env.VITE_HCAPTCHA_SITEKEY;
 
@@ -72,6 +78,7 @@ const SWITCH: Record<AuthMode, { prompt: string; action: string; to: AuthMode }>
 export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
     const [mode, setMode] = useState<AuthMode>(initialMode);
     const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -102,6 +109,11 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
 
     function switchMode(next: AuthMode) {
         setMode(next);
+        // Email survives a mode switch on purpose (a typo becomes a correction,
+        // not a retype) but the username does not: the only mode that asks for
+        // one is signup, so carrying it into sign-in and back would just be
+        // stale text in a field nobody saw.
+        setUsername('');
         setConfirmPassword('');
         setShowPassword(false);
         setError(null);
@@ -118,6 +130,10 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
         // instead of the browser's own native validation bubble.
         if (email.trim() === '') {
             setError('Enter your email.');
+            return;
+        }
+        if (mode === 'signup' && username.trim() === '') {
+            setError('Pick a username.');
             return;
         }
         if (mode !== 'reset' && password === '') {
@@ -143,7 +159,7 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
         setError(null);
         setNotice(null);
         try {
-            const outcome = await onSubmit(mode, email, password, captchaToken);
+            const outcome = await onSubmit(mode, email, password, username, captchaToken);
             if (mode === 'reset') {
                 // Deliberately non-committal: confirming or denying that the
                 // address has an account would let this form enumerate them.
@@ -278,6 +294,29 @@ export function AuthForm({ initialMode, onCancel, onSubmit }: AuthFormProps) {
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
                             </div>
+                            {/* "Username", not "Name": the latter reads as a demand
+                                for a real one, and this is only ever a display
+                                label. After the email, not before it — the address
+                                is the thing that actually creates the account, and
+                                leading with this makes the form look like it is
+                                asking for a profile. */}
+                            {mode === 'signup' && (
+                                <div className={shell.field}>
+                                    <label className={shell.label} htmlFor="auth-username">
+                                        Username
+                                    </label>
+                                    <input
+                                        id="auth-username"
+                                        className={styles.input}
+                                        type="text"
+                                        autoComplete="nickname"
+                                        maxLength={USERNAME_MAX}
+                                        placeholder="what should we call you?"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                    />
+                                </div>
+                            )}
                             {mode !== 'reset' &&
                                 passwordField(
                                     'auth-password',

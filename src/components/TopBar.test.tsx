@@ -15,7 +15,7 @@ describe('TopBar', () => {
      *         phone shows is the same DOM the desktop bar shows
      */
 
-    const SIGNED_IN = { id: 'u1', email: 'you@example.com' };
+    const SIGNED_IN = { id: 'u1', email: 'you@example.com', username: 'duong' };
 
     beforeEach(() => {
         localStorage.clear();
@@ -29,8 +29,9 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         expect(screen.getByRole('button', { name: 'stats' })).toHaveAttribute(
@@ -49,8 +50,9 @@ describe('TopBar', () => {
                 onView={onView}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         await user.click(screen.getByRole('button', { name: 'archive' }));
@@ -65,8 +67,9 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         expect(document.documentElement.dataset.theme).toBe('light');
@@ -90,8 +93,9 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         await user.click(screen.getByRole('button', { name: 'Guest' }));
@@ -103,8 +107,9 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         expect(document.documentElement.dataset.theme).toBe('dark');
@@ -118,15 +123,16 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         await user.click(screen.getByRole('button', { name: 'Guest' }));
         const menu = screen.getByRole('menu');
         expect(within(menu).getByRole('button', { name: 'Light' })).toBeInTheDocument();
         expect(within(menu).getByRole('button', { name: 'Dark' })).toBeInTheDocument();
-        // nothing to change the password of or sign out of as a guest
+        // nothing to change the password of, sign out of, or hold data for
         expect(within(menu).queryByRole('menuitem')).toBeNull();
     });
 
@@ -138,16 +144,17 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         expect(screen.queryByRole('dialog')).toBeNull();
 
         await user.click(screen.getByRole('button', { name: 'Account' }));
         const sheet = screen.getByRole('dialog');
-        // the three things the bar carries on a desktop, all reachable here
-        expect(within(sheet).getByText('Switch to dark')).toBeInTheDocument();
+        // the things the bar carries on a desktop, all reachable here
+        expect(within(sheet).getByRole('group', { name: 'Theme' })).toBeInTheDocument();
         expect(within(sheet).getByRole('link', { name: /support/i })).toBeInTheDocument();
         expect(within(sheet).getByText('Sign in')).toBeInTheDocument();
 
@@ -155,7 +162,7 @@ describe('TopBar', () => {
         expect(screen.queryByRole('dialog')).toBeNull();
     });
 
-    it('picking the theme from the sheet closes it and applies the change', async () => {
+    it('picking the theme from the sheet applies it and deliberately stays open', async () => {
         const user = userEvent.setup();
         render(
             <TopBar
@@ -163,14 +170,17 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         await user.click(screen.getByRole('button', { name: 'Account' }));
-        await user.click(within(screen.getByRole('dialog')).getByText('Switch to dark'));
-        expect(screen.queryByRole('dialog')).toBeNull();
+        const group = within(screen.getByRole('dialog')).getByRole('group', { name: 'Theme' });
+        await user.click(within(group).getByRole('button', { name: 'Dark' }));
         expect(document.documentElement.dataset.theme).toBe('dark');
+        // comparing palettes means staying put — the two-state row used to close
+        expect(screen.getByRole('dialog')).toBeTruthy();
     });
 
     it('signing in is reachable from both the bar and the sheet', async () => {
@@ -182,8 +192,9 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={onOpenAuth}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         // in the bar
@@ -206,8 +217,9 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={SIGNED_IN}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         expect(screen.queryByText('Guest')).not.toBeInTheDocument();
@@ -232,8 +244,9 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={SIGNED_IN}
                 onOpenAuth={vi.fn()}
-                onChangePassword={vi.fn()}
+                onOpenSettings={vi.fn()}
                 onSignOut={vi.fn()}
+                onOpenData={vi.fn()}
             />,
         );
         const chip = screen.getByRole('button', { name: /you@example\.com/ });
@@ -248,7 +261,7 @@ describe('TopBar', () => {
     });
 
     it('the dropdown carries the two account actions, each closing it', async () => {
-        const onChangePassword = vi.fn();
+        const onOpenSettings = vi.fn();
         const onSignOut = vi.fn();
         const rendered = userEvent.setup();
         render(
@@ -257,15 +270,16 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={SIGNED_IN}
                 onOpenAuth={vi.fn()}
-                onChangePassword={onChangePassword}
+                onOpenSettings={onOpenSettings}
                 onSignOut={onSignOut}
+                onOpenData={vi.fn()}
             />,
         );
         const chip = screen.getByRole('button', { name: /you@example\.com/ });
 
         await rendered.click(chip);
-        await rendered.click(screen.getByRole('menuitem', { name: 'Change password' }));
-        expect(onChangePassword).toHaveBeenCalledTimes(1);
+        await rendered.click(screen.getByRole('menuitem', { name: 'Account settings' }));
+        expect(onOpenSettings).toHaveBeenCalledTimes(1);
         // hands off rather than stacking: the menu is gone before the screen
         // App owns can appear
         expect(screen.queryByRole('menu')).toBeNull();
@@ -277,7 +291,7 @@ describe('TopBar', () => {
     });
 
     it('the phone sheet carries the same account rows, only when signed in', async () => {
-        const onChangePassword = vi.fn();
+        const onOpenSettings = vi.fn();
         const onSignOut = vi.fn();
         const rendered = userEvent.setup();
         const { rerender } = render(
@@ -286,13 +300,14 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={null}
                 onOpenAuth={vi.fn()}
-                onChangePassword={onChangePassword}
+                onOpenSettings={onOpenSettings}
                 onSignOut={onSignOut}
+                onOpenData={vi.fn()}
             />,
         );
         await rendered.click(screen.getByRole('button', { name: 'Account' }));
         // nothing to change the password OF as a guest
-        expect(within(screen.getByRole('dialog')).queryByText('Change password')).toBeNull();
+        expect(within(screen.getByRole('dialog')).queryByText('Account settings')).toBeNull();
         await rendered.click(
             within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }),
         );
@@ -303,14 +318,15 @@ describe('TopBar', () => {
                 onView={vi.fn()}
                 user={SIGNED_IN}
                 onOpenAuth={vi.fn()}
-                onChangePassword={onChangePassword}
+                onOpenSettings={onOpenSettings}
                 onSignOut={onSignOut}
+                onOpenData={vi.fn()}
             />,
         );
         await rendered.click(screen.getByRole('button', { name: 'Account' }));
         const sheet = screen.getByRole('dialog');
-        await rendered.click(within(sheet).getByText('Change password').closest('button')!);
-        expect(onChangePassword).toHaveBeenCalledTimes(1);
+        await rendered.click(within(sheet).getByText('Account settings').closest('button')!);
+        expect(onOpenSettings).toHaveBeenCalledTimes(1);
         expect(screen.queryByRole('dialog')).toBeNull();
 
         await rendered.click(screen.getByRole('button', { name: 'Account' }));
@@ -318,6 +334,96 @@ describe('TopBar', () => {
             within(screen.getByRole('dialog')).getByText('Sign out').closest('button')!,
         );
         expect(onSignOut).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    /*
+     * Data & privacy, which unlike the theme is gated on being signed in: a
+     * guest's weeks never leave their browser, so nothing is held on their
+     * behalf to take a copy of or have erased.
+     *   partition on surface: the desktop menu | the phone sheet
+     *   partition on the user: guest (absent from both) | signed in (present)
+     */
+
+    function renderBar(overrides: Partial<Parameters<typeof TopBar>[0]> = {}) {
+        const props = {
+            view: 'plan' as const,
+            onView: vi.fn(),
+            user: null,
+            onOpenAuth: vi.fn(),
+            onOpenSettings: vi.fn(),
+            onSignOut: vi.fn(),
+            onOpenData: vi.fn(),
+            ...overrides,
+        };
+        render(<TopBar {...props} />);
+        return { ...props, user: userEvent.setup() };
+    }
+
+    /*
+     * The chip's identity, which is a name now rather than an address:
+     *   partition on the user: guest (the word Guest, no avatar) | signed in
+     *     (username + avatar, address still in the accessible name)
+     */
+
+    it('signed in: the chip shows the username, not the address', () => {
+        renderBar({ user: SIGNED_IN });
+        const chip = screen.getByRole('button', { name: /^Account: duong/ });
+        expect(chip).toHaveTextContent('duong');
+        expect(chip).not.toHaveTextContent('you@example.com');
+    });
+
+    // A nickname alone does not say WHICH account, which matters to anyone with
+    // two — so the address rides along where assistive tech and a tooltip find it.
+    it('the address stays reachable from the chip without being displayed', () => {
+        renderBar({ user: SIGNED_IN });
+        const chip = screen.getByRole('button', { name: 'Account: duong (you@example.com)' });
+        expect(chip).toHaveAttribute('title', 'you@example.com');
+    });
+
+    it('a guest chip reads Guest and carries no avatar', () => {
+        renderBar();
+        const chip = screen.getByRole('button', { name: 'Guest' });
+        expect(chip.querySelector('svg')).not.toHaveClass(/cat/);
+    });
+
+    it('the phone sheet header names the person, with the address beneath', async () => {
+        const { user } = renderBar({ user: SIGNED_IN });
+        await user.click(screen.getByRole('button', { name: 'Account' }));
+        const sheet = screen.getByRole('dialog');
+        expect(within(sheet).getByRole('heading', { name: 'duong' })).toBeInTheDocument();
+        expect(within(sheet).getByText('you@example.com')).toBeInTheDocument();
+    });
+
+    it('the menu opens Data & privacy and closes on the way out', async () => {
+        const { user, onOpenData } = renderBar({ user: SIGNED_IN });
+
+        await user.click(screen.getByRole('button', { name: /you@example\.com/ }));
+        await user.click(screen.getByRole('menuitem', { name: /data & privacy/i }));
+        expect(onOpenData).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('menu')).toBeNull();
+    });
+
+    it('a guest is offered no data panel at all, on either surface', async () => {
+        const { user } = renderBar();
+
+        await user.click(screen.getByRole('button', { name: 'Guest' }));
+        expect(
+            within(screen.getByRole('menu')).queryByRole('menuitem', { name: /data & privacy/i }),
+        ).toBeNull();
+        await user.keyboard('{Escape}');
+
+        await user.click(screen.getByRole('button', { name: 'Account' }));
+        expect(within(screen.getByRole('dialog')).queryByText('Data & privacy')).toBeNull();
+    });
+
+    it('the phone sheet carries the same row, and hands off rather than stacking', async () => {
+        const { user, onOpenData } = renderBar({ user: SIGNED_IN });
+        await user.click(screen.getByRole('button', { name: 'Account' }));
+        const sheet = screen.getByRole('dialog');
+
+        await user.click(within(sheet).getByText('Data & privacy').closest('button')!);
+        expect(onOpenData).toHaveBeenCalledTimes(1);
         expect(screen.queryByRole('dialog')).toBeNull();
     });
 });

@@ -18,6 +18,8 @@ type WeekHeaderProps = {
     canMove: boolean;
     /** whether the viewed week is the one the queue will let you end */
     canEnd: boolean;
+    /** the week holds work and is not frozen — nothing else can be cleared */
+    canClear: boolean;
     /** the week is frozen in the archive: nothing below it can change */
     ended?: boolean;
     /** why the week reads as it does; omitted on an ordinary live current week */
@@ -34,6 +36,8 @@ type WeekHeaderProps = {
     onEndWeek: () => void;
     /** un-end the viewed week, putting it back on the live board */
     onReopenWeek: () => void;
+    /** hand off to the clear-board confirm */
+    onClearBoard: () => void;
 };
 
 /**
@@ -52,6 +56,7 @@ export function WeekHeader({
     progress,
     canMove,
     canEnd,
+    canClear,
     ended,
     note,
     minWeekStart,
@@ -61,6 +66,7 @@ export function WeekHeader({
     onMoveWork,
     onEndWeek,
     onReopenWeek,
+    onClearBoard,
 }: WeekHeaderProps) {
     // null = idle; a DateKey = armed, aimed at that week. One value carries both
     // "are we moving" and "where to", so the two can never disagree.
@@ -209,7 +215,7 @@ export function WeekHeader({
                         onClick={() => setSheetOpen(true)}
                         // An ended week has exactly one action left, and it is
                         // in the sheet — so this stays live for it.
-                        disabled={!canMove && !canEnd && !ended}
+                        disabled={!canMove && !canEnd && !ended && !canClear}
                     >
                         Manage
                     </button>
@@ -252,6 +258,11 @@ export function WeekHeader({
                     onReopen={() => {
                         setSheetOpen(false);
                         onReopenWeek();
+                    }}
+                    canClear={canClear}
+                    onClear={() => {
+                        setSheetOpen(false);
+                        onClearBoard();
                     }}
                 />
             )}

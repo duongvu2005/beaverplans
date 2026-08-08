@@ -53,3 +53,46 @@
     opacity: 0.45;
     cursor: default;
 }
+
+/* A row holding a control instead of being one. Same vertical rhythm and divider
+   as .item so it sits in the list without looking bolted on, but it is a <div> —
+   nothing about the row as a whole is pressable, only the segments inside it. */
+.pickerRow {
+    display: block;
+    padding: var(--sp-4) 0;
+}
+
+.pickerRow + .item {
+    border-top: 1px solid var(--line);
+}
+
+.pickerLabel {
+    display: block;
+    font: 600 var(--fs-row) / 1.4 var(--display);
+    color: var(--ink);
+    margin-bottom: var(--sp-2);
+}
+
+/* Under the control, not above it: the label says what this is, the control is
+   the thing, and this explains what the current choice means — which is only
+   worth reading once you have seen which one is lit. */
+.pickerNote {
+    display: block;
+    margin-top: var(--sp-2);
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+/* A row that destroys something. There is no separate danger colour in this
+   palette — terracotta is the "pay attention" signal, which is why .btn's danger
+   tone is built from --accent too. So this row simply wears at rest what every
+   other row only reaches on hover; the underline is what its own hover then adds,
+   since the colour has already been spent. Only the title is tinted: colouring
+   the sentence as well would make the row that most needs reading the hardest. */
+.danger b {
+    color: var(--accent);
+}
+
+.danger:hover:not(:disabled) b {
+    text-decoration: underline;
+}

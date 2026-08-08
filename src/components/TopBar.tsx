@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AccountMenu } from './AccountMenu';
 import { AccountSheet } from './AccountSheet';
+import { Avatar } from './Avatar';
 import { ChevronIcon } from './ChevronIcon';
 import { HeartIcon } from './HeartIcon';
 import { UserIcon } from './UserIcon';
@@ -21,8 +22,10 @@ type TopBarProps = {
     onView: (view: View) => void;
     user: AuthUser | null;
     onOpenAuth: () => void;
-    onChangePassword: () => void;
+    onOpenSettings: () => void;
     onSignOut: () => void;
+    /** signed in only — see AccountMenu's accountActions for why */
+    onOpenData: () => void;
 };
 
 /**
@@ -41,10 +44,11 @@ export function TopBar({
     onView,
     user,
     onOpenAuth,
-    onChangePassword,
+    onOpenSettings,
     onSignOut,
+    onOpenData,
 }: TopBarProps) {
-    const { theme, toggleTheme } = useTheme();
+    const { pref: themePref, setPref: setThemePref } = useTheme();
     // Two account surfaces, one per form factor, and only one is ever on
     // screen: the CSS hides the desktop chip on a phone and the phone's tab-bar
     // slot on a desktop, so these never race each other.
@@ -105,19 +109,23 @@ export function TopBar({
                         className={styles.acct}
                         open={menuOpen}
                         onClose={() => setMenuOpen(false)}
-                        theme={theme}
-                        onToggleTheme={toggleTheme}
+                        themePref={themePref}
+                        onPickTheme={setThemePref}
                         accountActions={
                             user === null
                                 ? undefined
                                 : {
-                                      onChangePassword: () => {
+                                      onOpenSettings: () => {
                                           setMenuOpen(false);
-                                          onChangePassword();
+                                          onOpenSettings();
                                       },
                                       onSignOut: () => {
                                           setMenuOpen(false);
                                           onSignOut();
+                                      },
+                                      onOpenData: () => {
+                                          setMenuOpen(false);
+                                          onOpenData();
                                       },
                                   }
                         }
@@ -136,19 +144,37 @@ export function TopBar({
                                 onClick={() => setMenuOpen((shown) => !shown)}
                                 aria-haspopup="menu"
                                 aria-expanded={menuOpen}
+                                // The visible label is a nickname, which on its own does
+                                // not say WHICH account — so the address rides along in
+                                // the accessible name and the tooltip. Not the only place
+                                // it appears: Data & privacy states it in full.
+                                title={user?.email}
+                                aria-label={
+                                    user === null
+                                        ? undefined
+                                        : `Account: ${user.username}${
+                                              user.email === undefined ? '' : ` (${user.email})`
+                                          }`
+                                }
                             >
-                                <i aria-hidden="true" />
+                                {/* A guest keeps the small dot: the cat is a picture OF
+                                    somebody, and there is nobody yet. */}
+                                {user === null ? (
+                                    <i aria-hidden="true" />
+                                ) : (
+                                    <Avatar size={26} className={styles.avatar} />
+                                )}
                                 <span
                                     className={
                                         // "Guest" is the one static caps-and-tracked word
-                                        // .guestLabel was built for; an email address isn't,
+                                        // .guestLabel was built for; a chosen name isn't,
                                         // so only that case drops the uppercase treatment.
                                         user === null
                                             ? styles.guestLabel
-                                            : `${styles.guestLabel} ${styles.guestEmail}`
+                                            : `${styles.guestLabel} ${styles.guestName}`
                                     }
                                 >
-                                    {user === null ? 'Guest' : (user.email ?? 'Account')}
+                                    {user === null ? 'Guest' : user.username}
                                 </span>
                                 <ChevronIcon dir="down" />
                             </button>
@@ -169,20 +195,28 @@ export function TopBar({
                         onClick={() => setSheetOpen(true)}
                         aria-label="Account"
                     >
-                        <span>
-                            <UserIcon />
-                        </span>
+                        {/* The span is a bordered circle framing the generic icon.
+                            The avatar is already a circle of its own, so signed in
+                            it replaces the span rather than sitting inside it —
+                            nesting the two drew a ring inside a ring. */}
+                        {user === null ? (
+                            <span>
+                                <UserIcon />
+                            </span>
+                        ) : (
+                            <Avatar size={26} />
+                        )}
                     </button>
                 </div>
             </header>
 
             {sheetOpen && (
                 <AccountSheet
-                    theme={theme}
+                    themePref={themePref}
                     supportUrl={DONATE_URL}
                     user={user}
                     onClose={() => setSheetOpen(false)}
-                    onToggleTheme={toggleTheme}
+                    onPickTheme={setThemePref}
                     // Hand off, don't stack: AuthForm is a takeover, and leaving
                     // this sheet mounted behind it composites a second scrim and
                     // makes Escape land back here instead of on the board.
@@ -193,11 +227,17 @@ export function TopBar({
                     // Same handoff. ChangePasswordDialog is an ordinary dialog
                     // and Dialog does stack, but a menu that stays open behind
                     // the thing it opened is a menu you have to dismiss twice.
-                    onChangePassword={() => {
+                    onOpenSettings={() => {
                         setSheetOpen(false);
-                        onChangePassword();
+                        onOpenSettings();
                     }}
                     onSignOut={onSignOut}
+                    // Same handoff as the two rows above: the dialog is App's,
+                    // and this sheet is gone before it appears.
+                    onOpenData={() => {
+                        setSheetOpen(false);
+                        onOpenData();
+                    }}
                 />
             )}
         </>

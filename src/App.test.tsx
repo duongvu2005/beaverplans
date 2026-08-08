@@ -62,6 +62,11 @@ describe('App under the weeks model', () => {
     const seed: Weeks = [sampleWeek, ...sampleArchive].reduce<Weeks>(putWeek, []);
 
     beforeEach(() => {
+        // The auth mocks are module-level vi.fn()s shared by every test in the
+        // file, so their call records survive across tests unless cleared —
+        // which matters for any assertion that a call did NOT happen.
+        vi.mocked(supabase.auth.signUp).mockClear();
+        vi.mocked(supabase.auth.signInWithPassword).mockClear();
         vi.useFakeTimers({ toFake: ['Date'] });
         vi.setSystemTime(new Date('2026-07-29T12:00:00'));
         // App now loads from real storage (useWeeks -> Store -> LocalBackend)
@@ -262,6 +267,7 @@ describe('App under the weeks model', () => {
 
             await user.click(dialog.getByRole('button', { name: 'Create one' }));
             await user.type(dialog.getByLabelText('Email'), 'new@example.com');
+            await user.type(dialog.getByLabelText('Username'), 'duong');
             await user.type(dialog.getByLabelText('Password'), 'password123');
             await user.type(dialog.getByLabelText('Confirm password'), 'password123');
             await user.click(dialog.getByText('solve captcha'));
@@ -287,6 +293,7 @@ describe('App under the weeks model', () => {
 
             await user.click(dialog.getByRole('button', { name: 'Create one' }));
             await user.type(dialog.getByLabelText('Email'), 'typo@example.com');
+            await user.type(dialog.getByLabelText('Username'), 'duong');
             await user.type(dialog.getByLabelText('Password'), 'password123');
             await user.type(dialog.getByLabelText('Confirm password'), 'password123');
             await user.click(dialog.getByText('solve captcha'));
@@ -314,6 +321,7 @@ describe('App under the weeks model', () => {
 
             await user.click(dialog.getByRole('button', { name: 'Create one' }));
             await user.type(dialog.getByLabelText('Email'), 'new@example.com');
+            await user.type(dialog.getByLabelText('Username'), 'duong');
             await user.type(dialog.getByLabelText('Password'), 'password123');
             await user.type(dialog.getByLabelText('Confirm password'), 'password123');
             await user.click(dialog.getByText('solve captcha'));
@@ -333,6 +341,48 @@ describe('App under the weeks model', () => {
             await user.click(dialog.getByRole('button', { name: 'Sign in' }));
 
             expect(screen.queryByRole('dialog')).toBeNull();
+        });
+
+        // Signup is the only mode that asks for a name, and it asks through the
+        // same sentence-under-the-button channel as every other field rather
+        // than the browser's native validation bubble.
+        it('signup refuses to submit without a name, and never reaches the backend', async () => {
+            const user = userEvent.setup();
+            await renderLoaded();
+            const dialog = await openAuthDialog(user);
+
+            await user.click(dialog.getByRole('button', { name: 'Create one' }));
+            await user.type(dialog.getByLabelText('Email'), 'new@example.com');
+            await user.type(dialog.getByLabelText('Password'), 'password123');
+            await user.type(dialog.getByLabelText('Confirm password'), 'password123');
+            await user.click(dialog.getByText('solve captcha'));
+            await user.click(dialog.getByRole('button', { name: 'Create account' }));
+
+            expect(await dialog.findByText('Pick a username.')).toBeTruthy();
+            expect(supabase.auth.signUp).not.toHaveBeenCalled();
+        });
+
+        // The contract that matters is the one with Supabase: the name has to
+        // land in user_metadata, which is where useAuth reads it back from.
+        it('the name reaches Supabase as user_metadata, trimmed', async () => {
+            const user = userEvent.setup();
+            await renderLoaded();
+            const dialog = await openAuthDialog(user);
+
+            await user.click(dialog.getByRole('button', { name: 'Create one' }));
+            await user.type(dialog.getByLabelText('Email'), 'new@example.com');
+            await user.type(dialog.getByLabelText('Username'), '  duong  ');
+            await user.type(dialog.getByLabelText('Password'), 'password123');
+            await user.type(dialog.getByLabelText('Confirm password'), 'password123');
+            await user.click(dialog.getByText('solve captcha'));
+            await user.click(dialog.getByRole('button', { name: 'Create account' }));
+
+            expect(supabase.auth.signUp).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    email: 'new@example.com',
+                    options: expect.objectContaining({ data: { username: 'duong' } }),
+                }),
+            );
         });
 
         it('password reset keeps its existing notice and stays open, unaffected by the signup change', async () => {

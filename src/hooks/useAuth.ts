@@ -7,7 +7,35 @@ import { cloudBackend } from '../storage/instance';
 export type AuthUser = {
     id: string;
     email: string | undefined;
+    /**
+     * What to call this person in the UI. Never undefined — see usernameOf for
+     * where it comes from when the account has none stored.
+     */
+    username: string;
 };
+
+/**
+ * A display name for a session's user.
+ *
+ * Stored in Supabase's `user_metadata`, which the account itself can write. That
+ * makes it a LABEL and not an identity: it is not unique, not verified, and not
+ * safe to key anything off. Everything that identifies an account still uses
+ * `id`, and the address is still shown wherever it actually matters (the
+ * Data & privacy panel).
+ *
+ * @param session any session, or null
+ * @returns the stored username when it is a non-blank string; otherwise the
+ *     local part of the email; otherwise 'you'. Never blank, so the chip always
+ *     has something to render — including for accounts created before signup
+ *     started asking for one.
+ */
+function usernameOf(session: Session): string {
+    const stored: unknown = session.user.user_metadata?.username;
+    if (typeof stored === 'string' && stored.trim() !== '') return stored.trim();
+    const local = session.user.email?.split('@')[0];
+    if (local !== undefined && local !== '') return local;
+    return 'you';
+}
 
 // Which user id (if any) is mid password-recovery, kept in localStorage
 // rather than only React state: a page refresh during recovery re-runs this
@@ -85,7 +113,14 @@ type UseAuthResult = {
     // what happens, indistinguishably, for an email that already has a
     // confirmed account (Supabase deliberately shapes that response the same
     // way, so as not to leak whether the address is taken).
-    signUp: (email: string, password: string, captchaToken: string) => Promise<boolean>;
+    signUp: (
+        email: string,
+        password: string,
+        username: string,
+        captchaToken: string,
+    ) => Promise<boolean>;
+    /** display label only — no re-auth, no confirmation mail */
+    updateUsername: (username: string) => Promise<void>;
     resetPassword: (email: string, captchaToken: string) => Promise<void>;
     updatePassword: (password: string) => Promise<void>;
     verifyPassword: (password: string, captchaToken: string) => Promise<boolean>;
@@ -138,7 +173,15 @@ export function useAuth(): UseAuthResult {
             // id -> cloud — and either direction changes which one to load from.
             const switchedUser = nextUserId !== lastUserId.current;
             lastUserId.current = nextUserId;
-            setUser(session === null ? null : { id: session.user.id, email: session.user.email });
+            setUser(
+                session === null
+                    ? null
+                    : {
+                          id: session.user.id,
+                          email: session.user.email,
+                          username: usernameOf(session),
+                      },
+            );
 
             const marker = readRecoveryMarker();
             if (event === 'PASSWORD_RECOVERY' && nextUserId !== undefined) {
@@ -203,14 +246,35 @@ export function useAuth(): UseAuthResult {
         if (error) throw new Error(error.message);
     }
 
-    async function signUp(email: string, password: string, captchaToken: string): Promise<boolean> {
+    async function signUp(
+        email: string,
+        password: string,
+        username: string,
+        captchaToken: string,
+    ): Promise<boolean> {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            options: { captchaToken },
+            // `data` lands in user_metadata, which is where usernameOf reads it
+            // back from. Trimmed here rather than at the field so the stored
+            // value is the canonical one, whatever the form sent.
+            options: { captchaToken, data: { username: username.trim() } },
         });
         if (error) throw new Error(error.message);
         return data.session !== null;
+    }
+
+    // No re-auth and no confirmation mail: this is a display label, not a
+    // credential and not an identifier (see usernameOf). The optimistic local
+    // update is so the chip changes the moment you save — supabase-js does emit a
+    // USER_UPDATED event, but waiting on a round trip to rename yourself makes a
+    // free action feel expensive.
+    async function updateUsername(username: string): Promise<void> {
+        const next = username.trim();
+        if (next === '') throw new Error('Pick a username.');
+        const { error } = await supabase.auth.updateUser({ data: { username: next } });
+        if (error) throw new Error(error.message);
+        setUser((current) => (current === null ? null : { ...current, username: next }));
     }
 
     async function resetPassword(email: string, captchaToken: string): Promise<void> {
@@ -298,6 +362,7 @@ export function useAuth(): UseAuthResult {
         epoch,
         signIn,
         signUp,
+        updateUsername,
         resetPassword,
         updatePassword,
         verifyPassword,

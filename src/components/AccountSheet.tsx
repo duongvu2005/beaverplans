@@ -1,19 +1,26 @@
-import type { Theme } from '../hooks/useTheme';
+import type { ThemePref } from '../hooks/useTheme';
 import type { AuthUser } from '../hooks/useAuth';
 import { Dialog } from './Dialog';
+import { ThemePicker } from './ThemePicker';
 import shell from './dialogShell.module.css';
 import styles from './WeekActionsSheet.module.css';
 
 type AccountSheetProps = {
-    theme: Theme;
+    themePref: ThemePref;
     supportUrl: string;
     user: AuthUser | null;
     onClose: () => void;
-    onToggleTheme: () => void;
+    onPickTheme: (pref: ThemePref) => void;
     onSignIn: () => void;
     /** signed in only; hands off to the dialog the way onSignIn does */
-    onChangePassword: () => void;
+    onOpenSettings: () => void;
     onSignOut: () => void;
+    /**
+     * signed in only, and another handoff. A guest's weeks never leave this
+     * browser, so there is nothing being held on their behalf to demand a copy
+     * of or have erased.
+     */
+    onOpenData: () => void;
 };
 
 /**
@@ -33,39 +40,45 @@ type AccountSheetProps = {
  * underneath it.
  */
 export function AccountSheet({
-    theme,
+    themePref,
     supportUrl,
     user,
     onClose,
-    onToggleTheme,
+    onPickTheme,
     onSignIn,
-    onChangePassword,
+    onOpenSettings,
     onSignOut,
+    onOpenData,
 }: AccountSheetProps) {
     const titleId = 'account-sheet-title';
     return (
         <Dialog open onClose={onClose} labelledBy={titleId}>
+            {/* The phone's chip is a bare circle with no room for a name beside
+                it, so this header is where the name actually appears — with the
+                address under it, since the name alone does not say which account
+                you are in. */}
             <div className={shell.head}>
                 <div className={shell.eyebrow}>You</div>
                 <h3 id={titleId} className={shell.title}>
-                    {user === null ? 'Guest' : (user.email ?? 'Account')}
+                    {user === null ? 'Guest' : user.username}
                 </h3>
+                {user?.email !== undefined && <p className={shell.sub}>{user.email}</p>}
             </div>
             <div className={styles.items}>
-                <button
-                    type="button"
-                    className={styles.item}
-                    onClick={() => {
-                        onToggleTheme();
-                        onClose();
-                    }}
-                >
-                    <b>{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}</b>
-                    <span>
-                        Currently using the {theme} palette. The choice is remembered on this
-                        device.
+                {/* A control rather than a row, unlike everything below it: with
+                    three options there is nothing for a single row to say. It also
+                    does NOT close the sheet the way the old two-state row did —
+                    picking a palette is a thing you compare, and closing on the
+                    first press meant reopening the sheet to try the other one. */}
+                <div className={styles.pickerRow}>
+                    <b className={styles.pickerLabel}>Theme</b>
+                    <ThemePicker pref={themePref} onPick={onPickTheme} />
+                    <span className={styles.pickerNote}>
+                        {themePref === 'system'
+                            ? 'Following your device setting, and changing with it.'
+                            : `Always ${themePref}, whatever your device is set to.`}
                     </span>
-                </button>
+                </div>
                 <a
                     className={styles.item}
                     href={supportUrl}
@@ -83,12 +96,16 @@ export function AccountSheet({
                     </button>
                 ) : (
                     <>
-                        <button type="button" className={styles.item} onClick={onChangePassword}>
-                            <b>Change password</b>
+                        <button type="button" className={styles.item} onClick={onOpenData}>
+                            <b>Data &amp; privacy</b>
                             <span>
-                                You&rsquo;ll confirm your current one first. Forgotten it? That
-                                screen can email you a link instead.
+                                What we store for you, and how to take a copy of it or have it
+                                deleted.
                             </span>
+                        </button>
+                        <button type="button" className={styles.item} onClick={onOpenSettings}>
+                            <b>Account settings</b>
+                            <span>Your username, email and password.</span>
                         </button>
                         <button
                             type="button"

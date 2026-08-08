@@ -267,6 +267,24 @@ export function ChangePasswordForm({
                                     're-enter it',
                                     confirmPassword,
                                     setConfirmPassword,
+                                    {
+                                        // Under the last field and right-aligned,
+                                        // the same shape sign-in uses for its own
+                                        // Forgot password — it used to sit in the
+                                        // foot, which put it below Cancel and read
+                                        // as a third dialog action rather than as a
+                                        // footnote on the fields.
+                                        extra: (
+                                            <button
+                                                type="button"
+                                                className={`${styles.link} ${styles.forgot}`}
+                                                onClick={() => void handleSendReset()}
+                                                disabled={busy}
+                                            >
+                                                Forgot your current password?
+                                            </button>
+                                        ),
+                                    },
                                 )}
                                 <div className={styles.captcha}>
                                     <HCaptcha
@@ -295,18 +313,6 @@ export function ChangePasswordForm({
                     )}
 
                     <div className={styles.foot}>
-                        {stage === 'form' && (
-                            <p className={styles.switch}>
-                                <button
-                                    type="button"
-                                    className={styles.link}
-                                    onClick={() => void handleSendReset()}
-                                    disabled={busy}
-                                >
-                                    Forgot your current password?
-                                </button>
-                            </p>
-                        )}
                         <button type="button" className={styles.guest} onClick={onClose}>
                             {stage === 'form' ? 'Cancel' : 'Back to your week'}
                         </button>

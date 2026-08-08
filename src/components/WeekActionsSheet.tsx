@@ -7,6 +7,8 @@ type WeekActionsSheetProps = {
     weekLabel: string;
     canMove: boolean;
     canEnd: boolean;
+    /** the week holds work and is not frozen — nothing else can be cleared */
+    canClear: boolean;
     /** the week is already in the archive: End week becomes Reopen */
     ended?: boolean;
     onClose: () => void;
@@ -16,6 +18,8 @@ type WeekActionsSheetProps = {
     onEnd: () => void;
     /** hand off to the reopen confirm; likewise */
     onReopen: () => void;
+    /** hand off to the clear-board confirm; likewise */
+    onClear: () => void;
 };
 
 /**
@@ -30,11 +34,13 @@ export function WeekActionsSheet({
     weekLabel,
     canMove,
     canEnd,
+    canClear,
     ended,
     onClose,
     onMove,
     onEnd,
     onReopen,
+    onClear,
 }: WeekActionsSheetProps) {
     const titleId = 'week-actions-title';
     return (
@@ -74,6 +80,22 @@ export function WeekActionsSheet({
                         </span>
                     </button>
                 )}
+                {/* Below End week, and last, because the two are easy to reach for
+                    interchangeably and only one of them keeps a record. Sitting
+                    underneath, in the danger tone, is what says which is which. */}
+                <button
+                    type="button"
+                    className={`${styles.item} ${styles.danger}`}
+                    disabled={!canClear}
+                    onClick={onClear}
+                >
+                    <b>Clear this board</b>
+                    <span>
+                        {ended
+                            ? 'An archived week is frozen. Reopen it first, or delete it from the Archive tab.'
+                            : 'Throw the whole week away without archiving it. Nothing is kept.'}
+                    </span>
+                </button>
             </div>
             <div className={shell.foot}>
                 <button type="button" className={`${shell.btn} ${shell.ghost}`} onClick={onClose}>
