@@ -1,6 +1,7 @@
 import { REALTIME_SUBSCRIBE_STATES } from '@supabase/supabase-js';
-import { CloudBackend, type RemoteWatcher } from './cloudBackend';
+import { CloudBackend, type LegacyImporter, type RemoteWatcher } from './cloudBackend';
 import { LocalBackend } from './localBackend';
+import { importLegacyForUser, type LegacyClient } from './migrateLegacy';
 import { Store } from './store';
 import { supabase } from './supabaseClient';
 
@@ -40,6 +41,18 @@ const watchPlannerWeeks: RemoteWatcher = (userId, onChange) => {
     };
 };
 
-export const cloudBackend = new CloudBackend(supabase, window.localStorage, watchPlannerWeeks);
+/**
+ * Binds the one-shot old-planner import to Supabase. Temporary, like the
+ * table it reads — see migrateLegacy.ts for when it comes out.
+ */
+const importLegacy: LegacyImporter = (userId) =>
+    importLegacyForUser(supabase as unknown as LegacyClient, userId);
+
+export const cloudBackend = new CloudBackend(
+    supabase,
+    window.localStorage,
+    watchPlannerWeeks,
+    importLegacy,
+);
 
 export const store = new Store(new LocalBackend(window.localStorage), cloudBackend);

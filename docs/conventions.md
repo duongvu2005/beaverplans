@@ -111,6 +111,40 @@ describe("clamp", () => {
 });
 ```
 
+### Database tests — project convention
+
+Schema, row-level security, and any SQL function are tested too, with
+[pgTAP](https://pgtap.org/) — a test framework that runs inside Postgres. Tests live in
+`supabase/tests/*.sql` and need the local stack up (`npx supabase start`):
+
+```
+npm run test:db
+```
+
+A pgTAP file plans a number of assertions, runs them, and rolls back, so fixtures never
+persist:
+
+```sql
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(2);
+
+select has_column('public', 'my_table', 'my_column', 'the column exists');
+select throws_ok($$ select my_function('bad') $$, 'P0002', 'refused', 'bad input is refused');
+
+select * from finish();
+rollback;
+```
+
+Test policies and grants **as the role a browser actually uses**, not as the superuser
+running the file — `set local role authenticated` plus `set local request.jwt.claim.sub`
+makes `auth.uid()` resolve, so RLS applies for real. A privilege assertion that passes as
+`postgres` proves nothing, because superusers bypass RLS.
+
+Anything needing two connections at once cannot be a pgTAP test, since the whole file is one
+transaction. Those go in a shell script beside it (`supabase/tests/race.sh`, run with
+`npm run test:db:race`).
+
 ## TypeScript — project convention
 
 - `strict: true` and `noUncheckedIndexedAccess: true` are on. `arr[i]` and `obj[key]` are

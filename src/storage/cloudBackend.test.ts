@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CloudBackend, type CloudClient, type RemoteWatcher } from './cloudBackend';
+import {
+    CloudBackend,
+    type CloudClient,
+    type LegacyImporter,
+    type RemoteWatcher,
+} from './cloudBackend';
 import { LocalBackend, type KeyValueStore } from './localBackend';
 import type { WeekPlan, Weeks } from '../core/types';
 
@@ -120,10 +125,27 @@ function fakeFeed() {
     return { watcher, state };
 }
 
-function makeBackend(client: FakeClient = new FakeClient(), openFeed?: RemoteWatcher) {
+function makeBackend(
+    client: FakeClient = new FakeClient(),
+    openFeed?: RemoteWatcher,
+    importLegacy?: LegacyImporter,
+) {
     const storage = new FakeStorage();
-    const backend = new CloudBackend(client, storage, openFeed);
+    const backend = new CloudBackend(client, storage, openFeed, importLegacy);
     return { backend, storage, client };
+}
+
+// A LegacyImporter that reports whether it imported, and records the calls.
+// `onImport` runs at call time, so a test can have the "server" gain the
+// imported rows exactly when the real RPC would have written them.
+function fakeImporter(imported: boolean, onImport: () => void = () => {}) {
+    const calls: string[] = [];
+    const importer: LegacyImporter = async (userId) => {
+        calls.push(userId);
+        onImport();
+        return imported;
+    };
+    return { importer, calls };
 }
 
 async function readDurable(storage: FakeStorage, key: string): Promise<Weeks> {
@@ -689,6 +711,83 @@ describe('CloudBackend', () => {
         it('covers no timer to cancel: no-op, does not throw', () => {
             const { backend } = makeBackend();
             expect(() => backend.cancelScheduledPush()).not.toThrow();
+        });
+    });
+
+    describe('legacy import on load', () => {
+        /*
+         * Testing strategy
+         *   partition on importer: absent | present, imported nothing |
+         *     present, imported rows
+         *   partition on session: signed in | signed out
+         *   partition on the result of importing: the imported weeks are
+         *     visible when load() resolves (the property useGuestMigration
+         *     depends on) | they are not left to a later Realtime event
+         */
+
+        it('covers absent importer: loads exactly as before', async () => {
+            const client = new FakeClient();
+            client.rows = [rowOf(week1)];
+            const { backend } = makeBackend(client);
+
+            await backend.load();
+
+            expect(backend.getWeeks()).toEqual([week1]);
+        });
+
+        it('covers signed out: never attempts an import', async () => {
+            const client = new FakeClient();
+            client.session = null;
+            const { importer, calls } = fakeImporter(false);
+            const { backend } = makeBackend(client, undefined, importer);
+
+            await backend.load();
+
+            expect(calls).toEqual([]);
+        });
+
+        it('covers nothing imported: passes the signed-in user, pulls once', async () => {
+            const client = new FakeClient();
+            client.rows = [rowOf(week1)];
+            const { importer, calls } = fakeImporter(false);
+            const { backend } = makeBackend(client, undefined, importer);
+
+            await backend.load();
+
+            expect(calls).toEqual(['u1']);
+            expect(backend.getWeeks()).toEqual([week1]);
+        });
+
+        it('covers rows imported: re-reads, so load() resolves with them present', async () => {
+            const client = new FakeClient();
+            client.rows = [];
+            // The import writes server-side, so the rows appear only once it
+            // runs — exactly as the RPC's insert would.
+            const { importer } = fakeImporter(true, () => {
+                client.rows = [rowOf(week1), rowOf(week2)];
+            });
+            const { backend } = makeBackend(client, undefined, importer);
+
+            await backend.load();
+
+            // Not [] — an import that only showed up on the next Realtime
+            // event would leave the cloud looking empty here, and
+            // useGuestMigration would silently adopt guest work into it.
+            expect(backend.getWeeks()).toEqual([week1, week2]);
+        });
+
+        it('covers a throwing importer: load still resolves, weeks still load', async () => {
+            const client = new FakeClient();
+            client.rows = [rowOf(week1)];
+            const { importer } = fakeImporter(true, () => {
+                throw new Error('importer blew up');
+            });
+            const { backend } = makeBackend(client, undefined, importer);
+
+            // A rejection here would reject load(), leaving the caller's
+            // `loaded` flag false forever — the app would never render.
+            await expect(backend.load()).resolves.toBeUndefined();
+            expect(backend.getWeeks()).toEqual([week1]);
         });
     });
 });

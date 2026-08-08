@@ -21,6 +21,18 @@ import { rowToWeekPlan, type PlannerWeekRow } from './plannerWeekRow';
  */
 export type RemoteWatcher = (userId: string, onChange: () => void) => () => void;
 
+/**
+ * Imports one user's old-planner data into planner_weeks, if they have any
+ * not yet imported. Injected for the same reason as RemoteWatcher: it reaches
+ * a different table and an RPC, and is temporary — omit it and this backend
+ * behaves exactly as it did before the old app existed alongside it.
+ *
+ * @param userId whose legacy row to import
+ * @returns true iff rows were written, i.e. the server must be re-read.
+ *          Does not throw; a failure is reported as false.
+ */
+export type LegacyImporter = (userId: string) => Promise<boolean>;
+
 export interface CloudClient {
     auth: {
         getSession(): Promise<{
@@ -140,6 +152,7 @@ export class CloudBackend implements Backend {
     private pushInFlight: boolean;
     private pushAgainNeeded: boolean;
     private readonly openFeed: RemoteWatcher | undefined;
+    private readonly importLegacy: LegacyImporter | undefined;
     private closeFeed: (() => void) | undefined;
     // Which user the open feed filters on, so a sign-in as somebody else
     // replaces it rather than quietly leaving the previous user's feed running.
@@ -153,10 +166,18 @@ export class CloudBackend implements Backend {
      * @param openFeed opens the live feed of remote changes; omit it and this
      *        backend simply never reports any, which is the behaviour every
      *        caller had before the feed existed
+     * @param importLegacy imports the user's old-planner data on first load;
+     *        omit it and no legacy import is ever attempted
      */
-    public constructor(client: CloudClient, storage: KeyValueStore, openFeed?: RemoteWatcher) {
+    public constructor(
+        client: CloudClient,
+        storage: KeyValueStore,
+        openFeed?: RemoteWatcher,
+        importLegacy?: LegacyImporter,
+    ) {
         this.client = client;
         this.openFeed = openFeed;
+        this.importLegacy = importLegacy;
         this.currentDurable = new LocalBackend(storage, CURRENT_STORAGE_KEY);
         this.syncedDurable = new LocalBackend(storage, SYNCED_STORAGE_KEY);
         this.cache = [];
@@ -181,6 +202,9 @@ export class CloudBackend implements Backend {
      * durable local copy unchanged. Whatever the merge produces that the
      * server has not got — which includes the merge itself, after a conflict
      * — is scheduled as a push before this promise resolves.
+     *
+     * On the first signed-in load for a user with old-planner data, imports it
+     * first (see LegacyImporter), so this resolves with that history present.
      */
     public async load(): Promise<void> {
         // load up the durables (this must always be done regardless of the auth status)
@@ -198,8 +222,30 @@ export class CloudBackend implements Backend {
         this.userId = session.data.session.user.id;
         this.watchRemote();
 
+        // Concurrent rather than sequenced: for everyone with nothing to import
+        // this is one primary-key lookup overlapping the pull, so it costs no
+        // wall-clock time. Only a user who actually imports pays the re-read.
         // Not notifying: load()'s own caller is about to read getWeeks anyway.
-        await this.pullAndMerge(false);
+        const [, imported] = await Promise.all([
+            this.pullAndMerge(false),
+            // Defended even though LegacyImporter promises not to throw: a
+            // rejection here would reject load(), and the caller's `loaded`
+            // flag never flips, so a temporary migration feature would strand
+            // the whole app on its spinner. Skipping the import is recoverable
+            // (migrated_at stays null, the next sign-in retries); not loading
+            // is not.
+            (this.importLegacy?.(this.userId) ?? Promise.resolve(false)).catch(() => false),
+        ]);
+        // The import writes straight to the server, so the merge that just ran
+        // cannot have seen it. Re-reading here rather than leaving it to the
+        // Realtime event that insert also fires is what makes load() resolve
+        // with the imported weeks already in hand — useGuestMigration reads
+        // "is the cloud empty" the moment weeksLoaded flips, and must not see
+        // an empty cloud for a user whose history is still in flight, or it
+        // would silently adopt guest work into what looks like a new account.
+        if (imported) {
+            await this.pullAndMerge(false);
+        }
     }
 
     /**
