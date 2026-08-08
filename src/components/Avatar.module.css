@@ -1,0 +1,53 @@
+/* The default account picture. Sized entirely by its width/height attributes so
+   one component serves the 22px desktop chip and the 26px phone slot without a
+   size variant per call site. */
+
+/* flex: none AND aspect-ratio, belt and braces: this lands inside flex rows (the
+   account chip) and grid cells (the phone's tab-bar slot), and a head drawn as an
+   ellipse is the one failure worth spending two properties to make unreachable.
+   The width/height attributes alone are only a starting size — layout pressure
+   from a long username or a cramped bar can still override them. */
+.cat {
+    flex: none;
+    display: block;
+    aspect-ratio: 1;
+    overflow: visible; /* the ring sits at r=45.5 of 100, so nothing clips */
+}
+
+/* currentColor throughout, so the mark inherits whatever the control around it
+   is already doing — including the chip's own hover and expanded states. The old
+   app hard-coded three separate colours here and they had to be kept in sync
+   with the chip by hand. */
+/* The old app's palette, kept deliberately: the face is a filled --paper disc
+   with a quiet border, and the features on top of it are --accent. That colour
+   split is doing the real work — it is what separates ears and eyes from the head
+   at 22px. Drawn in a single currentColor the same geometry reads as a letter M
+   inside a circle, which is exactly what happened when this was first ported.
+   So these do NOT inherit currentColor, and the avatar looks the same in the chip,
+   the phone slot, and anywhere else it lands. */
+.ring {
+    fill: var(--paper);
+    stroke: var(--line-strong);
+    stroke-width: 3;
+}
+
+.line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6; /* the old app's 5, scaled with the path it belongs to */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.eye {
+    fill: var(--accent);
+}
+
+/* An uploaded picture, once that exists: cropped to the circle rather than
+   letterboxed, since a square photo in a round frame is the common case. */
+.image {
+    flex: none;
+    display: block;
+    border-radius: 50%;
+    object-fit: cover;
+}
