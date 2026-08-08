@@ -9,6 +9,10 @@ import {
     archiveToWeekPlan,
     importLegacy,
     type LegacyRow,
+    type LegacySlot,
+    type LegacySub,
+    type LegacyTask,
+    type LegacyArchive,
 } from './importLegacy';
 import type { Task, Project, WeekPlan } from '../core/types';
 import { overallProgress, progressByDay } from '../core/progress';
