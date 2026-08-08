@@ -47,7 +47,7 @@ exactly the viewport height throughout. That excluded a gap, a stray element, an
 `z-index` tie between the scrim and the phone tab bar.
 
 **Fix.** Lock the scroll container rather than unmooring the body
-([`Dialog.module.css`](../src/components/Dialog.module.css)):
+([`Dialog.module.css`](../src/components/shared/Dialog.module.css)):
 
 ```css
 html.dialogOpen {

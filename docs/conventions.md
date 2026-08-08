@@ -18,9 +18,10 @@ src/
                  implementations behind it, plus a facade that picks which is
                  active.
   components/    the React layer. Depends on core/ and storage/, never the
-                 reverse. See architecture.md for the current component tree,
-                 state ownership, and props flow — kept there rather than
-                 here because it is a living diagram, not a fixed convention.
+                 reverse. Grouped into buckets, one level deep (below). See
+                 architecture.md for the current component tree, state
+                 ownership, and props flow — kept there rather than here
+                 because it is a living diagram, not a fixed convention.
 ```
 
 Tests are **colocated**: `x.ts` sits next to `x.test.ts` (`x.tsx` next to `x.test.tsx`
@@ -30,6 +31,69 @@ One-way dependency rule: `core/` depends on nothing else in `src/`. It is pure a
 independently testable, so it may not import from any layer added later. `storage/`
 depends on `core/` only. `components/` may depend on both. Each layer may depend on
 layers before it in this list, never after.
+
+### Component buckets — project convention
+
+`components/` is grouped by **feature area**, not by kind. A change is nearly always
+"the week board" or "the account panel", never "all the dialogs", so the folder a
+reader opens should match the thing they came to change.
+
+```
+components/
+  week/      the week board and its days
+  project/   the project → task → subtask tree
+  archive/   past weeks
+  stats/     charts and history
+  auth/      signing in: sign-in, password, recovery, guest migration
+  account/   signed-in settings: menu, profile, theme, data
+  shell/     the app frame that survives a view change
+  shared/    used outside any single bucket
+    icons/   the icon set
+```
+
+**Every component lives in a bucket.** No loose files at `components/` root — a rule
+with one exception stops being a rule, and the next ambiguous file has precedent to sit
+loose.
+
+Two buckets are not feature areas and need their bar stated, or they become the drawer
+everything ambiguous gets swept into:
+
+- **`shared/`** takes a module only when it is used **outside any single bucket**. One
+  consumer in one bucket means it belongs in that bucket instead. This is mechanically
+  checkable, which is the only reason it will still be true later. `shared/` is a leaf:
+  things point into it, it points at nothing outside itself. A module that *composes*
+  features belongs in `shell/`, not here — filing a composer among the primitives
+  inverts the dependency and makes `shared/` stop meaning anything.
+- **`shared/icons/`** is the one by-kind group, because the icons are genuinely a set.
+  It is exempt from the `shared/` bar above: an icon used by one bucket still lives here.
+
+A stylesheet shared across buckets gets a name saying what it is, not the name of the
+first component that used it — `dialogShell.module.css`, `sheetShell.module.css`. A
+component-shaped name on a shared stylesheet reads as private and invites someone to
+delete it with its apparent owner.
+
+Pure, tested helpers stay with their callers (`dndReorder.ts` in `project/`,
+`heatColumns.ts` in `stats/`). Living in `components/` is about who calls them, not
+about being impure; the split between `core/` and here is by role, not by folder.
+
+### Import paths — project convention
+
+**Relative imports only within your own folder; `@/` for anything outside it.**
+
+```ts
+import { Dialog } from '@/components/shared/Dialog';   // another bucket
+import type { WeekPlan } from '@/core/types';          // another layer
+import styles from './TaskRow.module.css';             // same folder
+```
+
+`@/` maps to `src/`. It is declared in **two** places that nothing cross-checks —
+`paths` in `tsconfig.app.json` (used by `tsc` and the editor) and `resolve.alias` in
+`vite.config.ts` (used by the bundler and vitest). A mismatch passes one and fails the
+other, so changes to either want `tsc -b` *and* `npm run build` run against them.
+
+The payoff is that a file can move without its importers changing: `../` breaks the
+moment either end of the import moves, and `../../../` is unreadable besides. There
+should be no `../` in any import in `src/`.
 
 ## Specifications — 6.102 readings 04–05
 

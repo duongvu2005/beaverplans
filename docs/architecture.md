@@ -7,6 +7,26 @@ this document covers the React layer on top of it.
 Companion documents: [conventions.md](./conventions.md) for coding rules,
 [week-model.md](./week-model.md) for the week and day model.
 
+## Where these components live
+
+`src/components/` is grouped by feature area, one level deep. Every component named
+below sits in exactly one of these; see [conventions.md](./conventions.md) for the rule
+that decides which.
+
+| bucket | components |
+|---|---|
+| `week/` | `WeekBoard` `WeekView` `WeekGrid` `WeekHeader` `WeekActionsSheet` `DayColumn` `DayCell` `DayRail` `FocusedDay` `MovePopover` |
+| `project/` | `ProjectView` `ProjectList` `ProjectCard` `ProjectEditor` `TaskRow` `TaskEditor` `SubtaskRow` `WeightChip` `WeightDots` |
+| `archive/` | `ArchiveBoard` `ArchiveRow` `ArchiveQuickLook` `CopyWeekDialog` |
+| `stats/` | `StatsBoard` `Heatmap` `WeekTrend` |
+| `auth/` | `AuthForm` `ChangePasswordForm` `RecoveryScreen` `GuestMergeDialog` `GuestMergeSheet` |
+| `account/` | `AccountMenu` `AccountSettings` `AccountSheet` `ChangeEmailForm` `ThemePicker` `DataPrivacyDialog` `Avatar` |
+| `shell/` | `TopBar` |
+| `shared/` | `Dialog` `ConfirmDialog` `ProgressBar` `PointsStat` `WeekSpark` `WeekRef`, plus `icons/` |
+
+`shell/` is the frame that survives a view change; `shared/` is a leaf that the feature
+buckets point into.
+
 ## Contents
 
 Everything below is covered in this order. `App` now holds a `Weeks` collection (see
