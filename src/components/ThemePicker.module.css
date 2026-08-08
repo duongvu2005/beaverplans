@@ -1,0 +1,39 @@
+/* Light / Dark / System as one segmented control. The recipe is the two-option
+   theme row this replaced, kept so the desktop menu looks unchanged apart from
+   gaining a third segment — only the horizontal padding comes down, since three
+   equal segments at the old 16px were wider than the menu itself. */
+
+.row {
+    display: flex;
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.btn {
+    flex: 1;
+    padding: 6px 8px;
+    border: 0;
+    background: none;
+    text-align: center;
+    font: 500 var(--fs-body) var(--sans);
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: 0.12s;
+    white-space: nowrap;
+}
+
+.btn + .btn {
+    border-left: 1px solid var(--line);
+}
+
+.btn:hover {
+    color: var(--ink);
+    background: var(--hover-neutral);
+}
+
+.on,
+.on:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}

@@ -1,43 +1,77 @@
 import { useEffect, useState } from 'react';
 
+/** What the person picked. 'system' defers to the OS, and can change under us. */
+export type ThemePref = 'light' | 'dark' | 'system';
+
+/** What is actually on screen. Always one of the two real palettes. */
 export type Theme = 'light' | 'dark';
 
 const KEY = 'beaverplans:theme';
 
-// Two states, not three: index.css makes light the default regardless of the OS
-// setting, so there is no "system" to fall back to yet. A third option would be
-// a change to the palette's contract, not to this hook.
-function stored(): Theme | null {
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+
+// Kept as the PREFERENCE, not the resolved theme: storing 'dark' for someone on
+// 'system' would freeze whatever their OS happened to be set to at the time.
+// Values written by the earlier two-state version of this hook were 'light' or
+// 'dark', which are still valid preferences, so no migration is needed.
+function stored(): ThemePref | null {
     try {
         const value = localStorage.getItem(KEY);
-        return value === 'light' || value === 'dark' ? value : null;
+        return value === 'light' || value === 'dark' || value === 'system' ? value : null;
     } catch {
         // Safari in private mode throws on any localStorage access.
         return null;
     }
 }
 
+function systemTheme(): Theme {
+    // matchMedia is missing in some test environments (jsdom implements it, but
+    // not every runner does) — defaulting to light matches index.css's own
+    // default rather than guessing.
+    if (typeof window.matchMedia !== 'function') return 'light';
+    return window.matchMedia(DARK_QUERY).matches ? 'dark' : 'light';
+}
+
 /**
- * The chosen theme, mirrored onto the document element and remembered.
+ * The chosen theme preference, the palette it currently resolves to, and a
+ * setter.
  *
- * @returns the current theme and a toggle between the two. The attribute
- *     `data-theme` on `<html>` is kept equal to the returned theme, which is
- *     what the dark palette in index.css keys off.
+ * 'system' is resolved HERE rather than in CSS, which is why index.css needs no
+ * prefers-color-scheme block: `data-theme` on <html> is always the resolved
+ * palette ('light' or 'dark'), so the stylesheet keeps its single, simple
+ * contract and only this hook knows that a third option exists.
+ *
+ * @returns pref (what was picked, including 'system'), theme (what is on screen
+ *     right now), and setPref. While pref is 'system' the OS is watched, so a
+ *     change to it repaints without a reload.
  */
 export function useTheme() {
-    const [theme, setTheme] = useState<Theme>(() => stored() ?? 'light');
+    const [pref, setPref] = useState<ThemePref>(() => stored() ?? 'system');
+    // Only meaningful while pref is 'system', but tracked unconditionally so
+    // switching to 'system' resolves off a current value rather than a stale one.
+    const [osTheme, setOsTheme] = useState<Theme>(systemTheme);
+
+    const theme: Theme = pref === 'system' ? osTheme : pref;
+
+    useEffect(() => {
+        if (typeof window.matchMedia !== 'function') return;
+        const query = window.matchMedia(DARK_QUERY);
+        const onChange = (e: MediaQueryListEvent) => setOsTheme(e.matches ? 'dark' : 'light');
+        query.addEventListener('change', onChange);
+        return () => query.removeEventListener('change', onChange);
+    }, []);
 
     useEffect(() => {
         document.documentElement.dataset.theme = theme;
+    }, [theme]);
+
+    useEffect(() => {
         try {
-            localStorage.setItem(KEY, theme);
+            localStorage.setItem(KEY, pref);
         } catch {
             // Not being able to remember the choice is not a reason to refuse it.
         }
-    }, [theme]);
+    }, [pref]);
 
-    return {
-        theme,
-        toggleTheme: () => setTheme((current) => (current === 'dark' ? 'light' : 'dark')),
-    };
+    return { pref, theme, setPref };
 }

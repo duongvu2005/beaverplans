@@ -3,8 +3,10 @@
    "done"; theming is a change of token values, not a rewrite.
    Fonts (Be Vietnam Pro / JetBrains Mono) are self-hosted via Fontsource,
    imported in main.tsx.
-   The light theme is the default regardless of OS; the dark palette applies only
-   under [data-theme="dark"], so a manual theme toggle can layer on later. */
+   Two palettes, one switch: the dark one applies only under [data-theme="dark"],
+   which useTheme keeps equal to the RESOLVED theme. "Follow the system" is
+   resolved in that hook, not here — so this file needs no prefers-color-scheme
+   block and [data-theme] stays the single source of which palette is live. */
 
 :root {
     /* neutrals */
@@ -96,9 +98,9 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark palette, applied ONLY when explicitly selected — the default is light
-   regardless of the OS setting. A theme toggle sets [data-theme="dark"]; a "system"
-   option could re-introduce prefers-color-scheme. */
+/* Dark palette. useTheme sets [data-theme] to the resolved theme, so this covers
+   both "Dark was picked" and "System was picked and the OS is dark" without
+   needing to know which — the hook has already answered that. */
 :root[data-theme='dark'] {
     color-scheme: dark;
     --bg: #1a1815;
