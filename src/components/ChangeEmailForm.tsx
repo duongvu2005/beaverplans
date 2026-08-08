@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ConfirmDialog } from './ConfirmDialog';
-import shell from './dialogShell.module.css';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import shell from '@/components/shared/dialogShell.module.css';
 import styles from './AccountSettings.module.css';
 
 type ChangeEmailFormProps = {

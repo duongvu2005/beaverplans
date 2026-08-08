@@ -4,9 +4,9 @@ import { removeWeek } from '@/core/weeks';
 import { weekRangeLabel } from '@/core/dates';
 import { ArchiveRow } from './ArchiveRow';
 import { ArchiveQuickLook } from './ArchiveQuickLook';
-import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { CopyWeekDialog } from './CopyWeekDialog';
-import shell from './dialogShell.module.css';
+import shell from '@/components/shared/dialogShell.module.css';
 import styles from './ArchiveBoard.module.css';
 
 // A week files under the year of its Monday, so one straddling New Year

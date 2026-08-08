@@ -19,7 +19,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { getEventCoordinates } from '@dnd-kit/utilities';
-import { Dialog } from './Dialog';
+import { Dialog } from '@/components/shared/Dialog';
 import { buildTask } from '@/core/buildTask';
 import { canMoveSubtaskTo } from '@/core/projects';
 import { parseDeadline } from '@/core/deadline';
@@ -30,7 +30,7 @@ import styles from './TaskEditor.module.css';
 import subStyles from './SubtaskRow.module.css';
 import { SubtaskRow } from './SubtaskRow';
 import { Grip } from '@/components/shared/icons/Grip';
-import shell from './dialogShell.module.css';
+import shell from '@/components/shared/dialogShell.module.css';
 import {
     addSubtaskOn as addSubtaskToDraft,
     moveSubtaskInDraft,

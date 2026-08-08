@@ -10,10 +10,10 @@ import {
     weekTrend,
     weekdayHistory,
 } from '@/core/weekStats';
-import { WeekSpark } from './WeekSpark';
-import { weekdayColumns } from './sparkColumns';
-import { WeekTrend } from './WeekTrend';
-import { WeekRef } from './WeekRef';
+import { WeekSpark } from '@/components/shared/WeekSpark';
+import { weekdayColumns } from '@/components/shared/sparkColumns';
+import { WeekTrend } from '@/components/shared/WeekTrend';
+import { WeekRef } from '@/components/shared/WeekRef';
 import { Heatmap, HeatmapLegend } from './Heatmap';
 import { heatColumns } from './heatColumns';
 import { useContainerWidth } from '@/hooks/useContainerWidth';

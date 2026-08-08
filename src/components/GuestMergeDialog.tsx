@@ -1,5 +1,5 @@
-import { Dialog } from './Dialog';
-import shell from './dialogShell.module.css';
+import { Dialog } from '@/components/shared/Dialog';
+import shell from '@/components/shared/dialogShell.module.css';
 import styles from './GuestMergeDialog.module.css';
 
 type GuestMergeDialogProps = {

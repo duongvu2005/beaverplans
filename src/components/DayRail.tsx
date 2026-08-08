@@ -1,7 +1,7 @@
 import type { DayOfWeek } from '@/core/types';
 import type { DayProgress } from '@/core/progress';
 import styles from './DayRail.module.css';
-import { ProgressBar } from './ProgressBar';
+import { ProgressBar } from '@/components/shared/ProgressBar';
 
 const LETTER: Record<DayOfWeek, string> = {
     mon: 'M',

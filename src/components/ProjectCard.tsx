@@ -9,7 +9,7 @@ import { Grip } from '@/components/shared/icons/Grip';
 import { DeadlineIcon } from '@/components/shared/icons/DeadlineIcon';
 import { CloseIcon } from '@/components/shared/icons/CloseIcon';
 import styles from './ProjectCard.module.css';
-import { ProgressBar } from './ProgressBar';
+import { ProgressBar } from '@/components/shared/ProgressBar';
 
 type ProjectCardProps = {
     project: Project;

@@ -3,7 +3,7 @@ import type { DateKey, DayOfWeek } from '@/core/types';
 import { dayStatusOf, weekStatusOf } from '@/core/dates';
 import { MoveIcon } from '@/components/shared/icons/MoveIcon';
 import { CloseIcon } from '@/components/shared/icons/CloseIcon';
-import check from './checkbox.module.css';
+import check from '@/components/shared/checkbox.module.css';
 import styles from './DayCell.module.css';
 
 const SHORT: Record<DayOfWeek, string> = {

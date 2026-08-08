@@ -1,6 +1,6 @@
-import { Dialog } from './Dialog';
-import shell from './dialogShell.module.css';
-import styles from './WeekActionsSheet.module.css';
+import { Dialog } from '@/components/shared/Dialog';
+import shell from '@/components/shared/dialogShell.module.css';
+import styles from '@/components/shared/sheetShell.module.css';
 
 type WeekActionsSheetProps = {
     /** the week these actions apply to, already formatted ("Jul 20 – Jul 26") */

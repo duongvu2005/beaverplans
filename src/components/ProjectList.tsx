@@ -25,7 +25,7 @@ import { beforeIdForDrop } from './dndReorder';
 import styles from './ProjectList.module.css';
 import cardStyles from './ProjectCard.module.css';
 import taskStyles from './TaskRow.module.css';
-import check from './checkbox.module.css';
+import check from '@/components/shared/checkbox.module.css';
 
 // The data attached to each draggable/droppable so a drop can tell what it hit.
 type TreeDragData =

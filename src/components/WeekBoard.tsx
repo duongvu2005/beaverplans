@@ -25,8 +25,8 @@ import { WeekView } from './WeekView';
 import { TaskEditor } from './TaskEditor';
 import { ProjectEditor } from './ProjectEditor';
 import { MovePopover } from './MovePopover';
-import { ConfirmDialog } from './ConfirmDialog';
-import shell from './dialogShell.module.css';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import shell from '@/components/shared/dialogShell.module.css';
 
 type Clearing = {
     subtaskId: string;

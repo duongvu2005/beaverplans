@@ -1,9 +1,9 @@
 import type { ThemePref } from '@/hooks/useTheme';
 import type { AuthUser } from '@/hooks/useAuth';
-import { Dialog } from './Dialog';
+import { Dialog } from '@/components/shared/Dialog';
 import { ThemePicker } from './ThemePicker';
-import shell from './dialogShell.module.css';
-import styles from './WeekActionsSheet.module.css';
+import shell from '@/components/shared/dialogShell.module.css';
+import styles from '@/components/shared/sheetShell.module.css';
 
 type AccountSheetProps = {
     themePref: ThemePref;

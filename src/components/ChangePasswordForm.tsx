@@ -1,10 +1,10 @@
 import { useRef, useState, type ReactNode, type SubmitEvent } from 'react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
-import { Dialog } from './Dialog';
+import { Dialog } from '@/components/shared/Dialog';
 import { CloseIcon } from '@/components/shared/icons/CloseIcon';
 import { EyeIcon, EyeOffIcon } from '@/components/shared/icons/EyeIcon';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
-import shell from './dialogShell.module.css';
+import shell from '@/components/shared/dialogShell.module.css';
 import styles from './AuthForm.module.css';
 
 const HCAPTCHA_SITEKEY = import.meta.env.VITE_HCAPTCHA_SITEKEY;

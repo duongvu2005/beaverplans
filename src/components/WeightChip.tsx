@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { WeightDots } from './WeightDots';
-import { Dialog } from './Dialog';
+import { Dialog } from '@/components/shared/Dialog';
 import styles from './WeightChip.module.css';
 
 const LEVELS = [1, 2, 3] as const;

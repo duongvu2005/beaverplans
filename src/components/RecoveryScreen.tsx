@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from 'react';
-import shell from './dialogShell.module.css';
+import shell from '@/components/shared/dialogShell.module.css';
 import authStyles from './AuthForm.module.css';
 import page from './RecoveryScreen.module.css';
 

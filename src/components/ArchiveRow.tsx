@@ -1,8 +1,8 @@
 import type { WeekPlan } from '@/core/types';
 import { overallProgress, progressByDay } from '@/core/progress';
 import { percentOf } from '@/core/math';
-import { WeekSpark } from './WeekSpark';
-import { weekdayColumns } from './sparkColumns';
+import { WeekSpark } from '@/components/shared/WeekSpark';
+import { weekdayColumns } from '@/components/shared/sparkColumns';
 import { CopyIcon } from '@/components/shared/icons/CopyIcon';
 import { CloseIcon } from '@/components/shared/icons/CloseIcon';
 import styles from './ArchiveRow.module.css';

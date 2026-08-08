@@ -7,11 +7,11 @@ import {
     taskProgress,
 } from '@/core/progress';
 import { percentOf } from '@/core/math';
-import { Dialog } from './Dialog';
-import { WeekSpark } from './WeekSpark';
-import { weekdayColumns } from './sparkColumns';
-import { PointsStat } from './PointsStat';
-import shell from './dialogShell.module.css';
+import { Dialog } from '@/components/shared/Dialog';
+import { WeekSpark } from '@/components/shared/WeekSpark';
+import { weekdayColumns } from '@/components/shared/sparkColumns';
+import { PointsStat } from '@/components/shared/PointsStat';
+import shell from '@/components/shared/dialogShell.module.css';
 import styles from './ArchiveQuickLook.module.css';
 
 type ArchiveQuickLookProps = {

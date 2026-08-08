@@ -2,7 +2,7 @@ import type { DateKey, DayOfWeek } from '@/core/types';
 import type { DaySchedule } from '@/core/daySchedule';
 import type { DayProgress } from '@/core/progress';
 import { DayCell } from './DayCell';
-import { PointsStat } from './PointsStat';
+import { PointsStat } from '@/components/shared/PointsStat';
 import styles from './DayColumn.module.css';
 
 type DayColumnProps = {

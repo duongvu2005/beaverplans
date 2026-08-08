@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Project, WeekPlan } from '@/core/types';
-import { ConfirmDialog } from './ConfirmDialog';
-import shell from './dialogShell.module.css';
-import check from './checkbox.module.css';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import shell from '@/components/shared/dialogShell.module.css';
+import check from '@/components/shared/checkbox.module.css';
 import styles from './CopyWeekDialog.module.css';
 
 type CopyWeekDialogProps = {

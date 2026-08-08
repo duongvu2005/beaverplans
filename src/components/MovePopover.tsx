@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Dialog } from './Dialog';
+import { Dialog } from '@/components/shared/Dialog';
 import { dayStatusOf } from '@/core/dates';
 import { canMoveSubtaskTo } from '@/core/projects';
 import { WEEK } from '@/core/types';
 import type { DateKey, DayOfWeek, Subtask } from '@/core/types';
-import check from './checkbox.module.css';
-import shell from './dialogShell.module.css';
+import check from '@/components/shared/checkbox.module.css';
+import shell from '@/components/shared/dialogShell.module.css';
 import styles from './moveUi.module.css';
 
 const SHORT: Record<DayOfWeek, string> = {

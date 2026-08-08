@@ -6,9 +6,9 @@ import type { Task } from '@/core/types';
 import { Grip } from '@/components/shared/icons/Grip';
 import { EditIcon } from '@/components/shared/icons/EditIcon';
 import { CloseIcon } from '@/components/shared/icons/CloseIcon';
-import { PointsStat } from './PointsStat';
+import { PointsStat } from '@/components/shared/PointsStat';
 import styles from './TaskRow.module.css';
-import check from './checkbox.module.css';
+import check from '@/components/shared/checkbox.module.css';
 
 type TaskRowProps = {
     task: Task;

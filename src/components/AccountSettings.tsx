@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Dialog } from './Dialog';
+import { Dialog } from '@/components/shared/Dialog';
 import { ChevronIcon } from '@/components/shared/icons/ChevronIcon';
 import { Avatar } from './Avatar';
-import shell from './dialogShell.module.css';
+import shell from '@/components/shared/dialogShell.module.css';
 import styles from './AccountSettings.module.css';
 
 // Matches the signup field, so a name accepted there is never rejected here.
