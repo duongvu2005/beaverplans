@@ -29,7 +29,7 @@ import { downloadText } from '@/utils/downloadText';
 import { newId } from '@/utils/newId';
 import { overallProgress } from '@/core/progress';
 import { WeekBoard } from '@/components/week/WeekBoard';
-import { ArchiveBoard } from '@/components/ArchiveBoard';
+import { ArchiveBoard } from '@/components/archive/ArchiveBoard';
 import { StatsBoard } from '@/components/StatsBoard';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { DataPrivacyDialog } from '@/components/DataPrivacyDialog';
