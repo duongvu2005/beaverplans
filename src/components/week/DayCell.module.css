@@ -1,0 +1,295 @@
+.cell {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    padding: 10px 2px;
+}
+
+/* roomy list: a hairline between adjacent cells */
+.cell + .cell {
+    border-top: 1px solid var(--line);
+}
+
+/* eyebrow: project label on the left, weight pips on the right */
+.eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.text {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.project {
+    font-family: var(--mono);
+    font-size: var(--fs-mini);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task {
+    display: block;
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: var(--fs-row);
+    font-weight: var(--w-row);
+    line-height: 1.3;
+    color: var(--ink);
+    margin-top: 1px;
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+
+.task:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r-focus);
+}
+
+.desc {
+    display: block;
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: var(--fs-body);
+    line-height: 1.35;
+    color: var(--ink-faint);
+    margin-top: 3px;
+}
+
+/* weight as 1–3 filled dots (easy / medium / hard) */
+.weight {
+    flex: none;
+    display: inline-flex;
+    gap: 3px;
+}
+
+.pip {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--line-strong);
+}
+
+.pip.on {
+    background: var(--accent);
+}
+
+.tagRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.cell.compact.overdue {
+    background: var(--hover-accent);
+    border-color: var(--accent-soft);
+}
+
+.cell.compact .cellTag {
+    border-radius: var(--r-chip);
+    padding: 1px 5px;
+}
+
+.cell.compact.overdue .cellTag {
+    border: 1px solid var(--accent-soft);
+    color: var(--accent);
+}
+
+.cell.compact.missed .cellTag {
+    border: 1px dashed var(--line-strong);
+}
+
+.cellTag {
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cell:not(.compact) .cellTag {
+    font-family: var(--sans);
+    font-size: var(--fs-body);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* missed: a passive historical record -> muted */
+.missTag {
+    color: var(--ink-faint);
+}
+
+/* overdue: a call to action -> accent */
+.overdueTag {
+    color: var(--accent);
+}
+
+/* compact icon buttons (grid tile) */
+.moveBtn,
+.clearBtn {
+    flex: none;
+    appearance: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.moveBtn {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--r-chip);
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+@media (hover: hover) {
+    .moveBtn:hover {
+        background: var(--accent-soft);
+    }
+}
+
+.clearBtn {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-faint);
+}
+
+.cell.compact .clearBtn {
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+
+.cell.compact .clearBtn:focus-visible {
+    opacity: 1;
+}
+@media (hover: hover) {
+    .cell.compact:hover .clearBtn {
+        opacity: 1;
+    }
+
+    .clearBtn:hover {
+        background: var(--hover-accent);
+        color: var(--accent);
+    }
+}
+
+/* roomy pills (focus list) */
+.movePill,
+.clearPill {
+    flex: none;
+    appearance: none;
+    cursor: pointer;
+    background: none;
+    font-family: var(--mono);
+    font-size: var(--fs-mini);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.movePill {
+    border: 1px solid var(--accent-soft);
+    color: var(--accent);
+}
+
+@media (hover: hover) {
+    .movePill:hover {
+        background: var(--accent-soft);
+    }
+}
+
+.clearPill {
+    border: 1px solid var(--line);
+    color: var(--ink-faint);
+}
+
+@media (hover: hover) {
+    .clearPill:hover {
+        background: var(--hover-accent);
+        color: var(--accent);
+        border-color: var(--accent-soft);
+    }
+}
+
+.moveBtn svg,
+.clearBtn svg,
+.movePill svg,
+.clearPill svg {
+    width: 12px;
+    height: 12px;
+    display: block;
+}
+
+.clearBtn svg,
+.clearPill svg {
+    width: 11px;
+    height: 11px;
+}
+
+/* done: strike + fade the title only; the check stays crisp */
+.cell.done .task {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-strong);
+}
+
+.cell.missed .task {
+    color: var(--ink-soft);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-strong);
+}
+
+.missedCheck {
+    border-style: dashed;
+    opacity: 0.5;
+}
+
+/* ---- compact variant: the 7-up grid tile ---- */
+.cell.compact {
+    padding: 6px 8px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--r-chip);
+}
+
+/* missed tile: the dashed border is the only signal */
+.cell.compact.missed {
+    border-color: var(--line-strong);
+    border-style: dashed;
+}
+
+.cell.compact .task {
+    font-size: var(--fs-body);
+    line-height: 1.28;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cell.compact .desc {
+    display: none;
+}

@@ -1,0 +1,342 @@
+.head {
+    --bleed: calc(var(--sp-3) + 1px);
+    display: grid;
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        'nav   acts'
+        'gauge gauge'
+        'note  note';
+    column-gap: var(--sp-4);
+    row-gap: var(--sp-3);
+    padding: var(--sp-3);
+    margin: calc(var(--bleed) * -1);
+    margin-bottom: var(--sp-4);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--r-card);
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease;
+}
+
+@container app (min-width: 1000px) {
+    .head {
+        max-width: calc(1440px + var(--bleed) * 2);
+        margin-inline: max(calc(var(--bleed) * -1), calc((100% - 1440px) / 2 - var(--bleed)));
+    }
+}
+
+/* --- navigation cluster --------------------------------------------------- */
+
+.nav {
+    grid-area: nav;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    min-width: 0;
+}
+
+/* The 26px is hit area for a thumb; nothing is painted. */
+.arrow {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+@media (hover: hover) {
+    .arrow:hover:not(:disabled) {
+        color: var(--ink);
+    }
+}
+
+.arrow:disabled {
+    color: var(--line-strong);
+    cursor: not-allowed;
+}
+
+/* Optical alignment of left arrow (count from head) */
+.prev {
+    margin-left: -9.5px;
+}
+
+.read {
+    --text-w: 98px;
+    --date-w: 117px;
+    width: calc(var(--sp-3) * 3 + 2px + var(--text-w) + var(--date-w));
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+    padding: 5px var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: transparent;
+    min-width: 0;
+}
+
+.name {
+    flex: 0 0 var(--text-w);
+    font: 600 var(--fs-row) / 1.4 var(--sans);
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.name[data-now='true'] {
+    color: var(--good);
+}
+
+.date {
+    flex: 0 0 var(--date-w);
+    font: var(--fs-body) / 1.4 var(--mono);
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+/* --- one button recipe: dialogShell's .btn type in a tighter box ----------- */
+
+.btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    font: 500 var(--fs-body) var(--sans);
+    padding: 6px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.15s;
+}
+
+/* Border and colour both move on hover. */
+@media (hover: hover) {
+    .btn:hover:not(:disabled) {
+        border-color: var(--ink-faint);
+        color: var(--ink);
+    }
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ghost {
+    border-color: transparent;
+    background: none;
+}
+
+@media (hover: hover) {
+    .ghost:hover:not(:disabled) {
+        border-color: transparent;
+        background: var(--hover-neutral);
+        color: var(--ink);
+    }
+}
+
+@media (hover: hover) {
+    .end:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+}
+
+.end,
+.reopen {
+    min-width: 5.75rem;
+    justify-content: center;
+}
+
+.reopen {
+    color: var(--ink-faint);
+}
+
+.acts {
+    grid-area: acts;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.manage {
+    display: none;
+}
+
+.head[data-armed='true'] .move {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+}
+
+:root[data-theme='dark'] .head[data-armed='true'] .move {
+    color: var(--bg);
+}
+
+@media (hover: hover) {
+    .head[data-armed='true'] .move:hover:not(:disabled) {
+        filter: brightness(1.06);
+    }
+}
+
+/* --- the gauge ------------------------------------------------------------ */
+
+.gauge {
+    grid-area: gauge;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-width: 0;
+}
+
+.track {
+    flex: 1 1 auto;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--line-strong);
+    overflow: hidden;
+}
+
+.fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--good);
+    transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pct {
+    flex: none;
+    font: var(--fs-body) / 1.4 var(--mono);
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+/* --- the note ------------------------------------------------------------- */
+
+.note {
+    grid-area: note;
+    margin: 0;
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+.note b {
+    color: var(--ink-soft);
+    font-weight: 600;
+}
+
+/* --- block states --------------------------------------------------------- */
+
+.head[data-mode='armed'] {
+    background: var(--hover-accent);
+    border-color: var(--accent-soft);
+}
+
+.head[data-mode='armed'] .name,
+.head[data-mode='armed'] .note,
+.head[data-mode='armed'] .arrow {
+    color: var(--accent);
+}
+
+.head[data-mode='armed'] .read {
+    border-color: var(--accent-soft);
+}
+
+@media (hover: hover) {
+    .head[data-mode='armed'] .arrow:hover:not(:disabled) {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+    }
+}
+
+.head[data-mode='armed'] .track,
+.head[data-mode='armed'] .pct {
+    opacity: 0.45;
+}
+
+.head[data-mode='ended'] {
+    background: var(--paper);
+    border-style: dashed;
+    border-color: var(--line-strong);
+}
+
+.head[data-mode='ended'] .name,
+.head[data-mode='ended'] .date,
+.head[data-mode='ended'] .pct {
+    color: var(--ink-faint);
+}
+
+.head[data-mode='ended'] .fill {
+    background: var(--ink-faint);
+}
+
+@container app (max-width: 680px) {
+    .head {
+        grid-template-areas:
+            'nav   nav'
+            'gauge acts'
+            'note  note';
+        column-gap: var(--sp-2);
+        row-gap: var(--sp-2);
+    }
+
+    .arrow {
+        width: 20px;
+    }
+
+    .read {
+        --text-w: 91px;
+        --date-w: 108px;
+        width: calc(var(--sp-2) * 2 + 2px + var(--sp-1) + var(--text-w) + var(--date-w));
+        gap: var(--sp-1);
+        padding: 4px var(--sp-2);
+    }
+
+    .name {
+        font-size: var(--fs-body);
+    }
+
+    .date {
+        font-size: var(--fs-chrome);
+    }
+
+    .today {
+        margin-left: auto;
+    }
+
+    /* Every whole-week action collapses into the sheet here. */
+    .move,
+    .end,
+    .reopen {
+        display: none;
+    }
+
+    .manage {
+        display: inline-flex;
+    }
+
+    .head[data-armed='true'] .move {
+        display: inline-flex;
+    }
+
+    .head[data-armed='true'] .manage {
+        display: none;
+    }
+}
+
+@container app (max-width: 430px) {
+    .count {
+        display: none;
+    }
+}

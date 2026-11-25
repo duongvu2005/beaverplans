@@ -1,0 +1,31 @@
+.cat {
+    flex: none;
+    display: block;
+    aspect-ratio: 1;
+    overflow: visible; /* the ring sits at r=45.5 of 100, so nothing clips */
+}
+
+.ring {
+    fill: var(--paper);
+    stroke: var(--line-strong);
+    stroke-width: 3;
+}
+
+.line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.eye {
+    fill: var(--accent);
+}
+
+.image {
+    flex: none;
+    display: block;
+    border-radius: 50%;
+    object-fit: cover;
+}

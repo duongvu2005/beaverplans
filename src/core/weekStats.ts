@@ -1,0 +1,207 @@
+import { dateKeyForDay, weeksBetween } from './dates';
+import { percentOf } from './math';
+import { overallProgress, progressByDay } from './progress';
+import type { Progress, DayProgress } from './progress';
+import type { DateKey, DayOfWeek, Weeks } from './types';
+import { WEEK } from './types';
+
+/**
+ * Completed weighted effort per calendar day, across every archived week.
+ *
+ * Only subtasks carry a weekday slot, so a leaf task's own isDone contributes
+ * nothing here: it has no date to be credited to.
+ *
+ * @param weeks the archived weeks (e.g. endedWeeks(...) — see weeks.ts)
+ * @returns a map from DateKey (a real calendar date, derived from an entry's
+ *          weekStart plus the weekday a subtask was assigned to) to the
+ *          total weighted effort completed on that date, summed across
+ *          every entry whose week contains it. A date with nothing
+ *          completed is absent from the map, not present with 0.
+ */
+export function dailyCompletions(weeks: Weeks): Map<DateKey, number> {
+    const totals = new Map<DateKey, number>();
+    for (const { weekStart, projects } of weeks) {
+        const subtasks = projects.flatMap((p) => p.tasks.flatMap((t) => t.subtasks));
+        for (const subtask of subtasks) {
+            if (!subtask.isDone) {
+                continue;
+            }
+            const date = dateKeyForDay(weekStart, subtask.assignedDay);
+            totals.set(date, (totals.get(date) ?? 0) + subtask.weight);
+        }
+    }
+    return totals;
+}
+
+export type WeekProgress = {
+    readonly weekStart: DateKey;
+    readonly progress: Progress;
+};
+
+/**
+ * The overall progress of every archived week, one entry per week.
+ *
+ * @param weeks the archived weeks, sorted ascending by weekStart (e.g.
+ *        endedWeeks(...) — see weeks.ts)
+ * @returns a list with one entry per entry in weeks, each pairing that
+ *          entry's weekStart with overallProgress(projects) computed fresh
+ *          on its snapshot, in the same order as weeks (so chronological,
+ *          oldest first, given the precondition above)
+ */
+export function weekHistory(weeks: Weeks): ReadonlyArray<WeekProgress> {
+    return weeks.map(({ weekStart, projects }) => ({
+        weekStart,
+        progress: overallProgress(projects),
+    }));
+}
+
+/**
+ * The progress of each weekday slot (mon-sun), summed across every archived
+ * week — every archived Wednesday together, and so on.
+ *
+ * @param weeks the archived weeks (e.g. endedWeeks(...) — see weeks.ts)
+ * @returns a list of DayProgress, one per weekday, ordered Monday first
+ *          through Sunday last (length 7). For each, assigned and done
+ *          are the sum of that weekday's assigned/done (per
+ *          progress.ts's progressByDay, computed fresh per entry) across
+ *          every entry in weeks.
+ */
+export function weekdayHistory(weeks: Weeks): ReadonlyArray<DayProgress> {
+    const totals: Record<DayOfWeek, { assigned: number; done: number }> = {
+        mon: { assigned: 0, done: 0 },
+        tue: { assigned: 0, done: 0 },
+        wed: { assigned: 0, done: 0 },
+        thu: { assigned: 0, done: 0 },
+        fri: { assigned: 0, done: 0 },
+        sat: { assigned: 0, done: 0 },
+        sun: { assigned: 0, done: 0 },
+    };
+    for (const { projects } of weeks) {
+        for (const dayProgress of progressByDay(projects)) {
+            totals[dayProgress.day].assigned += dayProgress.assigned;
+            totals[dayProgress.day].done += dayProgress.done;
+        }
+    }
+    return WEEK.map((day) => ({ day, ...totals[day] }));
+}
+
+/**
+ * The best-performing archived week, by completion percentage.
+ *
+ * @param history a chronological per-week progress history (see weekHistory)
+ * @returns the entry in history with the highest percentOf(done, total); on
+ *          a tie, the entry with the latest weekStart (a tie reads as a new
+ *          record, not a repeat of the old one). undefined if history is
+ *          empty.
+ */
+export function bestWeek(history: ReadonlyArray<WeekProgress>): WeekProgress | undefined {
+    return history.reduce<WeekProgress | undefined>((best, entry) => {
+        if (best === undefined) {
+            return entry;
+        }
+        const entryPct = percentOf(entry.progress.done, entry.progress.total);
+        const bestPct = percentOf(best.progress.done, best.progress.total);
+        // >= (not >): history is chronological, so a tie keeps the later entry.
+        return entryPct >= bestPct ? entry : best;
+    }, undefined);
+}
+
+/**
+ * The length of the current run of archived weeks meeting a completion
+ * threshold, counted backward from the most recent week.
+ *
+ * Adjacent means adjacent in `history`, not on the calendar: a week that was
+ * never ended is absent rather than failing, so a gap does not break the run.
+ * Same for longestStreak.
+ *
+ * @param history a chronological per-week progress history (see weekHistory)
+ * @param threshold the minimum completion percentage (0-100) for a week to
+ *        count toward the streak
+ * @returns the number of weeks, counting backward from the end of history,
+ *          that each have percentOf(done, total) >= threshold, stopping at
+ *          the first (most recent) week that doesn't. 0 if history is empty
+ *          or its last week doesn't meet threshold.
+ */
+export function currentStreak(history: ReadonlyArray<WeekProgress>, threshold: number): number {
+    let streak = 0;
+    for (const entry of [...history].reverse()) {
+        if (percentOf(entry.progress.done, entry.progress.total) < threshold) {
+            break;
+        }
+        streak++;
+    }
+    return streak;
+}
+
+/**
+ * The longest run, anywhere in history, of consecutive archived weeks each
+ * meeting a completion threshold.
+ *
+ * @param history a chronological per-week progress history (see weekHistory)
+ * @param threshold the minimum completion percentage (0-100) for a week to
+ *        count toward a streak
+ * @returns the length of the longest run of consecutive entries (in
+ *          chronological order) each with percentOf(done, total) >=
+ *          threshold, anywhere in history. 0 if history is empty or no week
+ *          meets threshold.
+ */
+export function longestStreak(history: ReadonlyArray<WeekProgress>, threshold: number): number {
+    let longest = 0;
+    let current = 0;
+    for (const entry of history) {
+        if (percentOf(entry.progress.done, entry.progress.total) >= threshold) {
+            current++;
+            longest = Math.max(longest, current);
+        } else {
+            current = 0;
+        }
+    }
+    return longest;
+}
+
+/**
+ * One item of a week trend: an archived week, or the run of untracked weeks
+ * lying between two archived ones.
+ */
+export type TrendItem =
+    | { readonly kind: 'week'; readonly week: WeekProgress }
+    | { readonly kind: 'gap'; readonly weeks: number };
+
+/**
+ * The most recent stretch of a week history, with the untracked runs between
+ * weeks made explicit.
+ *
+ * @param history a week history sorted chronologically, oldest first, no two
+ *        entries in the same week — weekHistory's output
+ * @param n how many items to return at most; at least 1
+ * @returns at most n items in display order (oldest first, so the most recent
+ *          archived week is last), taken from the end of history: one 'week'
+ *          item per archived week, and between each pair of non-adjacent
+ *          weeks one 'gap' item counting the untracked weeks separating them.
+ *          Empty when history is empty. Fewer than n when history runs out,
+ *          and n-1 when the n'th item taken would be a gap, which is dropped
+ *          rather than returned with nothing on its older side.
+ */
+export function weekTrend(
+    history: ReadonlyArray<WeekProgress>,
+    n: number,
+): ReadonlyArray<TrendItem> {
+    const newestFirst = [...history].reverse();
+    const items: TrendItem[] = [];
+
+    for (const [i, week] of newestFirst.entries()) {
+        if (items.length >= n) break;
+        items.push({ kind: 'week', week });
+
+        const older = newestFirst[i + 1];
+        if (older === undefined) continue;
+        const gap = weeksBetween(week.weekStart, older.weekStart) - 1;
+        if (gap > 0) items.push({ kind: 'gap', weeks: gap });
+    }
+
+    // A gap is only ever pushed straight after a week, so at most one can be
+    // trailing and one pop clears it.
+    if (items.at(-1)?.kind === 'gap') items.pop();
+
+    return items.reverse();
+}

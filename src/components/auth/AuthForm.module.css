@@ -1,0 +1,285 @@
+.wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    padding-top: var(--sp-5);
+}
+
+.close {
+    align-self: flex-start;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+.close svg {
+    width: 22px;
+    height: 22px;
+}
+
+@media (hover: hover) {
+    .close:hover {
+        background: var(--hover-neutral);
+        color: var(--ink);
+    }
+}
+
+.close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.head {
+    margin-top: var(--sp-5);
+}
+
+/* Derived from --fs-title rather than a token of its own. */
+.title {
+    margin: var(--sp-2) 0 0;
+    font: var(--w-title) calc(var(--fs-title) * 1.25) / 1.2 var(--display);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+.subtitle {
+    margin: var(--sp-1) 0 0;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-soft);
+}
+
+.lead {
+    margin: var(--sp-3) 0 0;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-soft);
+}
+
+.form {
+    margin-top: var(--sp-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+.pending {
+    margin-top: var(--sp-5);
+}
+
+.pendingLead {
+    margin: 0;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-soft);
+}
+
+.pendingEmail {
+    margin: var(--sp-2) 0 0;
+    font: 600 var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pendingHint {
+    margin: var(--sp-5) 0 0;
+    font: var(--fs-body) / 1.6 var(--sans);
+    color: var(--ink-soft);
+}
+
+.pendingTight .pendingHint {
+    margin-top: var(--sp-4);
+}
+
+.pendingTight .pendingHint + .pendingHint {
+    margin-top: var(--sp-3);
+}
+
+.input {
+    width: 100%;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    background: var(--bg);
+    color: var(--ink);
+    font: var(--fs-row) / 1.4 var(--sans);
+    padding: var(--sp-3);
+}
+
+.input::placeholder {
+    color: var(--ink-faint);
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--paper);
+}
+
+.forgot {
+    align-self: flex-end;
+}
+
+.pwWrap {
+    position: relative;
+    display: flex;
+}
+
+/* room for the reveal button so typed text never runs under it */
+.pwWrap .input {
+    padding-right: calc(var(--sp-2) * 2 + 32px);
+}
+
+.reveal {
+    position: absolute;
+    right: var(--sp-2);
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--r-chip);
+    background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+}
+
+.reveal svg {
+    width: 18px;
+    height: 18px;
+}
+
+@media (hover: hover) {
+    .reveal:hover {
+        color: var(--ink-soft);
+        background: var(--hover-neutral);
+    }
+}
+
+.captcha {
+    display: flex;
+    justify-content: center;
+}
+
+.error {
+    margin: 0;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r);
+    background: var(--hover-accent);
+    color: var(--accent);
+    font: var(--fs-body) / 1.45 var(--sans);
+}
+
+.notice {
+    margin: 0;
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r);
+    background: var(--good-soft);
+    color: var(--good);
+    font: var(--fs-body) / 1.45 var(--sans);
+}
+
+.submit {
+    width: 100%;
+    margin-top: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    font: 500 var(--fs-row) var(--sans);
+    text-align: center;
+}
+
+.pendingBack {
+    margin-top: var(--sp-5);
+}
+
+.pendingDone {
+    margin-top: 0;
+}
+
+.pendingSwap {
+    display: block;
+    margin: var(--sp-3) auto 0;
+}
+
+.foot {
+    margin-top: auto;
+    padding-top: var(--sp-6);
+    padding-bottom: var(--sp-3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-3);
+}
+
+.switch {
+    margin: 0;
+    text-align: center;
+    font: var(--fs-body) / 1.4 var(--sans);
+    color: var(--ink-soft);
+}
+
+.link {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: var(--fs-body) var(--sans);
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+@media (hover: hover) {
+    .link:hover {
+        opacity: 0.8;
+    }
+}
+
+.guest {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: var(--fs-body) var(--sans);
+    color: var(--ink-faint);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.guest:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (hover: hover) {
+    .guest:hover {
+        color: var(--ink-soft);
+    }
+}
+
+@container app (min-width: 681px) {
+    .wrap {
+        padding-top: 0;
+    }
+
+    .close {
+        display: none;
+    }
+
+    /* no × above it here, so the heading is the card's first line */
+    .head {
+        margin-top: 0;
+    }
+
+    .foot {
+        padding-top: var(--sp-5);
+    }
+}

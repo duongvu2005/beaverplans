@@ -1,0 +1,348 @@
+.welcome {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+.title {
+    margin: 0;
+    font: var(--w-title) var(--fs-title) / 1.3 var(--display);
+    color: var(--ink);
+}
+
+.sub {
+    margin: var(--sp-1) 0 0;
+    font: var(--fs-body) / 1.55 var(--sans);
+    color: var(--ink-faint);
+}
+
+.steps {
+    display: grid;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.step {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--sp-3);
+    align-items: start;
+    padding: var(--sp-2) 0;
+    border-radius: var(--r);
+}
+
+[data-mode='full'] .step {
+    padding: var(--sp-2) calc(var(--sp-3) + 1px);
+    border: 1px solid transparent;
+}
+
+[data-mode='full'] .step[data-state='current'] {
+    padding: var(--sp-3);
+    background: var(--paper);
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.num {
+    --chip: 22px;
+    width: var(--chip);
+    height: var(--chip);
+    margin-top: calc((var(--fs-row) * 1.35 - var(--chip)) / 2);
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--bg);
+    color: var(--ink-faint);
+    font: 500 var(--fs-label) / 1 var(--mono);
+}
+
+.step[data-state='current'] .num {
+    border-color: var(--accent);
+    background: var(--hover-accent);
+    color: var(--accent);
+}
+
+.step[data-state='done'] .num {
+    border-color: var(--good);
+    background: var(--good-soft);
+    color: var(--good);
+}
+
+.body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.h {
+    font: var(--w-row) var(--fs-row) / 1.35 var(--display);
+    color: var(--ink-soft);
+}
+
+.step[data-state='current'] .h {
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.step[data-state='done'] .h {
+    color: var(--ink-faint);
+}
+
+.d {
+    font: var(--fs-body)/1.45 var(--sans);
+    color: var(--ink-faint);
+}
+
+.step:not([data-state='current']) .d,
+.step:not([data-state='current']) .demo {
+    display: none;
+}
+
+.demo {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1) var(--sp-2);
+    flex-wrap: wrap;
+}
+
+.sample {
+    font: var(--w-row) var(--fs-row) / 1.3 var(--display);
+    color: var(--ink-soft);
+}
+
+/* a project card's name, at the size the card gives it */
+.projectSample {
+    font: var(--w-title) var(--fs-title) / 1.3 var(--display);
+    color: var(--ink-soft);
+}
+
+.daysDemo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--sp-1);
+}
+
+.day {
+    display: grid;
+    place-content: center;
+    min-height: 34px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    color: var(--ink-faint);
+    font: var(--fs-body) / 1 var(--mono);
+}
+
+[data-mode='guided'] .day {
+    background: var(--bg);
+}
+
+[data-mode='guided'] .dayOn {
+    background: var(--accent-soft);
+    border-color: var(--line-strong);
+}
+
+.dayOn {
+    background: var(--accent-soft);
+    border-color: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2) var(--sp-4);
+    font: var(--fs-body) / 1.4 var(--sans);
+    color: var(--ink-faint);
+}
+
+.level {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+/* WeightDots' pips, at rest. */
+.pips {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.pip {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--ink-faint);
+}
+
+.pip.on {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* dialogShell's .primary, but terracotta rather than ink */
+.cta {
+    align-self: flex-start;
+    font: 500 var(--fs-body) var(--sans);
+    padding: var(--sp-2) var(--sp-4);
+    border: 1px solid var(--accent);
+    border-radius: var(--r);
+    background: var(--accent);
+    color: var(--paper);
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+@media (hover: hover) {
+    .cta:hover {
+        filter: brightness(1.3);
+    }
+}
+
+.cta:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+/* dialogShell's .ghost, as .cta is its .primary. */
+.skip {
+    font: 500 var(--fs-body) var(--sans);
+    padding: var(--sp-2) var(--sp-4);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .skip:hover {
+        background: var(--hover-neutral);
+    }
+}
+
+.skip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.skipQuiet {
+    align-self: stretch;
+    margin-top: calc(var(--sp-3) * -1);
+    padding: var(--sp-2);
+    border: 0;
+    background: none;
+    font: var(--fs-body) var(--sans);
+    color: var(--ink-faint);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .skipQuiet:hover {
+        color: var(--ink-soft);
+    }
+}
+
+.skipQuiet:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r-chip);
+}
+
+/* Dashed, like the "+ add project" affordance. */
+.quiet {
+    padding: var(--sp-5) var(--sp-4);
+    border: 1.4px dashed var(--line);
+    border-radius: var(--r);
+    text-align: center;
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+.quietTitle {
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+@container app (max-width: 999px) {
+    .cta {
+        align-self: stretch;
+    }
+
+    .actions {
+        align-self: stretch;
+    }
+
+    .actions .cta {
+        flex: 1;
+    }
+}
+
+@container (min-width: 960px) {
+    [data-mode='full'] .steps {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--sp-3);
+    }
+
+    [data-mode='full'] .step,
+    [data-mode='full'] .step[data-state='current'] {
+        padding: var(--sp-3);
+        background: var(--paper);
+        border-color: var(--line);
+        /* a floor, as DayColumn has one */
+        min-height: 7rem;
+    }
+
+    [data-mode='full'] .step[data-state='current'] {
+        border-color: var(--accent);
+    }
+
+    [data-mode='full'] .step[data-state='done'] {
+        background: none;
+    }
+
+    [data-mode='full'] .step[data-state='done'] .d,
+    [data-mode='full'] .step[data-state='done'] .demo {
+        opacity: 0.5;
+    }
+
+    /* the room the phone column does not have */
+    [data-mode='full'] .step:not([data-state='current']) .d {
+        display: block;
+    }
+
+    [data-mode='full'] .step:not([data-state='current']) .demo {
+        display: flex;
+    }
+}
+
+/* No step is current in the explainer, so nothing is ringed. */
+[data-mode='explainer'] .steps {
+    gap: 0;
+}
+
+[data-mode='guided'] {
+    gap: var(--sp-3);
+}

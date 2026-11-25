@@ -1,0 +1,116 @@
+.body {
+    padding: var(--sp-4);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+.summary {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--sp-4);
+    margin: 0 calc(-1 * var(--sp-4));
+    padding: 0 var(--sp-4) var(--sp-4);
+    border-bottom: 1px solid var(--line);
+    --spark-track-h: 30px;
+    --spark-bar-w: 22px;
+}
+
+.tot {
+    flex: none;
+    text-align: right;
+}
+
+.totNum {
+    display: block;
+    font: 400 var(--fs-figure) / 1 var(--mono);
+    color: var(--accent);
+}
+
+.totCap {
+    display: block;
+    margin-top: 3px;
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}
+
+.project + .project {
+    margin-top: var(--sp-3);
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--line);
+}
+
+.projectHead {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-1);
+}
+
+.projectName {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--display);
+    font-size: var(--fs-title);
+    font-weight: var(--w-title);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.projectStat {
+    flex: none;
+    font: var(--fs-body) / 1.4 var(--mono);
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+.task {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1) 0;
+    padding-left: calc(var(--check-size) + var(--sp-2));
+}
+
+.taskName {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--sans);
+    font-size: var(--fs-row);
+    font-weight: var(--w-row);
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.done {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-strong);
+}
+
+.missChip {
+    flex: none;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--r-chip);
+    padding: 1px 5px;
+    white-space: nowrap;
+}
+
+.empty {
+    margin: 0;
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}

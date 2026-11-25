@@ -1,0 +1,70 @@
+.dots {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+}
+
+.dots::after {
+    content: attr(data-hint);
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translate(-50%, -2px);
+    white-space: nowrap;
+    font: 500 var(--fs-label) / 1.4 var(--sans);
+    color: var(--ink-soft);
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    padding: 1px var(--sp-2);
+    border-radius: var(--r-chip);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
+    z-index: 20;
+}
+
+.dots[data-hint]:not([data-hint=''])::after {
+    opacity: 1;
+    transform: translate(-50%, -5px);
+}
+
+.seg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.pip {
+    box-sizing: border-box;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--ink-faint);
+    transition:
+        background-color 0.1s ease,
+        border-color 0.1s ease;
+}
+
+.pip.on {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.seg:focus-visible {
+    outline: none;
+}
+
+.seg:focus-visible .pip {
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}

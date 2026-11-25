@@ -1,0 +1,133 @@
+:root {
+    /* neutrals */
+    --bg: #f4f1ea; /* warm paper page background */
+    --paper: #fbfaf6; /* raised surfaces (cards) */
+    --ink: #1c1a17; /* primary text / headings */
+    --ink-soft: #56514a; /* secondary text */
+    --ink-faint: #71695e; /* labels, counts, hints */
+    --line: #e2ddd2; /* borders */
+    --line-strong: #d2ccbe;
+    --hover-neutral: #f6f3ec; /* neutral row hover */
+
+    /* accent + status */
+    --accent: #a74127; /* terracotta: active, focus, actions */
+    --accent-soft: #efe0d9; /* accent tint background */
+    --hover-accent: #f7ece8; /* pale terracotta wash: the overdue cell */
+    --good: #317527; /* done / complete */
+    --good-soft: #dcead9;
+
+    --display: 'Be Vietnam Pro', system-ui, sans-serif;
+    --w-title: 600; /* project card names, section headings */
+    --w-row: 400; /* task / subtask row titles */
+    --sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+
+    --r-chip: 6px;
+    --r: 10px;
+    --r-card: 12px;
+    --r-focus: 3px;
+
+    /* type scale
+       --fs-micro   mono: the smallest chart and archive labels
+       --fs-mini    mono, UPPERCASE: row captions, day-cell project names
+       --fs-label   mono, UPPERCASE: labels, counts, day names, pills
+       --fs-chrome  mono/display: nav, eyebrows, the day-rail letter
+       --fs-body    sans: descriptions, tree rows
+       --fs-row     display: a task/subtask row title
+       --fs-section display: a section / pane heading, and the wordmark
+       --fs-title   display: a project card name
+       --fs-figure  mono: the one big number on a stat card */
+    --fs-micro: 9px;
+    --fs-mini: 10px;
+    --fs-label: 11px;
+    --fs-chrome: 12px;
+    --fs-body: 13px;
+    --fs-row: 14px;
+    --fs-section: 15px;
+    --fs-title: 16px;
+    --fs-figure: 20px;
+
+    --tabbar-h: 60px;
+    --tabbar-lift: 20px;
+
+    --shadow-float: 0 6px 20px rgb(28 26 23 / 10%);
+
+    --scrim: rgb(28 26 23 / 50%);
+
+    --grip-size: 16px;
+    --check-size: 18px;
+
+    --icon-size: 13px;
+
+    font: 16px/1.5 var(--sans);
+    color-scheme: light; /* default is the light theme; native controls follow it */
+    color: var(--ink-soft);
+    background: var(--bg);
+
+    scrollbar-color: var(--line-strong) transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #1a1815;
+    --paper: #231f1b;
+    --ink: #ece7dd;
+    --ink-soft: #b3ab9e;
+    --ink-faint: #948d7f;
+    --line: #332f29;
+    --line-strong: #463f37;
+    --hover-neutral: #2a2621;
+    --accent: #dc7356;
+    --accent-soft: #30201a;
+    --hover-accent: #31251f;
+    --good: #73a36b;
+    --good-soft: #2a3a24;
+    --shadow-float: 0 6px 20px rgb(0 0 0 / 45%);
+}
+
+:root[data-font='classic'] {
+    --display: 'Fraunces', Georgia, serif;
+    --w-title: 500;
+    --w-row: 400;
+    --sans: 'Newsreader', Georgia, serif;
+}
+
+b,
+strong {
+    font-weight: 600;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    overflow-x: clip;
+    overscroll-behavior: none;
+}
+
+body {
+    margin: 0;
+}
+
+#root {
+    height: 100svh;
+    padding-top: env(safe-area-inset-top);
+    display: flex;
+    flex-direction: column;
+}
+
+[data-app-container] {
+    container: app / inline-size;
+    contain: layout;
+}

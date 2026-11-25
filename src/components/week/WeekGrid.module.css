@@ -1,0 +1,13 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sp-2);
+    align-items: stretch;
+}
+
+/* enough room for 7 comfortable columns */
+@container (min-width: 960px) {
+    .grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+}

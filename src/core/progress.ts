@@ -1,0 +1,133 @@
+/**
+ * Progress of the project tree, measured in WEIGHTED EFFORT rather than raw counts.
+ *
+ * Each subtask carries a weight (1..3); it contributes that weight to the effort
+ * total, and the same weight to the done amount when it is complete. A task with
+ * no subtasks (a leaf) counts as a single unit of weight 1, done iff its isDone.
+ *
+ * Progress composes by SUMMING {done, total} pairs up the tree. Percentages are
+ * never stored or summed; pct is derived only at the edge from a final done/total
+ * pair via math.percent.
+ */
+import type { Project, Task, DayOfWeek } from './types';
+import { WEEK } from './types';
+
+export type Progress = {
+    readonly done: number;
+    readonly total: number;
+};
+export type DayProgress = {
+    readonly day: DayOfWeek;
+    readonly assigned: number; // include misses
+    readonly done: number;
+};
+
+/**
+ * Calculates the progress of a task.
+ *
+ * @param task any valid task
+ * @returns the task's weighted progress as a Progress, where `total` is the task's
+ *          total weighted effort and `done` is the weighted effort that is complete
+ */
+export function taskProgress(task: Task): Progress {
+    if (task.subtasks.length === 0) {
+        return { done: task.isDone ? 1 : 0, total: 1 };
+    }
+    const { done, total } = task.subtasks.reduce(
+        (acc, s) => ({
+            done: acc.done + (s.isDone ? s.weight : 0),
+            total: acc.total + s.weight,
+        }),
+        { done: 0, total: 0 },
+    );
+    return { done, total };
+}
+
+/**
+ * Counts how often a task's work slipped.
+ *
+ * @param task any valid task
+ * @returns the total number of recorded misses across task.subtasks. This counts
+ *          miss EVENTS, not distinct days and not distinct subtasks: one subtask
+ *          that slipped off two days and two subtasks that each slipped off one
+ *          both count 2. A leaf task has no subtasks and so no misses, and counts 0.
+ */
+export function taskMisses(task: Task): number {
+    return task.subtasks.reduce((misses, s) => misses + s.missedDays.length, 0);
+}
+
+/**
+ * Calculates the progress of a project
+ *
+ * @param project any valid project
+ * @returns the project's weighted progress as a Progress, where `total` is the project's
+ *          total weighted effort and `done` is the weighted effort that is complete
+ */
+export function projectProgress(project: Project): Progress {
+    const { done, total } = project.tasks.reduce(
+        (acc, task) => {
+            const progress = taskProgress(task);
+            return {
+                done: acc.done + progress.done,
+                total: acc.total + progress.total,
+            };
+        },
+        { done: 0, total: 0 },
+    );
+    return { done, total };
+}
+
+/**
+ * Calculate the overall progress of a list of projects.
+ *
+ * @param projects any valid list of projects
+ * @returns the overall weighted progress as a Progress, where `total` is the overall
+ *          total weighted effort and `done` is the weighted effort that is complete
+ */
+export function overallProgress(projects: ReadonlyArray<Project>): Progress {
+    const { done, total } = projects.reduce(
+        (acc, project) => {
+            const progress = projectProgress(project);
+            return {
+                done: acc.done + progress.done,
+                total: acc.total + progress.total,
+            };
+        },
+        { done: 0, total: 0 },
+    );
+    return { done, total };
+}
+
+/**
+ * Calculate the per day (mon-sun) progress of a list of projects.
+ *
+ * @param projects any valid list of projects
+ * @returns a list of weighted day progress, each a DayProgress, one for each day
+ *          of the week. For each, `day` is the weekday it describes, `assigned` is
+ *          the weighted effort assigned to that day (including subtasks that recorded
+ *          a miss on that day), and `done` is the weighted effort assigned to that day
+ *          AND completed (a recorded miss adds to `assigned` but never to `done`).
+ *          The list is ordered Monday first through Sunday last (length 7).
+ */
+export function progressByDay(projects: ReadonlyArray<Project>): ReadonlyArray<DayProgress> {
+    const weekProgress: Record<DayOfWeek, { assigned: number; done: number }> = {
+        mon: { assigned: 0, done: 0 },
+        tue: { assigned: 0, done: 0 },
+        wed: { assigned: 0, done: 0 },
+        thu: { assigned: 0, done: 0 },
+        fri: { assigned: 0, done: 0 },
+        sat: { assigned: 0, done: 0 },
+        sun: { assigned: 0, done: 0 },
+    };
+    const allSubtasks = projects.flatMap((p) => p.tasks.flatMap((t) => t.subtasks));
+    for (const subtask of allSubtasks) {
+        for (const day of subtask.missedDays) {
+            weekProgress[day].assigned += subtask.weight;
+        }
+        weekProgress[subtask.assignedDay].assigned += subtask.weight;
+        if (subtask.isDone) {
+            weekProgress[subtask.assignedDay].done += subtask.weight;
+        }
+    }
+    return WEEK.map((day) => ({ day, ...weekProgress[day] }));
+}

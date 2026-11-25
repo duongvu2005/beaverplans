@@ -1,0 +1,84 @@
+.trend {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 6px;
+    --spark-track-h: 78px;
+    --spark-bar-w: 32px;
+}
+
+.week,
+.slot {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+}
+
+.pct {
+    font: var(--fs-label) var(--mono);
+    font-size: var(--fs-mini);
+    color: var(--ink);
+}
+
+.label {
+    font: var(--fs-label) var(--mono);
+    font-size: var(--fs-micro);
+    letter-spacing: 0;
+    color: var(--ink-faint);
+    white-space: nowrap;
+}
+
+.slotTrack {
+    width: 100%;
+    height: var(--spark-track-h);
+    display: flex;
+    align-items: flex-end;
+}
+
+.slotBar {
+    width: 100%;
+    max-width: var(--spark-bar-w);
+    margin-inline: auto;
+    min-height: 4px;
+    border: 1px dashed var(--line);
+    border-bottom: none;
+    border-radius: 3px 3px 0 0;
+}
+
+.brk {
+    flex: 0 0 38px;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--sp-1);
+    padding-bottom: var(--sp-5);
+}
+
+.rule {
+    width: 0;
+    flex: 1;
+    border-left: 1px dashed var(--line-strong);
+}
+
+.brkText {
+    font: var(--fs-label) var(--mono);
+    font-size: var(--fs-micro);
+    letter-spacing: 0;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.2;
+}
+
+@container app (min-width: 681px) {
+    .trend {
+        --spark-bar-w: 38px;
+    }
+    .brk {
+        flex-basis: 44px;
+    }
+}

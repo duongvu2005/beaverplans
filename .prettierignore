@@ -1,0 +1,14 @@
+*.md
+
+# generated / not ours
+dist/
+coverage/
+supabase/.temp/
+
+# The catalogs are data, one entry per line however long. Wrapping them at 100
+# split entries across lines by string length, which differs per language.
+src/i18n/en.ts
+src/i18n/vi.ts
+
+# Google's verification token, served byte-for-byte as they issued it.
+public/googleead81012582a7180.html

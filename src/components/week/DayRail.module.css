@@ -1,0 +1,122 @@
+.rail {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.pill {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    border-radius: var(--r);
+    padding: 8px 0 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition:
+        border-color 0.12s,
+        background-color 0.12s;
+}
+
+@media (hover: hover) {
+    .pill:not(.selected):hover {
+        background: var(--hover-neutral);
+    }
+}
+
+.head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-1);
+    color: var(--ink-soft);
+}
+
+.flag {
+    display: block;
+    width: 11px;
+    height: 11px;
+    color: var(--accent);
+}
+
+.letter {
+    font-family: var(--mono);
+    font-size: var(--fs-chrome);
+    font-weight: 500;
+    line-height: 1;
+}
+
+.slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    height: 11px;
+}
+
+/* weighted-done bar under the letter */
+.bar {
+    width: 60%; /* a fraction of the pill, so it scales with the pill width */
+    height: 3px;
+    border-radius: 999px;
+    background: var(--line-strong);
+    overflow: hidden;
+}
+
+.count {
+    font-family: var(--mono);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    line-height: 1;
+    color: var(--ink-faint);
+}
+
+.fill {
+    display: block;
+    height: 100%;
+    background: var(--good);
+}
+
+.today {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+.today .head {
+    color: var(--accent);
+}
+
+.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+.selected .head,
+.selected .flag {
+    color: var(--paper);
+}
+.selected .bar {
+    background: color-mix(in srgb, var(--paper) 30%, transparent);
+}
+.selected .count {
+    color: var(--paper);
+}
+.today .count {
+    color: var(--accent);
+}
+.today.selected .count {
+    color: var(--paper);
+}
+
+.today.selected {
+    box-shadow: inset 0 0 0 1.5px var(--paper);
+}
+.today.selected .head,
+.today.selected .flag {
+    color: var(--paper);
+}
+
+.pill:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}

@@ -1,0 +1,97 @@
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+/* the note input is the only bordered box in the row */
+.subnote {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    font: var(--fs-body) var(--sans);
+    color: var(--ink);
+    padding: var(--sp-2) 9px;
+}
+
+.subnote::placeholder {
+    color: var(--ink-faint);
+}
+
+.subnote:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* grip: shared gutter from rowKit + hover-reveal */
+.grip {
+    composes: grip from './rowKit.module.css';
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+@media (hover: hover) {
+    .row:hover .grip {
+        opacity: 0.55;
+    }
+    .row:hover .grip:hover {
+        opacity: 0.9;
+    }
+}
+
+/* the drag handle is the span, not the svg — see rowKit */
+.gripHandle {
+    composes: gripHandle from './rowKit.module.css';
+}
+
+/* --- drag and drop --- */
+
+.dragging {
+    opacity: 0.4;
+}
+
+/* delete: shared icon-button chrome from rowKit + hover-reveal */
+.iconBtn {
+    composes: iconBtn from './rowKit.module.css';
+    opacity: 0;
+    transition:
+        opacity 0.12s ease,
+        background-color 0.13s,
+        color 0.13s;
+}
+@media (hover: hover) {
+    .row:hover .iconBtn {
+        opacity: 1;
+    }
+}
+.iconBtn:focus-visible {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
+}
+
+@container app (max-width: 680px) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
+}
+
+/* --- the drag clone (SubtaskRowPreview) --- */
+
+.grabbed .grip {
+    opacity: 0.55;
+}
+.grabbed .iconBtn {
+    opacity: 1;
+}

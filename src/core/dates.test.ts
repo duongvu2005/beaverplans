@@ -1,0 +1,573 @@
+/**
+ * These tests need the runner's timezone pinned to America/New_York (test.env.TZ
+ * in vite.config.ts). The "local/UTC differ" cases construct a Date whose local
+ * day is not its UTC day; without the pin they stop differing and pass for the
+ * wrong reason.
+ */
+
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import {
+    weekStartOf,
+    toDateKey,
+    todayKey,
+    addWeeks,
+    weeksBetween,
+    nextWeekStart,
+    dateKeyForDay,
+    dayStatusOf,
+    weekStatusOf,
+    weekStartOfKey,
+    isValidWeekStart,
+    todayInWeek,
+    dayOfWeekOf,
+    weekPhaseOf,
+} from './dates';
+
+describe('weekStartOf', () => {
+    /**
+     * Testing strategy:
+     *      - partition on date's position in week: Monday | mid-week | Sunday
+     *      - partition on calendar's boundary: normal | month | year | leap-Feb | DST
+     */
+
+    it('covers date is Monday and normal in calendar', () => {
+        // Mon Jul 06 2026
+        expect(weekStartOf(new Date(2026, 6, 6))).toBe('2026-07-06');
+    });
+
+    it('covers date is mid-week and near end of month', () => {
+        // Wed Oct 01 2025 -> Mon Sep 29 2025
+        expect(weekStartOf(new Date(2025, 9, 1))).toBe('2025-09-29');
+    });
+
+    it('covers date is Sunday and near end of year', () => {
+        // Sun Jan 04 2026 -> Mon Dec 29 2025
+        expect(weekStartOf(new Date(2026, 0, 4))).toBe('2025-12-29');
+    });
+
+    it('covers date is mid-week and leap-Feb', () => {
+        // Thu Feb 29 2024 -> Mon Feb 26 2024
+        expect(weekStartOf(new Date(2024, 1, 29))).toBe('2024-02-26');
+    });
+
+    it('covers date is Sunday and DST', () => {
+        // Sun Mar 08 2026 -> Mon Mar 02 2026
+        expect(weekStartOf(new Date(2026, 2, 8))).toBe('2026-03-02');
+    });
+
+    it('property: weekStartOf always returns a Monday', () => {
+        const d = new Date(2024, 0, 1);
+        const end = new Date(2025, 3, 8);
+        while (d <= end) {
+            const result = weekStartOf(d);
+            const asDate = new Date(result + 'T00:00:00');
+            const dstr = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+            expect(asDate.getDay(), `weekStartOf(${dstr}) = ${result} is not a Monday`).toBe(1);
+            d.setDate(d.getDate() + 1);
+        }
+    });
+});
+
+describe('toDateKey', () => {
+    /**
+     * Testing strategy:
+     *      - partition on zero-padding: single-digit month/day | two-digit month/day
+     *      - partition on local vs UTC day: same | differ (uses a pinned TZ)
+     *      - partition on calendar's boundary: normal | month | year | leap-Feb
+     */
+
+    it('covers 2-digit month, 1-digit day, local/UTC differ, normal', () => {
+        // local Tue Oct 07 2025 23:00; UTC is Oct 08 -> must use local day
+        expect(toDateKey(new Date(2025, 9, 7, 23, 0))).toBe('2025-10-07');
+    });
+
+    it('covers 1-digit month, 2-digit day, local/UTC same, month boundary', () => {
+        // Tue Sep 30 2025
+        expect(toDateKey(new Date(2025, 8, 30, 12, 0))).toBe('2025-09-30');
+    });
+
+    it('covers 1-digit month, 2-digit day, local/UTC differ, leap-Feb', () => {
+        // local Thu Feb 29 2024 23:30; UTC is Mar 01 -> must use local day
+        expect(toDateKey(new Date(2024, 1, 29, 23, 30))).toBe('2024-02-29');
+    });
+
+    it('covers 2-digit month, 2-digit day, local/UTC same, year boundary', () => {
+        // Wed Dec 31 2025
+        expect(toDateKey(new Date(2025, 11, 31, 12, 0))).toBe('2025-12-31');
+    });
+
+    it('covers 1-digit month, 1-digit day, local/UTC same, normal', () => {
+        // Thu Mar 05 2026
+        expect(toDateKey(new Date(2026, 2, 5, 12, 0))).toBe('2026-03-05');
+    });
+});
+
+describe('todayKey', () => {
+    /**
+     * Testing strategy:
+     *      - freeze the clock (vi.setSystemTime) so "today" is deterministic
+     *      - partition on local vs UTC day: same | differ (late-evening pinned time)
+     *      (formatting/padding is delegated to toDateKey, tested there)
+     */
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('covers local/UTC same: returns the frozen local day', () => {
+        // freeze to Thu Jul 09 2026 12:00 local
+        vi.setSystemTime(new Date(2026, 6, 9, 12, 0));
+        expect(todayKey()).toBe('2026-07-09');
+    });
+
+    it('covers local/UTC differ: returns local day, not UTC', () => {
+        // freeze to Tue Oct 07 2025 23:00 local; UTC is Oct 08 -> must return local
+        vi.setSystemTime(new Date(2025, 9, 7, 23, 0));
+        expect(todayKey()).toBe('2025-10-07');
+    });
+});
+
+describe('addWeeks', () => {
+    /**
+     * Testing strategy:
+     *      - partition on n: negative | zero | positive
+     *      - partition on calendar boundary crossed between input and result:
+     *        normal | month | year | leap-Feb | DST week
+     *      (input is always a Monday per precondition; result must also be a Monday)
+     */
+
+    it('covers n=0, normal: returns the input week-start unchanged', () => {
+        // Mon Jul 06 2026, +0
+        expect(addWeeks('2026-07-06', 0)).toBe('2026-07-06');
+    });
+
+    it('covers n=+3, crossing a month boundary', () => {
+        // Mon Jun 15 2026 +3 -> Mon Jul 06 2026
+        expect(addWeeks('2026-06-15', 3)).toBe('2026-07-06');
+    });
+
+    it('covers n=+2, crossing a year boundary', () => {
+        // Mon Dec 21 2026 +2 -> Mon Jan 04 2027
+        expect(addWeeks('2026-12-21', 2)).toBe('2027-01-04');
+    });
+
+    it('covers n=-2, stepping back over leap-Feb', () => {
+        // Mon Mar 11 2024 -2 -> Mon Feb 26 2024 (crosses Feb 29)
+        expect(addWeeks('2024-03-11', -2)).toBe('2024-02-26');
+    });
+
+    it('covers n=-3, stepping back across a DST week', () => {
+        // Mon Mar 23 2026 -3 -> Mon Mar 02 2026 (crosses DST Sun Mar 08)
+        expect(addWeeks('2026-03-23', -3)).toBe('2026-03-02');
+    });
+});
+
+describe('weeksBetween', () => {
+    /**
+     * Testing strategy:
+     *      - partition on sign: date before reference | same week | after
+     *      - partition on how inputs sit vs week boundaries (normalization):
+     *        same week raw-far apart -> 0 | adjacent weeks raw-close -> ±1 |
+     *        both mid-week, several weeks apart -> ±n
+     */
+
+    it('covers same week, Sun and Mon (6 raw days) -> 0', () => {
+        // both in week of Mon Jul 06 2026
+        expect(weeksBetween('2026-07-12', '2026-07-06')).toBe(0);
+    });
+
+    it('covers next-week Sun vs Mon (13 raw days) -> 1, not 2', () => {
+        // Sun Jul 19 (wk Jul 13) vs Mon Jul 06 (wk Jul 06)
+        expect(weeksBetween('2026-07-19', '2026-07-06')).toBe(1);
+    });
+
+    it('covers next-week Mon vs Sun (1 raw day) -> 1, not 0', () => {
+        // Mon Jul 13 (wk Jul 13) vs Sun Jul 12 (wk Jul 06)
+        expect(weeksBetween('2026-07-13', '2026-07-12')).toBe(1);
+    });
+
+    it('covers mid-week to mid-week, several weeks apart, positive', () => {
+        // Wed Jul 22 (wk Jul 20) vs Fri Jul 03 (wk Jun 29) -> 3
+        expect(weeksBetween('2026-07-22', '2026-07-03')).toBe(3);
+    });
+
+    it('covers mid-week to mid-week, several weeks apart, negative', () => {
+        // Wed Jul 01 (wk Jun 29) vs Fri Jul 24 (wk Jul 20) -> -3
+        expect(weeksBetween('2026-07-01', '2026-07-24')).toBe(-3);
+    });
+});
+
+describe('nextWeekStart', () => {
+    /**
+     * Testing strategy:
+     *      - partition on calendar boundary crossed: normal | month | year | leap-Feb | DST week
+     *      (input is a Monday per precondition; result is the following Monday)
+     */
+
+    it('covers normal, mid-year', () => {
+        // Mon Jul 06 2026 -> Mon Jul 13 2026
+        expect(nextWeekStart('2026-07-06')).toBe('2026-07-13');
+    });
+
+    it('covers crossing a month boundary', () => {
+        // Mon Jun 29 2026 -> Mon Jul 06 2026
+        expect(nextWeekStart('2026-06-29')).toBe('2026-07-06');
+    });
+
+    it('covers crossing a year boundary', () => {
+        // Mon Dec 28 2026 -> Mon Jan 04 2027
+        expect(nextWeekStart('2026-12-28')).toBe('2027-01-04');
+    });
+
+    it('covers stepping over leap-Feb', () => {
+        // Mon Feb 26 2024 -> Mon Mar 04 2024 (crosses Feb 29)
+        expect(nextWeekStart('2024-02-26')).toBe('2024-03-04');
+    });
+
+    it('covers crossing a DST week', () => {
+        // Mon Mar 02 2026 -> Mon Mar 09 2026 (crosses DST Sun Mar 08)
+        expect(nextWeekStart('2026-03-02')).toBe('2026-03-09');
+    });
+});
+
+describe('dateKeyForDay', () => {
+    /**
+     * Testing strategy:
+     *      - partition on day's offset within the week: first (mon) | mid (wed) | last (sun)
+     *      - partition on calendar boundary the resolved date crosses: none | month | year
+     *        | leap-Feb | DST week
+     */
+
+    it('covers first day of the week (mon), no boundary', () => {
+        expect(dateKeyForDay('2026-07-06', 'mon')).toBe('2026-07-06');
+    });
+
+    it('covers a mid-week day (wed), no boundary', () => {
+        expect(dateKeyForDay('2026-07-06', 'wed')).toBe('2026-07-08');
+    });
+
+    it('covers the last day of the week (sun), no boundary', () => {
+        expect(dateKeyForDay('2026-07-06', 'sun')).toBe('2026-07-12');
+    });
+
+    it('covers a week crossing a month boundary', () => {
+        // Mon Aug 31 2026 -> tue Sep 01 2026
+        expect(dateKeyForDay('2026-08-31', 'tue')).toBe('2026-09-01');
+    });
+
+    it('covers a week crossing a year boundary', () => {
+        // Mon Dec 28 2026 -> fri Jan 01 2027
+        expect(dateKeyForDay('2026-12-28', 'fri')).toBe('2027-01-01');
+    });
+
+    it('covers a week crossing leap-Feb', () => {
+        // Mon Feb 26 2024 -> thu Feb 29 2024 (the leap day itself)
+        expect(dateKeyForDay('2024-02-26', 'thu')).toBe('2024-02-29');
+    });
+
+    it('covers a DST week, slot on the transition day', () => {
+        // Mon Mar 02 2026 -> sun Mar 08 2026 (DST spring-forward Sunday)
+        expect(dateKeyForDay('2026-03-02', 'sun')).toBe('2026-03-08');
+    });
+});
+
+describe('dayStatusOf', () => {
+    /**
+     * Testing strategy:
+     *      - partition on weekStart's week vs today: past | current | future
+     *      - partition on slot vs today's weekday: before | same | after
+     *        (only decisive in the current week; in past/future the week dominates)
+     *      - trap cases: past week + latest slot must be 'past'; future week +
+     *        earliest slot must be 'future' (resolved date wins over weekday index)
+     */
+
+    // today = Thu Jul 09 2026 for every case
+    const today = '2026-07-09';
+
+    it('covers current week, slot before today -> past', () => {
+        // wed of week Jul 06 -> Jul 08
+        expect(dayStatusOf('wed', '2026-07-06', today)).toBe('past');
+    });
+
+    it('covers current week, slot equals today -> today', () => {
+        // thu of week Jul 06 -> Jul 09
+        expect(dayStatusOf('thu', '2026-07-06', today)).toBe('today');
+    });
+
+    it('covers current week, slot after today -> future', () => {
+        // sat of week Jul 06 -> Jul 11
+        expect(dayStatusOf('sat', '2026-07-06', today)).toBe('future');
+    });
+
+    it('covers past week, latest slot still past (week dominates)', () => {
+        // sun of week Jun 29 -> Jul 05, before today despite being a late weekday
+        expect(dayStatusOf('sun', '2026-06-29', today)).toBe('past');
+    });
+
+    it('covers future week, earliest slot still future (week dominates)', () => {
+        // mon of week Jul 13 -> Jul 13, after today despite being an early weekday
+        expect(dayStatusOf('mon', '2026-07-13', today)).toBe('future');
+    });
+
+    it('covers today on Sunday, earlier weekday slot -> past', () => {
+        // today Sun Jul 12; sat of same week (Jul 11) is the day before -> past
+        expect(dayStatusOf('sat', '2026-07-06', '2026-07-12')).toBe('past');
+    });
+});
+
+describe('weekStatusOf', () => {
+    /*
+     * Testing strategy:
+     *      - partition on weekStart's week vs today's week: past | current | future
+     *      - boundary traps (classify by week, not raw day count):
+     *          today on Sunday + same-week Monday -> current (6 raw days apart)
+     *          today on Sunday + next Monday       -> future (only 1 raw day apart)
+     */
+
+    it('covers current week, today mid-week', () => {
+        // Mon Jul 06 vs Thu Jul 09 -> same week
+        expect(weekStatusOf('2026-07-06', '2026-07-09')).toBe('current');
+    });
+
+    it('covers past week, today mid-week', () => {
+        // Mon Jun 29 vs Thu Jul 09 -> previous week
+        expect(weekStatusOf('2026-06-29', '2026-07-09')).toBe('past');
+    });
+
+    it('covers future week, today mid-week', () => {
+        // Mon Jul 13 vs Thu Jul 09 -> next week
+        expect(weekStatusOf('2026-07-13', '2026-07-09')).toBe('future');
+    });
+
+    it('covers current week, today on Sunday (same week despite 6 raw days)', () => {
+        // Mon Jul 06 vs Sun Jul 12 -> same week
+        expect(weekStatusOf('2026-07-06', '2026-07-12')).toBe('current');
+    });
+
+    it('covers future week, today on Sunday (next week despite 1 raw day)', () => {
+        // Mon Jul 13 vs Sun Jul 12 -> next week
+        expect(weekStatusOf('2026-07-13', '2026-07-12')).toBe('future');
+    });
+});
+
+describe('isValidWeekStart', () => {
+    /*
+     * Testing strategy:
+     *      - partition on input: real Monday | real date, not Monday | not a real date
+     *      - partition on not-a-real-date: impossible-but-formatted | malformed string
+     *      - boundary: year+month-boundary Monday; impossible date that rolls onto a Monday
+     */
+
+    it('covers a real Monday, mid-month', () => {
+        expect(isValidWeekStart('2026-07-06')).toBe(true);
+    });
+
+    it('covers a real Monday on a year and month boundary', () => {
+        expect(isValidWeekStart('2024-01-01')).toBe(true);
+    });
+
+    it('covers a real date that is a Sunday', () => {
+        expect(isValidWeekStart('2026-07-12')).toBe(false);
+    });
+
+    it('covers a real date that is a Tuesday', () => {
+        expect(isValidWeekStart('2026-07-07')).toBe(false);
+    });
+
+    it('covers an impossible date that rolls onto a Monday', () => {
+        expect(isValidWeekStart('2026-02-30')).toBe(false);
+    });
+
+    it('covers an impossible leap date that rolls onto a Monday', () => {
+        expect(isValidWeekStart('2027-02-29')).toBe(false);
+    });
+
+    it('covers an impossible month', () => {
+        expect(isValidWeekStart('2026-13-01')).toBe(false);
+    });
+
+    it('covers a malformed unpadded key', () => {
+        expect(isValidWeekStart('2026-7-6')).toBe(false);
+    });
+
+    it('covers a year below 1000 (still 4 digits)', () => {
+        expect(isValidWeekStart('0500-01-06')).toBe(false);
+    });
+
+    it('covers an empty string', () => {
+        expect(isValidWeekStart('')).toBe(false);
+    });
+
+    it('covers a garbage string', () => {
+        expect(isValidWeekStart('hello')).toBe(false);
+    });
+});
+
+/*
+ * Testing strategy:
+ *   partition on weekStart's week vs today: current | future | past
+ *   within the current week, partition on today's weekday: Monday (start) |
+ *     midweek | Sunday (end) — Sunday is the getDay()===0 trap
+ *   boundary: today = Sunday but weekStart = the following Monday (different week)
+ *   boundary: year-boundary week; DST week
+ */
+describe('todayInWeek', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('covers current week, midweek', () => {
+        vi.setSystemTime(new Date('2026-07-16T12:00:00')); // Thu
+        expect(todayInWeek('2026-07-13')).toBe('thu');
+    });
+
+    it('covers current week, Monday start', () => {
+        vi.setSystemTime(new Date('2026-07-13T12:00:00')); // Mon
+        expect(todayInWeek('2026-07-13')).toBe('mon');
+    });
+
+    it('covers current week, Sunday end (getDay()===0 trap)', () => {
+        vi.setSystemTime(new Date('2026-07-19T12:00:00')); // Sun
+        expect(todayInWeek('2026-07-13')).toBe('sun');
+    });
+
+    it('covers a future week -> undefined', () => {
+        vi.setSystemTime(new Date('2026-07-16T12:00:00'));
+        expect(todayInWeek('2026-07-20')).toBeUndefined();
+    });
+
+    it('covers a past week -> undefined', () => {
+        vi.setSystemTime(new Date('2026-07-16T12:00:00'));
+        expect(todayInWeek('2026-07-06')).toBeUndefined();
+    });
+
+    it('covers Sunday belonging to its own week, not the next', () => {
+        vi.setSystemTime(new Date('2026-07-19T12:00:00')); // Sun in the 07-13 week
+        expect(todayInWeek('2026-07-20')).toBeUndefined();
+    });
+
+    it('covers a year-boundary week', () => {
+        vi.setSystemTime(new Date('2026-01-01T12:00:00')); // Thu, in the Mon 2025-12-29 week
+        expect(todayInWeek('2025-12-29')).toBe('thu');
+    });
+
+    it('covers a DST-week Sunday', () => {
+        vi.setSystemTime(new Date('2026-03-08T12:00:00')); // spring-forward Sun, in the Mon 2026-03-02 week
+        expect(todayInWeek('2026-03-02')).toBe('sun');
+    });
+});
+
+describe('dayOfWeekOf', () => {
+    /**
+     * Testing strategy:
+     *      - partition on weekday: Monday (the week's first) | mid-week |
+     *        Sunday (the week's last, and where getDay's 0 has to wrap)
+     *      - partition on calendar boundary: normal | month | year | leap-Feb | DST
+     */
+
+    it('covers Monday', () => {
+        expect(dayOfWeekOf('2026-08-17')).toBe('mon');
+    });
+
+    it('covers mid-week', () => {
+        expect(dayOfWeekOf('2026-08-19')).toBe('wed');
+    });
+
+    it('covers Sunday: getDay 0 wraps to the end of the week, not the start', () => {
+        expect(dayOfWeekOf('2026-08-23')).toBe('sun');
+    });
+
+    it('covers a year boundary', () => {
+        expect(dayOfWeekOf('2026-01-01')).toBe('thu');
+        expect(dayOfWeekOf('2026-12-31')).toBe('thu');
+    });
+
+    it('covers a leap day', () => {
+        expect(dayOfWeekOf('2024-02-29')).toBe('thu');
+    });
+
+    it('covers a spring-forward Sunday, which is 23 hours long locally', () => {
+        expect(dayOfWeekOf('2026-03-08')).toBe('sun');
+    });
+});
+
+describe('weekPhaseOf', () => {
+    /**
+     * Testing strategy:
+     *      - partition on where today falls in weekStart's week: Mon | Tue-Thu |
+     *        Fri-Sat | Sun | outside the week
+     *      - partition on outside: an earlier week | a later week
+     *      - boundary: Sunday belongs to its own week, so the Monday one day
+     *        later is a different week, not the same one's last day
+     *
+     * Mon 2026-08-17 .. Sun 2026-08-23 throughout.
+     */
+
+    it('covers Monday: the week is whole', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-17')).toEqual({ phase: 'start', daysLeft: 7 });
+    });
+
+    it('covers Tuesday', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-18')).toEqual({ phase: 'midweek', daysLeft: 6 });
+    });
+
+    it('covers Wednesday', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-19')).toEqual({ phase: 'midweek', daysLeft: 5 });
+    });
+
+    it('covers Thursday, the last midweek day', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-20')).toEqual({ phase: 'midweek', daysLeft: 4 });
+    });
+
+    it('covers Friday, the first late day', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-21')).toEqual({ phase: 'late', daysLeft: 3 });
+    });
+
+    it('covers Saturday', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-22')).toEqual({ phase: 'late', daysLeft: 2 });
+    });
+
+    it('covers Sunday: today still counts, so one day is left, not none', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-23')).toEqual({ phase: 'lastDay', daysLeft: 1 });
+    });
+
+    it('covers today in an earlier week -> undefined', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-16')).toBeUndefined();
+    });
+
+    it('covers today in a later week -> undefined', () => {
+        expect(weekPhaseOf('2026-08-17', '2026-08-24')).toBeUndefined();
+    });
+});
+
+describe('weekStartOfKey', () => {
+    /*
+     * Testing strategy
+     *     partition on the key's weekday: Monday | midweek | Sunday
+     *     partition on the week: within one month | straddling a month
+     *     property: idempotent, and agrees with weekStartOf on the same day
+     */
+
+    it('covers a Monday: answers itself', () => {
+        expect(weekStartOfKey('2026-07-06')).toBe('2026-07-06');
+    });
+
+    it('covers midweek', () => {
+        expect(weekStartOfKey('2026-07-08')).toBe('2026-07-06');
+    });
+
+    it('covers a Sunday, the last day of the week', () => {
+        expect(weekStartOfKey('2026-07-12')).toBe('2026-07-06');
+    });
+
+    it('covers a week straddling a month', () => {
+        expect(weekStartOfKey('2026-08-02')).toBe('2026-07-27');
+    });
+
+    it('is idempotent', () => {
+        expect(weekStartOfKey(weekStartOfKey('2026-07-08'))).toBe(weekStartOfKey('2026-07-08'));
+    });
+
+    // The whole point: no UTC anywhere, so a key never lands on the day before.
+    it('agrees with weekStartOf on the same local day', () => {
+        expect(weekStartOfKey('2026-07-08')).toBe(weekStartOf(new Date(2026, 6, 8)));
+    });
+});

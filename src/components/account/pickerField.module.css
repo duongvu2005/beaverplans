@@ -1,0 +1,13 @@
+.field {
+    display: block;
+    margin-bottom: var(--sp-5);
+}
+
+.label {
+    display: block;
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: var(--sp-2);
+}

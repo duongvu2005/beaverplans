@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" sizes="32x32" href="/favicon-32.png" />
+        <link rel="icon" sizes="16x16 32x32 48x48" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f1ea" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a1815" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <!-- NOT black-translucent. That runs the web view under the status bar
+             without growing its height to match, so it ends a status bar's height
+             short of the screen (47px on a 6.1") and leaves a dead strip along the
+             bottom that no CSS can reach — the page does not extend there at all.
+             default keeps the web view the right size; theme-color above paints
+             the bar, so it still follows the palette. -->
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
+        <link rel="canonical" href="https://beaverplans.com/" />
+        <title>beaverplans: a minimalist weekly planner for students</title>
+        <meta
+            name="description"
+            content="A minimalist weekly planner for keeping your week on course. Simple layouts, intentional structure, and just enough room to build a dam(n) good plan."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="beaverplans" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:locale:alternate" content="vi_VN" />
+        <meta property="og:url" content="https://beaverplans.com/" />
+        <meta property="og:title" content="beaverplans" />
+        <meta
+            property="og:description"
+            content="A minimalist weekly planner for keeping your week on course. Simple layouts, intentional structure, and just enough room to build a dam(n) good plan."
+        />
+        <meta property="og:image" content="https://beaverplans.com/og.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+            property="og:image:alt"
+            content="The beaverplans beaver beside the wordmark and the line 'dam(n) good planning'."
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "beaverplans",
+                "url": "https://beaverplans.com/"
+            }
+        </script>
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "beaverplans",
+                "url": "https://beaverplans.com/",
+                "applicationCategory": "ProductivityApplication",
+                "operatingSystem": "Web",
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
+                }
+            }
+        </script>
+        <script>
+            // Applies the remembered theme before the first paint; useTheme sets
+            // the same attribute, but only after React mounts.
+            try {
+                var t = localStorage.getItem('beaverplans:theme');
+                if (t !== 'light' && t !== 'dark') {
+                    t =
+                        window.matchMedia &&
+                        window.matchMedia('(prefers-color-scheme: dark)').matches
+                            ? 'dark'
+                            : 'light';
+                }
+                document.documentElement.dataset.theme = t;
+            } catch (e) {
+                /* private mode: fall through to the default light theme */
+            }
+        </script>
+    </head>
+    <body>
+        <div id="root" data-app-container></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
+</html>

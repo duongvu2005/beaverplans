@@ -1,0 +1,86 @@
+/* --- active view pane --- */
+.pane {
+    flex: 1 1 auto;
+    padding: var(--sp-5);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+/* --- plan view: projects + week grid --- */
+.plan-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr); /* not bare 1fr: let the column shrink below content */
+    gap: var(--sp-5);
+    align-items: start;
+}
+
+@container app (min-width: 1000px) {
+    .plan-layout {
+        grid-template-columns: minmax(0, 25rem) minmax(0, 1fr);
+        max-width: 1440px;
+        margin-inline: auto;
+    }
+}
+
+.plan-layout[inert],
+.plan-layout[inert] * {
+    cursor: default;
+}
+
+.plan-layout[data-ended='true'] {
+    --bleed: calc(var(--sp-3) + 1px);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--r-card);
+    background: var(--paper);
+    padding: var(--sp-3);
+    margin: calc(var(--bleed) * -1);
+}
+
+@container app (min-width: 1000px) {
+    .plan-layout[data-ended='true'] {
+        max-width: calc(1440px + var(--bleed) * 2);
+        margin-inline: max(calc(var(--bleed) * -1), calc((100% - 1440px) / 2 - var(--bleed)));
+    }
+}
+
+.projectView,
+.weekView {
+    min-width: 0;
+}
+
+.weekGridPane {
+    min-width: 0;
+    container-type: inline-size;
+}
+
+.focusPane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+}
+
+@container app (max-width: 999px) {
+    .weekGridPane {
+        display: none;
+    }
+    .weekView {
+        order: -1;
+    }
+}
+
+@container app (min-width: 1000px) {
+    .weekView[data-mode='grid'] .focusPane {
+        display: none;
+    }
+    .weekView[data-mode='focus'] .weekGridPane {
+        display: none;
+    }
+}
+
+@container app (max-width: 680px) {
+    .pane {
+        padding: var(--sp-4);
+        padding-bottom: calc(var(--tabbar-lift) + var(--tabbar-h) + var(--sp-4));
+    }
+}

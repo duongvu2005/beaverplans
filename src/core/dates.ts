@@ -1,0 +1,303 @@
+/**
+ * Date helpers for the week model. All dates are interpreted in the
+ * user's local timezone; DateKey is a local YYYY-MM-DD string
+ * (avoid toISOString, which is UTC and shifts the day).
+ */
+import type { DateKey, DayOfWeek, DayStatus, WeekPhase, WeekStatus } from './types';
+import { WEEK } from './types';
+
+const DAYS_PER_WEEK = 7;
+const MS_PER_DAY = 86_400_000;
+const MS_PER_WEEK = DAYS_PER_WEEK * MS_PER_DAY;
+
+/**
+ * Finds the Monday that starts the week containing the given date.
+ *
+ * @param date any datetime
+ * @returns the DateKey of that week's Monday
+ */
+export function weekStartOf(date: Date): DateKey {
+    const result = new Date(date);
+    const day = result.getDay();
+    const MON = 1; // getDay() value for Monday
+    const daysSinceMonday = (day - MON + 7) % 7;
+    result.setDate(result.getDate() - daysSinceMonday);
+
+    return toDateKey(result);
+}
+
+/**
+ * Finds the Monday that starts the week containing a DateKey's day.
+ *
+ * weekStartOf's counterpart for callers holding a key rather than a Date, so
+ * they need not parse one themselves — parsing a key as UTC is the standing way
+ * to land a day early.
+ *
+ * @param key any valid DateKey
+ * @returns the DateKey of that week's Monday, which is key itself when key is
+ *     already a Monday
+ */
+export function weekStartOfKey(key: DateKey): DateKey {
+    return weekStartOf(parseKey(key));
+}
+
+/**
+ * Formats a date as a YYYY-MM-DD key.
+ *
+ * @param date any datetime
+ * @returns the YYYY-MM-DD DateKey for that day
+ */
+export function toDateKey(date: Date): DateKey {
+    const year = date.getFullYear().toString().padStart(4, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * Computes the DateKey of today.
+ * Non-deterministic: reads the system clock.
+ *
+ * @returns the YYYY-MM-DD DateKey for today
+ */
+export function todayKey(): DateKey {
+    return toDateKey(new Date());
+}
+
+/**
+ * Shifts a week-start by n weeks.
+ *
+ * @param weekStart a DateKey that is a Monday (week-start)
+ * @param n whole number of weeks to move; may be negative (earlier) or zero
+ * @returns the week-start n weeks from weekStart; also a Monday
+ */
+export function addWeeks(weekStart: DateKey, n: number): DateKey {
+    const result = parseKey(weekStart);
+    result.setDate(result.getDate() + n * DAYS_PER_WEEK);
+
+    return toDateKey(result);
+}
+
+/**
+ * Counts the whole weeks between two dates. Each argument is reduced to its
+ * week-start before counting, so a sub-week gap is never a fractional week.
+ *
+ * @param date any valid DateKey; the week being measured
+ * @param reference any valid DateKey; the week measured from
+ * @returns signed week count; positive when date's week is after
+ *          reference's week, negative when before, 0 in the same week
+ */
+export function weeksBetween(date: DateKey, reference: DateKey): number {
+    return Math.round(
+        (weekStartDate(date).getTime() - weekStartDate(reference).getTime()) / MS_PER_WEEK,
+    );
+}
+
+/**
+ * Returns the Monday of key's week as a local Date.
+ *
+ * @param key any valid DateKey
+ * @returns the week-start (Monday) of key's week, as a local Date at midnight
+ */
+function weekStartDate(key: DateKey): Date {
+    return parseKey(weekStartOf(parseKey(key)));
+}
+
+/**
+ * Parses a DateKey as a local Date at midnight (avoids UTC parsing).
+ *
+ * @param key any valid DateKey
+ * @returns a Date at local midnight on key's day
+ */
+function parseKey(key: DateKey): Date {
+    return new Date(key + 'T00:00:00');
+}
+
+/**
+ * Gives the week-start of the week immediately after the given one.
+ *
+ * @param weekStart a DateKey that is a Monday (week-start)
+ * @returns the Monday one week after weekStart
+ */
+export function nextWeekStart(weekStart: DateKey): DateKey {
+    return addWeeks(weekStart, 1);
+}
+
+/**
+ * Resolves a weekday slot within a given week to its real calendar date.
+ *
+ * @param weekStart a DateKey that is a Monday (week-start)
+ * @param day the weekday slot within weekStart's week
+ * @returns the DateKey of the calendar date day falls on, within weekStart's week
+ */
+export function dateKeyForDay(weekStart: DateKey, day: DayOfWeek): DateKey {
+    const date = parseKey(weekStart);
+    date.setDate(date.getDate() + WEEK.indexOf(day));
+    return toDateKey(date);
+}
+
+/**
+ * The weekday a calendar date falls on — the inverse of dateKeyForDay.
+ *
+ * @param key a well-formed DateKey (local YYYY-MM-DD)
+ * @returns the DayOfWeek that date is
+ */
+export function dayOfWeekOf(key: DateKey): DayOfWeek {
+    const MON = 1; // getDay() value for Monday
+    // WEEK runs Mon-first, getDay() Sun-first, so shift before wrapping.
+    return WEEK[(parseKey(key).getDay() + DAYS_PER_WEEK - MON) % DAYS_PER_WEEK]!; // 0..6 indexes WEEK
+}
+
+/**
+ * Classifies a weekday slot as past, today, or future by resolving it
+ * to a calendar date within weekStart's week and comparing to today.
+ *
+ * @param day the weekday slot within the week
+ * @param weekStart a DateKey that is a Monday (week-start)
+ * @param today the DateKey of today
+ * @returns 'past' | 'today' | 'future' for the date that day maps to
+ */
+export function dayStatusOf(day: DayOfWeek, weekStart: DateKey, today: DateKey): DayStatus {
+    const daySlotKey = dateKeyForDay(weekStart, day);
+    if (daySlotKey > today) {
+        return 'future';
+    } else if (daySlotKey < today) {
+        return 'past';
+    } else {
+        return 'today';
+    }
+}
+
+/**
+ * Classifies a weekStart as past, current, or future.
+ *
+ * @param weekStart any valid weekstart (satisfies isValidWeekStart)
+ * @param today the DateKey of today
+ * @returns the position of weekStart's week relative to the week containing
+ *          today: 'past' if strictly before it, 'current' if the same week,
+ *          'future' if strictly after.
+ */
+export function weekStatusOf(weekStart: DateKey, today: DateKey): WeekStatus {
+    const todayWeek = weekStartOf(parseKey(today));
+    if (todayWeek < weekStart) {
+        return 'future';
+    } else if (todayWeek > weekStart) {
+        return 'past';
+    } else {
+        return 'current';
+    }
+}
+
+/**
+ * Check whether the weekStart is valid.
+ *
+ * @param key any key
+ * @returns true iff key represents a valid calendar date in the format
+ *          "YYYY-MM-DD" (year must be in the range 1000-9999) and that
+ *          date is a Monday.
+ */
+export function isValidWeekStart(key: DateKey): boolean {
+    const regex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const match = key.match(regex);
+    if (!match || !match[1] || !match[2] || !match[3]) {
+        return false;
+    }
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const day = parseInt(match[3], 10);
+    const MON = 1; // getDay() value for Monday
+
+    if (year < 1000 || year > 9999) {
+        return false;
+    }
+
+    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+
+    if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day ||
+        date.getDay() !== MON
+    ) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * The bounds on stepping through weeks: the first and last Mondays that
+ * isValidWeekStart accepts, its year range being 1000-9999.
+ */
+export const FIRST_WEEK_START: DateKey = '1000-01-06';
+export const LAST_WEEK_START: DateKey = '9999-12-27';
+
+/**
+ * Three-letter English month abbreviations, January first.
+ *
+ * Nothing outside `core/` and `i18n/` should read it — a month's name is a
+ * matter of language, and this is only one language's.
+ */
+export const MONTHS: readonly string[] = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+];
+
+/**
+ * The day of a given week that is today, or undefined if that week does not
+ * contain today.
+ *
+ * @param weekStart  the Monday (local YYYY-MM-DD) of the week in question
+ * @returns  the DayOfWeek that is today, if weekStart's week contains today;
+ *           otherwise undefined
+ *
+ * Impure: reads the system clock.
+ */
+export function todayInWeek(weekStart: DateKey): DayOfWeek | undefined {
+    const todayDate = new Date();
+    if (weekStartOf(todayDate) !== weekStart) {
+        return undefined;
+    }
+    const MON = 1; // getDay() value for Monday
+    return WEEK[(todayDate.getDay() + DAYS_PER_WEEK - MON) % DAYS_PER_WEEK];
+}
+
+/**
+ * How far through a week today is — how much of it is left, and a coarse phase
+ * to phrase that in. Which weekdays count as which phase is settled here, not
+ * in the copy catalogs.
+ *
+ * @param weekStart a DateKey that is a Monday (week-start)
+ * @param today the DateKey of today
+ * @returns the phase of weekStart's week and the number of days remaining in it
+ *          counting today, if that week contains today; otherwise undefined
+ */
+export function weekPhaseOf(
+    weekStart: DateKey,
+    today: DateKey,
+): { readonly phase: WeekPhase; readonly daysLeft: number } | undefined {
+    if (weekStatusOf(weekStart, today) !== 'current') {
+        return undefined;
+    }
+    // Today is workable, so it counts: Friday has three days left, not two.
+    const elapsed = WEEK.indexOf(dayOfWeekOf(today));
+    const daysLeft = DAYS_PER_WEEK - elapsed;
+    const phase: WeekPhase =
+        daysLeft === DAYS_PER_WEEK
+            ? 'start'
+            : daysLeft > 3
+              ? 'midweek'
+              : daysLeft > 1
+                ? 'late'
+                : 'lastDay';
+    return { phase, daysLeft };
+}

@@ -1,0 +1,64 @@
+.rail {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--sp-1);
+}
+
+/* one day box — mirrors TaskEditor's .day toggle */
+.pill {
+    display: grid;
+    place-content: center;
+    min-height: 40px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    background: var(--paper);
+    color: var(--ink-faint);
+    font: var(--fs-body) / 1.1 var(--mono);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .pill:hover:not(:disabled) {
+        background: var(--hover-neutral);
+        color: var(--ink);
+    }
+}
+
+/* where it sits today — a quiet accent outline, no label text */
+.cur {
+    border-color: var(--accent-soft);
+    color: var(--ink-faint);
+}
+
+.picked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+    font-weight: 600;
+}
+
+@media (hover: hover) {
+    .picked:hover:not(:disabled) {
+        background: var(--accent);
+        color: var(--paper);
+    }
+}
+
+.pill:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.miss {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font: var(--fs-body) / 1.4 var(--sans);
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+.missBox.missBox:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}

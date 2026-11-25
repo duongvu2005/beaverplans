@@ -1,0 +1,116 @@
+/* The data-and-privacy panel. */
+
+.body {
+    padding: var(--sp-4) var(--sp-5) var(--sp-5);
+    overflow-y: auto;
+}
+
+.actionsLabel {
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 var(--sp-3);
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.action {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    text-align: left;
+    appearance: none;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: var(--sp-3) var(--sp-4);
+    cursor: pointer;
+    font: var(--w-title) var(--fs-row) / 1.4 var(--display);
+    color: var(--ink);
+}
+
+@media (hover: hover) {
+    .action:hover:not(:disabled) {
+        border-color: var(--line-strong);
+        background: var(--hover-neutral);
+    }
+}
+
+.action:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.action svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+}
+
+/* Pushes the trailing state word ("Copied") to the right edge. */
+.grow {
+    margin-left: auto;
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--good);
+}
+
+/* Erasure sits apart from the two that only give you a copy. */
+.destructive {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    margin-top: var(--sp-3);
+    padding-top: var(--sp-4);
+    border-top: 1px solid var(--line);
+}
+
+/* The stored-weeks label's treatment, in the warning colour. */
+.dangerLabel {
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 var(--sp-1);
+}
+
+.danger {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 33%, transparent);
+}
+
+@media (hover: hover) {
+    .danger:hover:not(:disabled) {
+        border-color: var(--accent);
+        background: var(--hover-accent);
+    }
+}
+
+.fallback {
+    margin-top: var(--sp-4);
+}
+
+.fallbackNote {
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-soft);
+    margin: 0 0 var(--sp-2);
+}
+
+.fallbackBox {
+    width: 100%;
+    height: 120px;
+    resize: vertical;
+    font: var(--fs-label) / 1.5 var(--mono);
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--r-chip);
+    padding: var(--sp-3);
+}

@@ -1,0 +1,100 @@
+.heat,
+.legend {
+    --heat-cell: 13px;
+    --heat-gap: 3px;
+    --heat-month-h: 15px;
+}
+
+.heat {
+    display: flex;
+    align-items: flex-start;
+}
+
+.axis {
+    flex: none;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--heat-gap);
+    padding-top: calc(var(--heat-month-h) + var(--heat-gap));
+    padding-right: 6px;
+    /* Opaque, or scrolling cells show through it. */
+    background: var(--paper);
+}
+
+.axisLabel {
+    height: var(--heat-cell);
+    min-width: 16px;
+    font: var(--fs-label) var(--mono);
+    font-size: var(--fs-mini);
+    line-height: var(--heat-cell);
+    text-align: right;
+    color: var(--ink-faint);
+}
+
+.grid {
+    display: flex;
+    gap: var(--heat-gap);
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--heat-gap);
+}
+
+.month {
+    height: var(--heat-month-h);
+    position: relative;
+    font: var(--fs-label) var(--mono);
+    font-size: var(--fs-micro);
+    line-height: 12px;
+    white-space: nowrap;
+    color: var(--ink-faint);
+}
+.month span {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.cell {
+    width: var(--heat-cell);
+    height: var(--heat-cell);
+    border-radius: 2px;
+    background: var(--line);
+}
+
+.cell[data-level='1'] {
+    background: var(--accent-soft);
+}
+.cell[data-level='2'] {
+    background: color-mix(in srgb, var(--accent) 40%, var(--accent-soft));
+}
+.cell[data-level='3'] {
+    background: color-mix(in srgb, var(--accent) 72%, var(--accent-soft));
+}
+.cell[data-level='4'] {
+    background: var(--accent);
+}
+
+.untracked {
+    background: color-mix(in srgb, var(--line) 40%, transparent);
+}
+
+.future {
+    background: none;
+    border: 1px dashed var(--line);
+}
+
+.legend {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    font: var(--fs-label) var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+}

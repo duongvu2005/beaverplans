@@ -1,0 +1,70 @@
+.iconBtn {
+    flex: none;
+    appearance: none;
+    cursor: pointer;
+    padding: 0; /* iOS Safari default button padding would shift the icon */
+    width: 26px;
+    height: 26px;
+    border-radius: var(--r-chip);
+    display: grid;
+    place-items: center;
+    transition:
+        background-color 0.13s,
+        color 0.13s;
+}
+
+.iconBtn svg {
+    display: block;
+    width: var(--icon-size);
+    height: var(--icon-size);
+}
+
+:where(.iconBtn) {
+    border: none;
+    background: none;
+    color: var(--ink-faint);
+}
+
+@media (hover: hover) {
+    :where(.iconBtn:hover) {
+        background: var(--line);
+        color: var(--ink);
+    }
+}
+
+.iconBtn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.grip {
+    flex: none;
+    width: var(--grip-size);
+    height: var(--grip-size);
+    color: var(--ink-faint);
+    cursor: grab;
+}
+
+.grip:active {
+    cursor: grabbing;
+}
+
+.gripHandle {
+    flex: none;
+    display: flex;
+    align-items: center;
+    touch-action: none;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (hover: none) {
+    .gripHandle::after {
+        content: '';
+        position: absolute;
+        inset: -12px -6px;
+    }
+}

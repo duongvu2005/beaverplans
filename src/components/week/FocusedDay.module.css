@@ -1,0 +1,45 @@
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 13px 14px;
+}
+
+.head {
+    font-family: var(--mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 var(--sp-1);
+}
+
+.count {
+    font-family: var(--mono);
+    font-size: var(--fs-label);
+    color: var(--ink-faint);
+    margin: 0 0 var(--sp-3);
+}
+
+.due {
+    font-family: var(--mono);
+    font-size: var(--fs-label);
+    line-height: 1.5;
+    color: var(--accent);
+    margin: -6px 0 11px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+}
+
+.list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.empty {
+    font-family: var(--display);
+    font-size: var(--fs-row);
+    color: var(--ink-faint);
+    padding: 6px 0 2px;
+}

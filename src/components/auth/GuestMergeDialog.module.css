@@ -1,0 +1,11 @@
+.footSpan {
+    justify-content: stretch;
+}
+
+.footSpan button {
+    flex: 1;
+}
+
+.footSpan button:not(:first-child) {
+    flex: 1.5;
+}

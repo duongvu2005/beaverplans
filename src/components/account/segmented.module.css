@@ -1,0 +1,41 @@
+.row {
+    display: flex;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    overflow: hidden;
+}
+
+.btn {
+    flex: 1;
+    padding: 6px 8px;
+    border: 0;
+    background: none;
+    text-align: center;
+    font: 500 var(--fs-body) var(--sans);
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: 0.12s;
+    white-space: nowrap;
+}
+
+.btn + .btn {
+    border-left: 1px solid var(--line);
+}
+
+@media (hover: hover) {
+    .btn:hover {
+        color: var(--ink);
+        background: var(--hover-neutral);
+    }
+}
+
+.on {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+@media (hover: hover) {
+    .on:hover {
+        background: var(--accent-soft);
+        color: var(--accent);
+    }
+}

@@ -1,0 +1,199 @@
+.row {
+    padding: var(--sp-1) var(--sp-2);
+    margin: 0 calc(-1 * var(--sp-2));
+    border-radius: var(--r);
+    transition: background-color 0.12s;
+}
+@media (hover: hover) {
+    .row:hover {
+        background: var(--hover-neutral);
+    }
+}
+
+.top {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.deadline {
+    display: block;
+    padding-top: 1px;
+    margin-left: calc(var(--grip-size) + var(--check-size) + 2 * var(--sp-2));
+    font-family: var(--mono);
+    font-size: var(--fs-mini);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.name {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 2px 0;
+    border: none;
+    background: none;
+    outline: none;
+    font-family: var(--sans);
+    font-size: var(--fs-row);
+    font-weight: var(--w-row);
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.name::placeholder {
+    color: var(--ink-faint);
+}
+
+.name.done {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-strong);
+}
+
+.assignHint {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: var(--fs-mini);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--accent);
+    padding: 2px 0;
+    opacity: 0.85;
+    transition: opacity 0.13s;
+}
+@media (hover: hover) {
+    .row:hover .assignHint {
+        opacity: 1;
+    }
+}
+.arrow {
+    display: none;
+    width: 13px;
+    height: 13px;
+}
+@media (hover: hover) {
+    .row:hover .arrow {
+        display: block;
+    }
+}
+
+.actions {
+    flex: none;
+    display: flex;
+    gap: 2px;
+}
+
+.iconBtn {
+    composes: iconBtn from './rowKit.module.css';
+    opacity: 0;
+    transition:
+        opacity 0.12s ease,
+        background-color 0.13s,
+        color 0.13s;
+}
+@media (hover: hover) {
+    .row:hover .iconBtn {
+        opacity: 1;
+    }
+}
+.iconBtn:focus-visible {
+    opacity: 1;
+}
+
+.assignCta {
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+@media (hover: hover) {
+    .assignCta:hover {
+        color: var(--accent);
+        background: var(--accent-soft);
+    }
+}
+
+.grip {
+    composes: grip from './rowKit.module.css';
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.gripHandle {
+    composes: gripHandle from './rowKit.module.css';
+}
+
+/* --- drag and drop --- */
+
+.dragging {
+    opacity: 0.4;
+}
+@media (hover: hover) {
+    .row:hover .grip {
+        opacity: 0.55;
+    }
+    .row:hover .grip:hover {
+        opacity: 0.9;
+    }
+}
+
+@media (hover: none) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
+    /* no arrow on touch — the label alone reads fine without hover */
+}
+
+@container app (max-width: 680px) {
+    .grip {
+        opacity: 0.55;
+    }
+    .iconBtn {
+        opacity: 1;
+    }
+}
+
+.deadline.quiet {
+    color: var(--ink-faint);
+}
+.deadline.live {
+    color: var(--accent);
+}
+.deadline.urgent {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* --- the drag clone (TaskRowPreview) --- */
+
+.grabbed {
+    background: var(--hover-neutral);
+}
+.grabbed .grip {
+    opacity: 0.55;
+}
+.grabbed .iconBtn {
+    opacity: 1;
+}
+.grabbed .arrow {
+    display: inline-block;
+}
+.grabbed .assignHint {
+    opacity: 1;
+}

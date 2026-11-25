@@ -1,0 +1,179 @@
+.body {
+    padding: var(--sp-4) var(--sp-5) var(--sp-5);
+    overflow-y: auto;
+}
+
+.field {
+    display: block;
+    margin-bottom: var(--sp-5);
+}
+
+.label {
+    display: block;
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: var(--sp-2);
+}
+
+.editRow {
+    display: flex;
+    gap: var(--sp-2);
+}
+
+.input {
+    flex: 1;
+    min-width: 0; /* or a long value pushes Save out of the panel */
+    font: var(--fs-row) var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-chip);
+    padding: 8px 10px;
+}
+
+.input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+}
+
+.save {
+    flex: none;
+    appearance: none;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+    border-radius: var(--r-chip);
+    padding: 8px 14px;
+    font: 600 var(--fs-body) var(--sans);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .save:hover:not(:disabled) {
+        filter: brightness(0.92);
+    }
+}
+
+.save:disabled {
+    border-color: var(--line);
+    background: none;
+    color: var(--ink-faint);
+    cursor: default;
+}
+
+.note {
+    display: block;
+    margin-top: var(--sp-2);
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+.saved {
+    color: var(--good);
+}
+
+.error {
+    color: var(--accent);
+}
+
+.guide {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-5);
+}
+
+.guideText {
+    flex: 1;
+    min-width: 0;
+}
+
+/* LanguagePicker's .label, so the three read as one column. */
+.guideLabel {
+    display: block;
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}
+
+.guideNote {
+    display: block;
+    margin-top: var(--sp-1);
+    font: var(--fs-body) / 1.5 var(--sans);
+    color: var(--ink-faint);
+}
+
+.rows {
+    border-top: 1px solid var(--line);
+    padding-top: var(--sp-4);
+}
+
+/* A destination, not a control: these open something else. */
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    text-align: left;
+    appearance: none;
+    background: none;
+    border: 0;
+    border-radius: var(--r);
+    padding: var(--sp-3) var(--sp-2);
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .row:hover {
+        background: var(--hover-neutral);
+    }
+}
+
+.rowText {
+    flex: 1;
+    min-width: 0;
+}
+
+.rowTitle {
+    display: block;
+    font: var(--w-title) var(--fs-row) / 1.4 var(--display);
+    color: var(--ink);
+}
+
+.rowSub {
+    display: block;
+    font: var(--fs-body) / 1.45 var(--sans);
+    color: var(--ink-faint);
+    overflow-wrap: anywhere;
+}
+
+.chevron {
+    flex: none;
+    color: var(--ink-faint);
+}
+
+.soon {
+    opacity: 0.6;
+    cursor: default;
+}
+
+@media (hover: hover) {
+    .soon:hover {
+        background: none;
+    }
+}
+
+.soonTag {
+    flex: none;
+    font: var(--fs-label) / 1 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 8px;
+}

@@ -1,0 +1,20 @@
+.target.target {
+    border: 1.5px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.fieldSlot.fieldSlot {
+    border-bottom: 1.5px solid transparent;
+}
+
+.field.field {
+    border-bottom-color: var(--accent);
+}
+
+.muted.muted {
+    border-color: transparent;
+    background: none;
+    color: var(--ink-faint);
+    box-shadow: none;
+}

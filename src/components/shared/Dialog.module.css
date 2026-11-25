@@ -1,0 +1,58 @@
+.scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end; /* dock to bottom -> sheet */
+    justify-content: center;
+    background: var(--scrim);
+    overscroll-behavior: contain;
+}
+
+.panel {
+    width: 100%;
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    border-top-left-radius: var(--r-card);
+    border-top-right-radius: var(--r-card);
+    box-shadow: 0 -8px 30px rgba(28, 26, 23, 0.18);
+    padding-bottom: env(safe-area-inset-bottom); /* iOS home-indicator */
+}
+
+.panel:focus {
+    outline: none;
+}
+
+:global(html.dialogOpen) {
+    overflow-y: hidden;
+}
+
+@container app (min-width: 681px) {
+    .scrim {
+        align-items: center; /* centered -> modal */
+    }
+    .panel {
+        width: min(520px, 92vw);
+        max-height: 88dvh;
+        border-radius: var(--r-card);
+    }
+}
+
+.scrimFull {
+    background: var(--bg);
+}
+
+.panelFull {
+    height: 98dvh;
+    max-height: 98dvh;
+}
+
+@container app (min-width: 681px) {
+    .panelFull {
+        width: min(420px, 92vw);
+        height: auto;
+        max-height: 88dvh;
+    }
+}
